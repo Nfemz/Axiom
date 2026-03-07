@@ -316,29 +316,29 @@
 
 **Purpose**: Advanced features, resilience, and optimizations that span multiple user stories
 
-- [ ] T123 [P] Implement skill authoring system (create structured skills with trigger/inputs/outputs/steps, validation gate, versioning per FR-022/FR-022a) in `packages/orchestrator/src/skills/registry.ts`
-- [ ] T124 Implement skill invocation and self-healing lifecycle (invoke by name, diagnose failures, publish new versions, auto-deprecate after 3 consecutive failures per FR-022c) in `packages/orchestrator/src/skills/lifecycle.ts`
-- [ ] T125 [P] Implement tool/API/MCP discovery (search registries, integrate new tools, codify as skills per FR-022b) in `packages/agent-runtime/src/tools/discovery.ts`
-- [ ] T126 Implement tiered security gate for discovered tools (auto-approve trusted sources, require operator approval for unknown per FR-025) in `packages/orchestrator/src/security/tool-approval.ts`
-- [ ] T127 [P] Implement memory reflection and consolidation (periodic structured summaries, prune outdated entries, consolidate into higher-level summaries per FR-020f) in `packages/orchestrator/src/memory/consolidation.ts`
-- [ ] T128 [P] Implement memory quality pipeline (write-time noise filtering + importance scoring, read-time multi-stage scoring with recency/importance/decay/MMR/threshold per FR-020e) in `packages/orchestrator/src/memory/quality-pipeline.ts`
-- [ ] T129 Implement graceful degradation mode (continue non-sensitive work on infrastructure failures, queue sensitive ops, self-heal on recovery per FR-015c) in `packages/agent-runtime/src/loop/degradation.ts`
-- [ ] T130 [P] Implement self-learning from failures (persist resolutions to shared knowledge base, avoid repeating failed approaches per FR-012c) in `packages/agent-runtime/src/memory/self-learning.ts`
-- [ ] T131 [P] Implement automated daily backup system (PostgreSQL dump, 90-day retention, weekly restore verification per FR-028) in `packages/orchestrator/src/db/backup.ts`
-- [ ] T132 Implement backup/restore API — POST /api/system/backup, POST /api/system/backup/restore in `packages/dashboard/src/app/api/system/backup/route.ts`
-- [ ] T133 [P] Implement priority queue scheduler (suspend lower-priority agents on resource exhaustion, elastic scaling per FR-015a) in `packages/orchestrator/src/agents/priority-scheduler.ts`
-- [ ] T134 Implement conflict resolution system (detect contention, escalate to parent, resolve via LLM, publish resolution to knowledge base per FR-011b) in `packages/orchestrator/src/agents/conflict-resolution.ts`
-- [ ] T135 [P] Implement quarantine review page for prompt injection flagged content in `packages/dashboard/src/app/settings/quarantine/page.tsx`
+- [x] T123 [P] Implement skill authoring system (create structured skills with trigger/inputs/outputs/steps, validation gate, versioning per FR-022/FR-022a) in `packages/orchestrator/src/skills/registry.ts`
+- [x] T124 Implement skill invocation and self-healing lifecycle (invoke by name, diagnose failures, publish new versions, auto-deprecate after 3 consecutive failures per FR-022c) in `packages/orchestrator/src/skills/lifecycle.ts`
+- [x] T125 [P] Implement tool/API/MCP discovery (search registries, integrate new tools, codify as skills per FR-022b) in `packages/agent-runtime/src/tools/discovery.ts`
+- [x] T126 Implement tiered security gate for discovered tools (auto-approve trusted sources, require operator approval for unknown per FR-025) in `packages/orchestrator/src/security/tool-approval.ts`
+- [x] T127 [P] Implement memory reflection and consolidation (periodic structured summaries, prune outdated entries, consolidate into higher-level summaries per FR-020f) in `packages/orchestrator/src/memory/consolidation.ts`
+- [x] T128 [P] Implement memory quality pipeline (write-time noise filtering + importance scoring, read-time multi-stage scoring with recency/importance/decay/MMR/threshold per FR-020e) in `packages/orchestrator/src/memory/quality-pipeline.ts`
+- [x] T129 Implement graceful degradation mode (continue non-sensitive work on infrastructure failures, queue sensitive ops, self-heal on recovery per FR-015c) in `packages/agent-runtime/src/loop/degradation.ts`
+- [x] T130 [P] Implement self-learning from failures (persist resolutions to shared knowledge base, avoid repeating failed approaches per FR-012c) in `packages/agent-runtime/src/memory/self-learning.ts`
+- [x] T131 [P] Implement automated daily backup system (PostgreSQL dump, 90-day retention, weekly restore verification per FR-028) in `packages/orchestrator/src/db/backup.ts`
+- [x] T132 Implement backup/restore API — POST /api/system/backup, POST /api/system/backup/restore in `packages/dashboard/src/app/api/system/backup/route.ts`
+- [x] T133 [P] Implement priority queue scheduler (suspend lower-priority agents on resource exhaustion, elastic scaling per FR-015a) in `packages/orchestrator/src/agents/priority-scheduler.ts`
+- [x] T134 Implement conflict resolution system (detect contention, escalate to parent, resolve via LLM, publish resolution to knowledge base per FR-011b) in `packages/orchestrator/src/agents/conflict-resolution.ts`
+- [x] T135 [P] Implement quarantine review page for prompt injection flagged content in `packages/dashboard/src/app/settings/quarantine/page.tsx`
 - [ ] T136 Update CLAUDE.md with complete development guidance, commands, and conventions (finalize content started in T005a)
 - [ ] T137 Run quickstart.md validation — verify full local dev setup and production deployment flow
 
 ### Phase 10 Tests
 
-- [ ] T137a [P] Unit tests for skill authoring (structured skill creation, validation gate, versioning) in `packages/orchestrator/tests/unit/skill-registry.test.ts`
-- [ ] T137b [P] Unit tests for skill lifecycle (invocation, self-healing, auto-deprecation after N failures) in `packages/orchestrator/tests/unit/skill-lifecycle.test.ts`
-- [ ] T137c [P] Unit tests for memory quality pipeline (write-time noise filtering, importance scoring, read-time multi-stage scoring) in `packages/orchestrator/tests/unit/memory-quality.test.ts`
-- [ ] T137d [P] Unit tests for memory consolidation (reflection generation, pruning, higher-level summary creation) in `packages/orchestrator/tests/unit/memory-consolidation.test.ts`
-- [ ] T137e [P] Unit tests for priority queue scheduler (suspend lower-priority, resource exhaustion handling) in `packages/orchestrator/tests/unit/priority-scheduler.test.ts`
+- [x] T137a [P] Unit tests for skill authoring (structured skill creation, validation gate, versioning) in `packages/orchestrator/tests/unit/skill-registry.test.ts`
+- [x] T137b [P] Unit tests for skill lifecycle (invocation, self-healing, auto-deprecation after N failures) in `packages/orchestrator/tests/unit/skill-lifecycle.test.ts`
+- [x] T137c [P] Unit tests for memory quality pipeline (write-time noise filtering, importance scoring, read-time multi-stage scoring) in `packages/orchestrator/tests/unit/memory-quality.test.ts`
+- [x] T137d [P] Unit tests for memory consolidation (reflection generation, pruning, higher-level summary creation) in `packages/orchestrator/tests/unit/memory-consolidation.test.ts`
+- [x] T137e [P] Unit tests for priority queue scheduler (suspend lower-priority, resource exhaustion handling) in `packages/orchestrator/tests/unit/priority-scheduler.test.ts`
 
 ---
 

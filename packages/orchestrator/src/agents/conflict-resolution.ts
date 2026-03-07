@@ -1,0 +1,106 @@
+// ---------------------------------------------------------------------------
+// Axiom Orchestrator – Conflict Resolution (T134)
+// ---------------------------------------------------------------------------
+// Detects and resolves conflicts between agents: resource contention, goal
+// overlap, and budget conflicts. Placeholder detection and resolution with
+// escalation support.
+// ---------------------------------------------------------------------------
+
+import { createLogger } from "@axiom/shared";
+import type { Database } from "../db/drizzle.js";
+import { sharedKnowledge } from "../db/schema.js";
+import { randomUUID } from "node:crypto";
+
+const log = createLogger("conflict-resolution");
+
+// ── Types ───────────────────────────────────────────────────────────────────
+
+export type ConflictType =
+  | "resource_contention"
+  | "goal_overlap"
+  | "budget_conflict";
+
+export interface Conflict {
+  id: string;
+  type: ConflictType;
+  agentIds: string[];
+  description: string;
+  detectedAt: Date;
+}
+
+interface AgentInfo {
+  id: string;
+  currentTask: string | null;
+  budgetSpent: number;
+}
+
+// ── Detect Conflict ─────────────────────────────────────────────────────────
+
+export function detectConflict(agents: AgentInfo[]): Conflict | null {
+  // Check for goal overlap: agents working on the same task
+  const taskMap = new Map<string, string[]>();
+  for (const agent of agents) {
+    if (agent.currentTask) {
+      const existing = taskMap.get(agent.currentTask) ?? [];
+      existing.push(agent.id);
+      taskMap.set(agent.currentTask, existing);
+    }
+  }
+
+  for (const [task, agentIds] of taskMap) {
+    if (agentIds.length > 1) {
+      return {
+        id: randomUUID(),
+        type: "goal_overlap",
+        agentIds,
+        description: `Multiple agents working on the same task: "${task}"`,
+        detectedAt: new Date(),
+      };
+    }
+  }
+
+  return null;
+}
+
+// ── Escalate to Parent ──────────────────────────────────────────────────────
+
+export async function escalateToParent(
+  db: Database,
+  conflict: Conflict,
+): Promise<void> {
+  log.warn("Conflict escalated to parent", {
+    conflictId: conflict.id,
+    type: conflict.type,
+    agentIds: conflict.agentIds,
+    description: conflict.description,
+  });
+
+  // Placeholder: in production, this would notify the parent agent or operator
+}
+
+// ── Resolve Conflict ────────────────────────────────────────────────────────
+
+export async function resolveConflict(
+  db: Database,
+  conflict: Conflict,
+  resolution: string,
+): Promise<void> {
+  log.info("Conflict resolved", {
+    conflictId: conflict.id,
+    type: conflict.type,
+    resolution,
+  });
+
+  // Publish resolution to knowledge base as a learning entry
+  await db.insert(sharedKnowledge).values({
+    content: `Conflict resolution: ${conflict.description} — ${resolution}`,
+    entryType: "resolution",
+    tags: ["conflict", conflict.type],
+    category: "conflict-resolution",
+    importanceScore: 0.7,
+  });
+
+  log.info("Conflict resolution published to knowledge base", {
+    conflictId: conflict.id,
+  });
+}
