@@ -169,25 +169,25 @@
 
 ### Implementation for User Story 3
 
-- [ ] T070 [US3] Implement Vercel AI SDK provider configuration (Anthropic, OpenAI, Google, OpenRouter) with per-agent model selection in `packages/agent-runtime/src/loop/providers.ts`
-- [ ] T071 [US3] Implement tool registry and execution framework (register tools, validate inputs via Zod, execute with error handling) in `packages/agent-runtime/src/tools/registry.ts`
-- [ ] T072 [P] [US3] Implement terminal tool (run commands, install packages, manage processes in sandbox) in `packages/agent-runtime/src/tools/terminal.ts`
-- [ ] T073 [P] [US3] Implement file system tool (read, write, list, search files in sandbox) in `packages/agent-runtime/src/tools/filesystem.ts`
-- [ ] T074 [P] [US3] Implement browser tool via Playwright (navigate, click, fill, extract, screenshot — headless automation tier) in `packages/agent-runtime/src/tools/browser.ts`
-- [ ] T075 [P] [US3] Implement desktop/computer-use tool via @e2b/desktop (screen capture, mouse, keyboard — pixel-level tier) in `packages/agent-runtime/src/tools/computer-use.ts`
-- [ ] T076 [P] [US3] Implement HTTP/API tool (make HTTP requests, parse responses — API-first tier) in `packages/agent-runtime/src/tools/http.ts`
-- [ ] T077 [US3] Implement tool tiering logic (prefer API > headless browser > pixel-level per FR-003) in `packages/agent-runtime/src/tools/tiering.ts`
-- [ ] T078 [US3] Implement capability-aware agent (self-assess tool sufficiency, request capability upgrades per FR-018) in `packages/agent-runtime/src/loop/capability-check.ts`
-- [ ] T079 [US3] Implement sub-agent spawning from within agent-runtime (agent spawns child agents via orchestrator message per FR-002) in `packages/agent-runtime/src/loop/sub-agent.ts`
-- [ ] T080 [US3] Implement dynamic goal decomposition (LLM-powered task breakdown, agent count/type/sequencing per FR-013) in `packages/orchestrator/src/agents/goal-decomposition.ts`
-- [ ] T080a [US3] Implement workflow lead coordination pattern per FR-011: orchestrator spawns workflow lead agents for parallel workflows, each managing their own hierarchical agent team. Workflow leads are specialized agents with sub-agent spawning authority. Root orchestrator coordinates across workflows (budget allocation, cross-workflow conflict escalation, resource balancing). File: `packages/orchestrator/src/agents/workflow-coordinator.ts`
+- [x] T070 [US3] Implement Vercel AI SDK provider configuration (Anthropic, OpenAI, Google, OpenRouter) with per-agent model selection in `packages/agent-runtime/src/loop/providers.ts`
+- [x] T071 [US3] Implement tool registry and execution framework (register tools, validate inputs via Zod, execute with error handling) in `packages/agent-runtime/src/tools/registry.ts`
+- [x] T072 [P] [US3] Implement terminal tool (run commands, install packages, manage processes in sandbox) in `packages/agent-runtime/src/tools/terminal.ts`
+- [x] T073 [P] [US3] Implement file system tool (read, write, list, search files in sandbox) in `packages/agent-runtime/src/tools/filesystem.ts`
+- [x] T074 [P] [US3] Implement browser tool via Playwright (navigate, click, fill, extract, screenshot — headless automation tier) in `packages/agent-runtime/src/tools/browser.ts`
+- [x] T075 [P] [US3] Implement desktop/computer-use tool via @e2b/desktop (screen capture, mouse, keyboard — pixel-level tier) in `packages/agent-runtime/src/tools/computer-use.ts`
+- [x] T076 [P] [US3] Implement HTTP/API tool (make HTTP requests, parse responses — API-first tier) in `packages/agent-runtime/src/tools/http.ts`
+- [x] T077 [US3] Implement tool tiering logic (prefer API > headless browser > pixel-level per FR-003) in `packages/agent-runtime/src/tools/tiering.ts`
+- [x] T078 [US3] Implement capability-aware agent (self-assess tool sufficiency, request capability upgrades per FR-018) in `packages/agent-runtime/src/loop/capability-check.ts`
+- [x] T079 [US3] Implement sub-agent spawning from within agent-runtime (agent spawns child agents via orchestrator message per FR-002) in `packages/agent-runtime/src/loop/sub-agent.ts`
+- [x] T080 [US3] Implement dynamic goal decomposition (LLM-powered task breakdown, agent count/type/sequencing per FR-013) in `packages/orchestrator/src/agents/goal-decomposition.ts`
+- [x] T080a [US3] Implement workflow lead coordination pattern per FR-011: orchestrator spawns workflow lead agents for parallel workflows, each managing their own hierarchical agent team. Workflow leads are specialized agents with sub-agent spawning authority. Root orchestrator coordinates across workflows (budget allocation, cross-workflow conflict escalation, resource balancing). File: `packages/orchestrator/src/agents/workflow-coordinator.ts`
 
 ### Phase 5 Tests
 
-- [ ] T080b [P] [US3] Unit tests for tool registry (register, validate inputs via Zod, execute, error handling) in `packages/agent-runtime/tests/unit/tool-registry.test.ts`
-- [ ] T080c [P] [US3] Unit tests for tool tiering logic (API > headless browser > pixel-level preference order, fallback escalation) in `packages/agent-runtime/tests/unit/tiering.test.ts`
-- [ ] T080d [P] [US3] Unit tests for capability-check (self-assessment, upgrade request generation with justification) in `packages/agent-runtime/tests/unit/capability-check.test.ts`
-- [ ] T080e [P] [US3] Unit tests for goal decomposition (mock LLM response parsing, agent count/type/sequencing output) in `packages/orchestrator/tests/unit/goal-decomposition.test.ts`
+- [x] T080b [P] [US3] Unit tests for tool registry (register, validate inputs via Zod, execute, error handling) in `packages/agent-runtime/tests/unit/tool-registry.test.ts`
+- [x] T080c [P] [US3] Unit tests for tool tiering logic (API > headless browser > pixel-level preference order, fallback escalation) in `packages/agent-runtime/tests/unit/tiering.test.ts`
+- [x] T080d [P] [US3] Unit tests for capability-check (self-assessment, upgrade request generation with justification) in `packages/agent-runtime/tests/unit/capability-check.test.ts`
+- [x] T080e [P] [US3] Unit tests for goal decomposition (mock LLM response parsing, agent count/type/sequencing output) in `packages/orchestrator/tests/unit/goal-decomposition.test.ts`
 
 **Checkpoint**: Agent can browse web, run terminal commands, interact with desktop apps, use APIs, spawn sub-agents, and decompose goals
 

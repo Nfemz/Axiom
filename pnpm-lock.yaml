@@ -53,6 +53,9 @@ importers:
       '@axiom/shared':
         specifier: workspace:*
         version: link:../shared
+      '@e2b/desktop':
+        specifier: ^2.2.2
+        version: 2.2.2
       ai:
         specifier: ^6.0.116
         version: 6.0.116(zod@4.3.6)
