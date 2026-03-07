@@ -232,26 +232,26 @@
 
 ### Implementation for User Story 5
 
-- [ ] T091 [P] [US5] Implement pipeline service (create, advance stage, pause, complete, fail) in `packages/orchestrator/src/agents/pipeline-service.ts`
-- [ ] T092 [P] [US5] Implement financial ledger service (record transactions, compute balances, revenue splits per FR-008a/FR-019) in `packages/orchestrator/src/financial/ledger.ts`
-- [ ] T093 [US5] Implement budget enforcement (pre-authorization check per FR-008c, block if exceeds remaining budget, escalate for additional budget) in `packages/orchestrator/src/financial/budget.ts`
-- [ ] T094 [US5] Implement LLM cost tracker (per-call logging with input/output/cache tokens, computed cost per FR-008b) in `packages/orchestrator/src/financial/llm-costs.ts`
-- [ ] T095 [US5] Integrate LLM cost tracking into agent-runtime (report usage after each generateText call) in `packages/agent-runtime/src/loop/cost-reporter.ts`
-- [ ] T096 [US5] Implement revenue collection and split logic (route revenue to ledger, read configurable split ratio from SystemConfig, apply operator/reinvestment split per FR-008a, default 20/80) in `packages/orchestrator/src/financial/revenue.ts`
-- [ ] T097 [US5] Implement heartbeat standing order evaluation (evaluate operator goals, advance pipelines, spawn agents, reallocate resources per FR-021a) in `packages/orchestrator/src/heartbeat/standing-orders.ts`
-- [ ] T098 [P] [US5] Implement pipelines API — GET /api/pipelines, POST, GET/:id, PATCH/:id per contracts/api.md in `packages/dashboard/src/app/api/pipelines/route.ts` and `packages/dashboard/src/app/api/pipelines/[id]/route.ts`
-- [ ] T099 [P] [US5] Implement financial API — GET /api/financial/transactions, GET /api/financial/summary, GET /api/financial/costs per contracts/api.md in `packages/dashboard/src/app/api/financial/route.ts`
-- [ ] T100 [P] [US5] Implement pipeline management page (create pipeline, view stages, progress, budget) in `packages/dashboard/src/app/pipelines/page.tsx`
-- [ ] T101 [P] [US5] Implement financial dashboard page (transactions, per-agent costs, per-venture ROI, revenue splits, trend charts per FR-008d) in `packages/dashboard/src/app/financial/page.tsx`
-- [ ] T102 [US5] Implement SSE stream for cost updates (cost:update, cost:alert) in `packages/dashboard/src/app/api/stream/costs/route.ts`
-- [ ] T103 [US5] Implement SSE stream for pipeline progress (pipeline:stage, pipeline:complete) in `packages/dashboard/src/app/api/stream/pipeline/[id]/route.ts`
+- [x] T091 [P] [US5] Implement pipeline service (create, advance stage, pause, complete, fail) in `packages/orchestrator/src/agents/pipeline-service.ts`
+- [x] T092 [P] [US5] Implement financial ledger service (record transactions, compute balances, revenue splits per FR-008a/FR-019) in `packages/orchestrator/src/financial/ledger.ts`
+- [x] T093 [US5] Implement budget enforcement (pre-authorization check per FR-008c, block if exceeds remaining budget, escalate for additional budget) in `packages/orchestrator/src/financial/budget.ts`
+- [x] T094 [US5] Implement LLM cost tracker (per-call logging with input/output/cache tokens, computed cost per FR-008b) in `packages/orchestrator/src/financial/llm-costs.ts`
+- [x] T095 [US5] Integrate LLM cost tracking into agent-runtime (report usage after each generateText call) in `packages/agent-runtime/src/loop/cost-reporter.ts`
+- [x] T096 [US5] Implement revenue collection and split logic (route revenue to ledger, read configurable split ratio from SystemConfig, apply operator/reinvestment split per FR-008a, default 20/80) in `packages/orchestrator/src/financial/revenue.ts`
+- [x] T097 [US5] Implement heartbeat standing order evaluation (evaluate operator goals, advance pipelines, spawn agents, reallocate resources per FR-021a) in `packages/orchestrator/src/heartbeat/standing-orders.ts`
+- [x] T098 [P] [US5] Implement pipelines API — GET /api/pipelines, POST, GET/:id, PATCH/:id per contracts/api.md in `packages/dashboard/src/app/api/pipelines/route.ts` and `packages/dashboard/src/app/api/pipelines/[id]/route.ts`
+- [x] T099 [P] [US5] Implement financial API — GET /api/financial/transactions, GET /api/financial/summary, GET /api/financial/costs per contracts/api.md in `packages/dashboard/src/app/api/financial/route.ts`
+- [x] T100 [P] [US5] Implement pipeline management page (create pipeline, view stages, progress, budget) in `packages/dashboard/src/app/pipelines/page.tsx`
+- [x] T101 [P] [US5] Implement financial dashboard page (transactions, per-agent costs, per-venture ROI, revenue splits, trend charts per FR-008d) in `packages/dashboard/src/app/financial/page.tsx`
+- [x] T102 [US5] Implement SSE stream for cost updates (cost:update, cost:alert) in `packages/dashboard/src/app/api/stream/costs/route.ts`
+- [x] T103 [US5] Implement SSE stream for pipeline progress (pipeline:stage, pipeline:complete) in `packages/dashboard/src/app/api/stream/pipeline/[id]/route.ts`
 
 ### Phase 7 Tests
 
-- [ ] T103a [P] [US5] Unit tests for budget enforcement (pre-authorization check, block on insufficient budget, escalation trigger) in `packages/orchestrator/tests/unit/budget.test.ts`
-- [ ] T103b [P] [US5] Unit tests for financial ledger (transaction recording, balance computation, revenue split calculation) in `packages/orchestrator/tests/unit/ledger.test.ts`
-- [ ] T103c [P] [US5] Unit tests for LLM cost tracker (token counting, cost computation per model, per-agent aggregation) in `packages/orchestrator/tests/unit/llm-costs.test.ts`
-- [ ] T103d [US5] Unit tests for pipeline service (stage advancement, pause/complete/fail transitions) in `packages/orchestrator/tests/unit/pipeline.test.ts`
+- [x] T103a [P] [US5] Unit tests for budget enforcement (pre-authorization check, block on insufficient budget, escalation trigger) in `packages/orchestrator/tests/unit/budget.test.ts`
+- [x] T103b [P] [US5] Unit tests for financial ledger (transaction recording, balance computation, revenue split calculation) in `packages/orchestrator/tests/unit/ledger.test.ts`
+- [x] T103c [P] [US5] Unit tests for LLM cost tracker (token counting, cost computation per model, per-agent aggregation) in `packages/orchestrator/tests/unit/llm-costs.test.ts`
+- [x] T103d [US5] Unit tests for pipeline service (stage advancement, pause/complete/fail transitions) in `packages/orchestrator/tests/unit/pipeline.test.ts`
 
 **Checkpoint**: Pipelines advance through stages, financial transactions tracked, budget enforced, LLM costs logged, revenue splits working, dashboard shows financials
 
