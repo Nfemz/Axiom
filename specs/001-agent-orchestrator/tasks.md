@@ -265,26 +265,26 @@
 
 ### Implementation for User Story 6
 
-- [ ] T104 [P] [US6] Implement Discord bot entry point (connect, register slash commands, handle interactions) in `packages/discord-bot/src/index.ts`
-- [ ] T105 [P] [US6] Implement Discord slash commands (/status, /agent, /budget, /approve, /deny, /spawn per contracts/discord.md) in `packages/discord-bot/src/commands/`
-- [ ] T106 [US6] Implement Discord message routing (agent updates → Discord channels, operator replies → agent inbox via Redis) in `packages/discord-bot/src/handlers/message-router.ts`
-- [ ] T107 [US6] Implement Discord approval workflow (interactive buttons for approve/deny, route decisions to orchestrator) in `packages/discord-bot/src/handlers/approval-handler.ts`
-- [ ] T108 [US6] Implement Discord channel management (create per-agent/workflow channels, post notifications to #orchestrator and #approvals) in `packages/discord-bot/src/handlers/channel-manager.ts`
-- [ ] T109 [P] [US6] Implement alert rule engine (evaluate conditions against metrics, fire alert events, severity routing per FR-014) in `packages/orchestrator/src/security/alert-engine.ts`
-- [ ] T110 [P] [US6] Implement alerts API — CRUD for rules, list/ack events per contracts/api.md in `packages/dashboard/src/app/api/alerts/route.ts`
-- [ ] T111 [US6] Implement SSE stream for alert events (alert:new, alert:ack) in `packages/dashboard/src/app/api/stream/alerts/route.ts`
-- [ ] T112 [P] [US6] Implement alert management page (create/edit rules, view events, acknowledge, smart banners for active critical/warning alerts) in `packages/dashboard/src/app/alerts/page.tsx`
-- [ ] T113 [P] [US6] Implement skill observability page (skill count, invocation frequency, success/failure rates, top skills, authoring agent, version history, deprecation events per FR-022d) in `packages/dashboard/src/app/skills/page.tsx`
-- [ ] T114 [P] [US6] Implement skills API — GET /api/skills, GET /api/skills/:id, POST /api/skills/:id/deprecate per contracts/api.md in `packages/dashboard/src/app/api/skills/route.ts`
-- [ ] T115 [P] [US6] Implement memory/cognitive health metrics page (write/read rates, retrieval quality, knowledge base growth, reflection frequency per FR-020g) in `packages/dashboard/src/app/settings/memory/page.tsx`
-- [ ] T116 [P] [US6] Implement system settings page (heartbeat interval, active hours, revenue split, backup config, Discord webhook) in `packages/dashboard/src/app/settings/page.tsx`
-- [ ] T117 [US6] Implement token economics dashboard component (per-agent per-model cost breakdown, 7d/30d trend charts, projected monthly spend per FR-008d) in `packages/dashboard/src/components/cost-charts.tsx`
-- [ ] T118 [US6] Add discord-bot service to `docker-compose.yml` with Redis dependency
+- [x] T104 [P] [US6] Implement Discord bot entry point (connect, register slash commands, handle interactions) in `packages/discord-bot/src/index.ts`
+- [x] T105 [P] [US6] Implement Discord slash commands (/status, /agent, /budget, /approve, /deny, /spawn per contracts/discord.md) in `packages/discord-bot/src/commands/`
+- [x] T106 [US6] Implement Discord message routing (agent updates → Discord channels, operator replies → agent inbox via Redis) in `packages/discord-bot/src/handlers/message-router.ts`
+- [x] T107 [US6] Implement Discord approval workflow (interactive buttons for approve/deny, route decisions to orchestrator) in `packages/discord-bot/src/handlers/approval-handler.ts`
+- [x] T108 [US6] Implement Discord channel management (create per-agent/workflow channels, post notifications to #orchestrator and #approvals) in `packages/discord-bot/src/handlers/channel-manager.ts`
+- [x] T109 [P] [US6] Implement alert rule engine (evaluate conditions against metrics, fire alert events, severity routing per FR-014) in `packages/orchestrator/src/security/alert-engine.ts`
+- [x] T110 [P] [US6] Implement alerts API — CRUD for rules, list/ack events per contracts/api.md in `packages/dashboard/src/app/api/alerts/route.ts`
+- [x] T111 [US6] Implement SSE stream for alert events (alert:new, alert:ack) in `packages/dashboard/src/app/api/stream/alerts/route.ts`
+- [x] T112 [P] [US6] Implement alert management page (create/edit rules, view events, acknowledge, smart banners for active critical/warning alerts) in `packages/dashboard/src/app/alerts/page.tsx`
+- [x] T113 [P] [US6] Implement skill observability page (skill count, invocation frequency, success/failure rates, top skills, authoring agent, version history, deprecation events per FR-022d) in `packages/dashboard/src/app/skills/page.tsx`
+- [x] T114 [P] [US6] Implement skills API — GET /api/skills, GET /api/skills/:id, POST /api/skills/:id/deprecate per contracts/api.md in `packages/dashboard/src/app/api/skills/route.ts`
+- [x] T115 [P] [US6] Implement memory/cognitive health metrics page (write/read rates, retrieval quality, knowledge base growth, reflection frequency per FR-020g) in `packages/dashboard/src/app/settings/memory/page.tsx`
+- [x] T116 [P] [US6] Implement system settings page (heartbeat interval, active hours, revenue split, backup config, Discord webhook) in `packages/dashboard/src/app/settings/page.tsx`
+- [x] T117 [US6] Implement token economics dashboard component (per-agent per-model cost breakdown, 7d/30d trend charts, projected monthly spend per FR-008d) in `packages/dashboard/src/components/cost-charts.tsx`
+- [x] T118 [US6] Add discord-bot service to `docker-compose.yml` with Redis dependency
 
 ### Phase 8 Tests
 
-- [ ] T118a [P] [US6] Unit tests for alert rule engine (condition evaluation, severity routing, alert firing) in `packages/orchestrator/tests/unit/alert-engine.test.ts`
-- [ ] T118b [P] [US6] Unit tests for Discord slash command handlers (mock interactions, response formatting) in `packages/discord-bot/tests/unit/commands.test.ts`
+- [x] T118a [P] [US6] Unit tests for alert rule engine (condition evaluation, severity routing, alert firing) in `packages/orchestrator/tests/unit/alert-engine.test.ts`
+- [x] T118b [P] [US6] Unit tests for Discord slash command handlers (mock interactions, response formatting) in `packages/discord-bot/tests/unit/commands.test.ts`
 - [ ] T118c [US6] Integration tests for Discord message routing (agent updates → Discord channels, operator replies → agent inbox via Redis mock) in `packages/discord-bot/tests/integration/message-router.test.ts`
 
 **Checkpoint**: Discord bot responds to commands, agent conversations work in channels, alerts fire and display on dashboard, skill/memory metrics visible, full settings management
