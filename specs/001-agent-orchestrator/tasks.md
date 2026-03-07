@@ -299,14 +299,14 @@
 
 ### Implementation for User Story 7
 
-- [ ] T119 [P] [US7] Implement identity registry service (create, list, revoke identities, link credentials to secret vault) in `packages/orchestrator/src/agents/identity-service.ts`
-- [ ] T120 [US7] Implement agent-side identity creation tools (create email, phone, service account via appropriate providers) in `packages/agent-runtime/src/tools/identity.ts`
-- [ ] T121 [P] [US7] Implement identities API — GET /api/identities, DELETE /api/identities/:id per contracts/api.md in `packages/dashboard/src/app/api/identities/route.ts` and `packages/dashboard/src/app/api/identities/[id]/route.ts`
-- [ ] T122 [US7] Implement identity registry page (list all identities with type, agent, provider, status; revoke action) in `packages/dashboard/src/app/identities/page.tsx`
+- [x] T119 [P] [US7] Implement identity registry service (create, list, revoke identities, link credentials to secret vault) in `packages/orchestrator/src/agents/identity-service.ts`
+- [x] T120 [US7] Implement agent-side identity creation tools (create email, phone, service account via appropriate providers) in `packages/agent-runtime/src/tools/identity.ts`
+- [x] T121 [P] [US7] Implement identities API — GET /api/identities, DELETE /api/identities/:id per contracts/api.md in `packages/dashboard/src/app/api/identities/route.ts` and `packages/dashboard/src/app/api/identities/[id]/route.ts`
+- [x] T122 [US7] Implement identity registry page (list all identities with type, agent, provider, status; revoke action) in `packages/dashboard/src/app/identities/page.tsx`
 
 ### Phase 9 Tests
 
-- [ ] T122a [P] [US7] Unit tests for identity registry service (create, list, revoke, credential linking) in `packages/orchestrator/tests/unit/identity-service.test.ts`
+- [x] T122a [P] [US7] Unit tests for identity registry service (create, list, revoke, credential linking) in `packages/orchestrator/tests/unit/identity-service.test.ts`
 
 **Checkpoint**: Agents can create identities, registry tracks all identities, operator can view and revoke
 
