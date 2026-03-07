@@ -23,20 +23,20 @@
 
 **Purpose**: Monorepo initialization, tooling, and infrastructure configuration
 
-- [ ] T001 Initialize pnpm workspace with `pnpm-workspace.yaml` defining packages/orchestrator, packages/dashboard, packages/agent-runtime, packages/discord-bot, packages/shared
-- [ ] T002 Configure Turborepo with `turbo.json` for build/dev/test/lint pipelines across all 5 packages
-- [ ] T003 [P] Create root `tsconfig.json` with base TypeScript 5.x config (ESM, strict, path aliases) and per-package `tsconfig.json` extending it
-- [ ] T004 [P] Create root `vitest.workspace.ts` configuring Vitest for all packages
-- [ ] T005 [P] Configure ESLint and Prettier at root with per-package overrides
-- [ ] T005a [P] Create initial `CLAUDE.md` at repo root with development guidance routing (commands, code style, project structure, links to spec/plan artifacts). Update incrementally as implementation progresses.
-- [ ] T006 Create `docker-compose.yml` with PostgreSQL 17 (pgvector/pgvector:pg17) on :5432, Redis 7 on :6379, volume mounts, and healthchecks
-- [ ] T007 Create `.env.example` with all required environment variables (DATABASE_URL, REDIS_URL, E2B_API_KEY, ANTHROPIC_API_KEY, DISCORD_BOT_TOKEN, ENCRYPTION_KEY, etc.)
-- [ ] T008 [P] Scaffold `packages/shared/` with `package.json`, `src/types/`, `src/schemas/`, `src/constants/` directories and barrel exports
-- [ ] T009 [P] Scaffold `packages/orchestrator/` with `package.json`, `src/` directory structure per plan.md (agents/, comms/, db/, heartbeat/, memory/, secrets/, skills/, financial/, security/, health/)
-- [ ] T010 [P] Scaffold `packages/dashboard/` with Next.js 15 App Router, `package.json`, `src/app/`, `src/components/`, `src/lib/`
-- [ ] T011 [P] Scaffold `packages/agent-runtime/` with `package.json`, `src/` directory structure (loop/, tools/, memory/, comms/)
-- [ ] T012 [P] Scaffold `packages/discord-bot/` with `package.json`, `src/` directory structure (commands/, handlers/)
-- [ ] T013 Install all primary dependencies across packages per plan.md (E2B SDK, Vercel AI SDK, BullMQ, ioredis, discord.js, Playwright, drizzle-orm, drizzle-kit, zod, @simplewebauthn/server, @simplewebauthn/browser, iron-session)
+- [x] T001 Initialize pnpm workspace with `pnpm-workspace.yaml` defining packages/orchestrator, packages/dashboard, packages/agent-runtime, packages/discord-bot, packages/shared
+- [x] T002 Configure Turborepo with `turbo.json` for build/dev/test/lint pipelines across all 5 packages
+- [x] T003 [P] Create root `tsconfig.json` with base TypeScript 5.x config (ESM, strict, path aliases) and per-package `tsconfig.json` extending it
+- [x] T004 [P] Create root `vitest.workspace.ts` configuring Vitest for all packages
+- [x] T005 [P] Configure ESLint and Prettier at root with per-package overrides
+- [x] T005a [P] Create initial `CLAUDE.md` at repo root with development guidance routing (commands, code style, project structure, links to spec/plan artifacts). Update incrementally as implementation progresses.
+- [x] T006 Create `docker-compose.yml` with PostgreSQL 17 (pgvector/pgvector:pg17) on :5432, Redis 7 on :6379, volume mounts, and healthchecks
+- [x] T007 Create `.env.example` with all required environment variables (DATABASE_URL, REDIS_URL, E2B_API_KEY, ANTHROPIC_API_KEY, DISCORD_BOT_TOKEN, ENCRYPTION_KEY, etc.)
+- [x] T008 [P] Scaffold `packages/shared/` with `package.json`, `src/types/`, `src/schemas/`, `src/constants/` directories and barrel exports
+- [x] T009 [P] Scaffold `packages/orchestrator/` with `package.json`, `src/` directory structure per plan.md (agents/, comms/, db/, heartbeat/, memory/, secrets/, skills/, financial/, security/, health/)
+- [x] T010 [P] Scaffold `packages/dashboard/` with Next.js 15 App Router, `package.json`, `src/app/`, `src/components/`, `src/lib/`
+- [x] T011 [P] Scaffold `packages/agent-runtime/` with `package.json`, `src/` directory structure (loop/, tools/, memory/, comms/)
+- [x] T012 [P] Scaffold `packages/discord-bot/` with `package.json`, `src/` directory structure (commands/, handlers/)
+- [x] T013 Install all primary dependencies across packages per plan.md (E2B SDK, Vercel AI SDK, BullMQ, ioredis, discord.js, Playwright, drizzle-orm, drizzle-kit, zod, @simplewebauthn/server, @simplewebauthn/browser, iron-session)
 
 **Checkpoint**: Monorepo builds, `pnpm dev` starts all packages, `docker compose up -d postgres redis` runs infrastructure
 
@@ -48,29 +48,29 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T014 Define shared entity types (Agent, AgentDefinition, AgentMemory, AgentSession, Checkpoint, SharedKnowledgeEntry, Skill, AuditLogEntry, FinancialTransaction, LLMUsageLog, Identity, Secret, Pipeline, AlertRule, AlertEvent, OperatorCredential, SystemConfig) in `packages/shared/src/types/entities.ts`
-- [ ] T015 [P] Define shared enums (AgentStatus, MemoryType, SkillStatus, AlertSeverity, IdentityType, SecretType, PipelineStatus, TransactionType, AuditOutcome) in `packages/shared/src/types/enums.ts`
-- [ ] T016 [P] Define Zod validation schemas for agent-to-orchestrator and orchestrator-to-agent message types per contracts/api.md in `packages/shared/src/schemas/messages.ts`
-- [ ] T017 [P] Define Zod schemas for API request/response payloads (spawn agent, control agent, create definition, etc.) in `packages/shared/src/schemas/api.ts`
-- [ ] T018 [P] Define shared constants (default heartbeat interval, default revenue split, budget defaults, status transition rules) in `packages/shared/src/constants/defaults.ts`
-- [ ] T019 Configure Drizzle ORM with PostgreSQL + pgvector in `packages/orchestrator/src/db/drizzle.ts` (connection pool, pgvector custom type)
-- [ ] T020 Create Drizzle schema for all entities per data-model.md in `packages/orchestrator/src/db/schema.ts` (tables, relations, indexes including HNSW on vector columns, GIN on array/JSONB columns)
-- [ ] T021 Generate initial Drizzle migration in `drizzle/` directory and verify it runs against Docker PostgreSQL
-- [ ] T022 [P] Create Redis/ioredis connection module with `maxRetriesPerRequest: null` and keepalive config in `packages/orchestrator/src/comms/redis.ts`
-- [ ] T023 [P] Create BullMQ queue definitions (agent:spawn, agent:results, heartbeat, backup, memory:consolidation) in `packages/orchestrator/src/comms/queues.ts`
-- [ ] T024 [P] Create Redis Streams helper (publish, subscribe with consumer groups, XACK) in `packages/orchestrator/src/comms/streams.ts`
-- [ ] T025 Create base database query helpers (CRUD operations for Agent, AgentDefinition, SystemConfig) in `packages/orchestrator/src/db/queries.ts`
-- [ ] T026 [P] Create structured logger module in `packages/shared/src/logger.ts`
-- [ ] T027 [P] Create environment config loader with Zod validation for all env vars in `packages/orchestrator/src/config.ts`
-- [ ] T027a [P] Configure TLS for Redis and PostgreSQL connections (FR-005): enable TLS on ioredis connection in `packages/orchestrator/src/comms/redis.ts`, enable SSL on Drizzle/PostgreSQL connection in `packages/orchestrator/src/db/drizzle.ts`, and document TLS cert provisioning in quickstart.md
-- [ ] T027b [P] Implement AES-256 encryption utilities for data-at-rest (FR-005) in `packages/shared/src/crypto.ts` — key derivation from ENCRYPTION_KEY env var, encrypt/decrypt helpers used by secrets vault and sensitive DB fields
+- [x] T014 Define shared entity types (Agent, AgentDefinition, AgentMemory, AgentSession, Checkpoint, SharedKnowledgeEntry, Skill, AuditLogEntry, FinancialTransaction, LLMUsageLog, Identity, Secret, Pipeline, AlertRule, AlertEvent, OperatorCredential, SystemConfig) in `packages/shared/src/types/entities.ts`
+- [x] T015 [P] Define shared enums (AgentStatus, MemoryType, SkillStatus, AlertSeverity, IdentityType, SecretType, PipelineStatus, TransactionType, AuditOutcome) in `packages/shared/src/types/enums.ts`
+- [x] T016 [P] Define Zod validation schemas for agent-to-orchestrator and orchestrator-to-agent message types per contracts/api.md in `packages/shared/src/schemas/messages.ts`
+- [x] T017 [P] Define Zod schemas for API request/response payloads (spawn agent, control agent, create definition, etc.) in `packages/shared/src/schemas/api.ts`
+- [x] T018 [P] Define shared constants (default heartbeat interval, default revenue split, budget defaults, status transition rules) in `packages/shared/src/constants/defaults.ts`
+- [x] T019 Configure Drizzle ORM with PostgreSQL + pgvector in `packages/orchestrator/src/db/drizzle.ts` (connection pool, pgvector custom type)
+- [x] T020 Create Drizzle schema for all entities per data-model.md in `packages/orchestrator/src/db/schema.ts` (tables, relations, indexes including HNSW on vector columns, GIN on array/JSONB columns)
+- [x] T021 Generate initial Drizzle migration in `drizzle/` directory and verify it runs against Docker PostgreSQL
+- [x] T022 [P] Create Redis/ioredis connection module with `maxRetriesPerRequest: null` and keepalive config in `packages/orchestrator/src/comms/redis.ts`
+- [x] T023 [P] Create BullMQ queue definitions (agent:spawn, agent:results, heartbeat, backup, memory:consolidation) in `packages/orchestrator/src/comms/queues.ts`
+- [x] T024 [P] Create Redis Streams helper (publish, subscribe with consumer groups, XACK) in `packages/orchestrator/src/comms/streams.ts`
+- [x] T025 Create base database query helpers (CRUD operations for Agent, AgentDefinition, SystemConfig) in `packages/orchestrator/src/db/queries.ts`
+- [x] T026 [P] Create structured logger module in `packages/shared/src/logger.ts`
+- [x] T027 [P] Create environment config loader with Zod validation for all env vars in `packages/orchestrator/src/config.ts`
+- [x] T027a [P] Configure TLS for Redis and PostgreSQL connections (FR-005): enable TLS on ioredis connection in `packages/orchestrator/src/comms/redis.ts`, enable SSL on Drizzle/PostgreSQL connection in `packages/orchestrator/src/db/drizzle.ts`, and document TLS cert provisioning in quickstart.md
+- [x] T027b [P] Implement AES-256 encryption utilities for data-at-rest (FR-005) in `packages/shared/src/crypto.ts` — key derivation from ENCRYPTION_KEY env var, encrypt/decrypt helpers used by secrets vault and sensitive DB fields
 
 ### Phase 2 Tests
 
-- [ ] T027c [P] Unit tests for shared types, schemas, and constants — verify Zod schemas validate/reject correctly, enum exhaustiveness, constant values in `packages/shared/tests/`
+- [x] T027c [P] Unit tests for shared types, schemas, and constants — verify Zod schemas validate/reject correctly, enum exhaustiveness, constant values in `packages/shared/tests/`
 - [ ] T027d [P] Integration tests for DB connection, migrations, and base CRUD queries using Testcontainers (PostgreSQL) in `packages/orchestrator/tests/integration/db.test.ts`
 - [ ] T027e [P] Integration tests for Redis connection, BullMQ queue creation, and Streams pub/sub using Testcontainers (Redis) in `packages/orchestrator/tests/integration/redis.test.ts`
-- [ ] T027f [P] Unit tests for encryption utilities (AES-256 encrypt/decrypt round-trip, key derivation) in `packages/shared/tests/crypto.test.ts`
+- [x] T027f [P] Unit tests for encryption utilities (AES-256 encrypt/decrypt round-trip, key derivation) in `packages/shared/tests/crypto.test.ts`
 
 **Checkpoint**: Foundation ready — shared types compile, DB migrations run, Redis connects, BullMQ queues initialize
 
@@ -84,24 +84,24 @@
 
 ### Implementation for User Story 1
 
-- [ ] T028 [US1] Implement orchestrator entry point with graceful startup/shutdown, signal handling (SIGTERM/SIGINT), and process lifecycle in `packages/orchestrator/src/index.ts`
-- [ ] T029 [US1] Implement `/health` endpoint returning orchestrator/redis/postgresql status per contracts/api.md in `packages/orchestrator/src/health/handler.ts`
-- [ ] T030 [US1] Implement heartbeat scheduler (configurable interval, active hours, cheap-checks-first pattern per FR-021) in `packages/orchestrator/src/heartbeat/scheduler.ts`
-- [ ] T031 [US1] Implement heartbeat check logic with three-layer liveness detection per FR-012a: (1) heartbeat timeout for hang detection, (2) resource/cost heuristics (CPU, memory, LLM spend rate) for infinite loop detection, (3) periodic LLM self-assessment for subtle stall detection. Also check pipeline progress and pending approvals. Configurable thresholds and remediation actions (kill, restart, escalate) per agent. File: `packages/orchestrator/src/heartbeat/checks.ts`
-- [ ] T032 [P] [US1] Create Next.js root layout with sidebar navigation, dark/light theme, and responsive shell in `packages/dashboard/src/app/layout.tsx`
-- [ ] T033 [P] [US1] Implement WebAuthn registration flow (generate challenge, verify response, store credential) in `packages/dashboard/src/app/api/auth/register/route.ts`
-- [ ] T034 [P] [US1] Implement WebAuthn login flow (generate challenge, verify response, create iron-session) in `packages/dashboard/src/app/api/auth/login/route.ts`
-- [ ] T035 [US1] Implement auth middleware that protects all `/api/*` routes except `/api/auth/*` and `/health` in `packages/dashboard/src/lib/auth-middleware.ts`
-- [ ] T036 [US1] Implement setup wizard API (get state, advance step) for first-run flow (FR-029) in `packages/dashboard/src/app/api/system/setup/route.ts`
-- [ ] T037 [US1] Implement setup wizard UI (passkey registration, API key config, payment method, Discord webhook, test agent spawn) in `packages/dashboard/src/app/(auth)/setup/page.tsx`
-- [ ] T038 [US1] Implement login page with passkey authentication in `packages/dashboard/src/app/(auth)/login/page.tsx`
-- [ ] T039 [US1] Implement system config API (GET/PATCH) in `packages/dashboard/src/app/api/system/config/route.ts`
-- [ ] T040 [US1] Implement dashboard home page showing system health, uptime, active agent count, and resource summary in `packages/dashboard/src/app/page.tsx`
-- [ ] T041 [US1] Implement SSE infrastructure — base ReadableStream helper with auth check and `force-dynamic` in `packages/dashboard/src/lib/sse.ts`
-- [ ] T042 [US1] Implement client-side SSE hook (`useSSE`) for real-time dashboard updates in `packages/dashboard/src/lib/use-sse.ts`
-- [ ] T043 [US1] Create systemd service unit file for orchestrator process supervision with watchdog in `deploy/axiom-orchestrator.service`
-- [ ] T044 [US1] Add orchestrator + dashboard services to `docker-compose.yml` with build contexts, health checks, and dependency ordering
-- [ ] T044a [US1] Implement uptime tracking and reporting (SC-001): record health check results over time, compute rolling 30-day uptime percentage, surface on dashboard home page (T040) and `/health` response. File: `packages/orchestrator/src/health/uptime-tracker.ts`
+- [x] T028 [US1] Implement orchestrator entry point with graceful startup/shutdown, signal handling (SIGTERM/SIGINT), and process lifecycle in `packages/orchestrator/src/index.ts`
+- [x] T029 [US1] Implement `/health` endpoint returning orchestrator/redis/postgresql status per contracts/api.md in `packages/orchestrator/src/health/handler.ts`
+- [x] T030 [US1] Implement heartbeat scheduler (configurable interval, active hours, cheap-checks-first pattern per FR-021) in `packages/orchestrator/src/heartbeat/scheduler.ts`
+- [x] T031 [US1] Implement heartbeat check logic with three-layer liveness detection per FR-012a: (1) heartbeat timeout for hang detection, (2) resource/cost heuristics (CPU, memory, LLM spend rate) for infinite loop detection, (3) periodic LLM self-assessment for subtle stall detection. Also check pipeline progress and pending approvals. Configurable thresholds and remediation actions (kill, restart, escalate) per agent. File: `packages/orchestrator/src/heartbeat/checks.ts`
+- [x] T032 [P] [US1] Create Next.js root layout with sidebar navigation, dark/light theme, and responsive shell in `packages/dashboard/src/app/layout.tsx`
+- [x] T033 [P] [US1] Implement WebAuthn registration flow (generate challenge, verify response, store credential) in `packages/dashboard/src/app/api/auth/register/route.ts`
+- [x] T034 [P] [US1] Implement WebAuthn login flow (generate challenge, verify response, create iron-session) in `packages/dashboard/src/app/api/auth/login/route.ts`
+- [x] T035 [US1] Implement auth middleware that protects all `/api/*` routes except `/api/auth/*` and `/health` in `packages/dashboard/src/lib/auth-middleware.ts`
+- [x] T036 [US1] Implement setup wizard API (get state, advance step) for first-run flow (FR-029) in `packages/dashboard/src/app/api/system/setup/route.ts`
+- [x] T037 [US1] Implement setup wizard UI (passkey registration, API key config, payment method, Discord webhook, test agent spawn) in `packages/dashboard/src/app/(auth)/setup/page.tsx`
+- [x] T038 [US1] Implement login page with passkey authentication in `packages/dashboard/src/app/(auth)/login/page.tsx`
+- [x] T039 [US1] Implement system config API (GET/PATCH) in `packages/dashboard/src/app/api/system/config/route.ts`
+- [x] T040 [US1] Implement dashboard home page showing system health, uptime, active agent count, and resource summary in `packages/dashboard/src/app/page.tsx`
+- [x] T041 [US1] Implement SSE infrastructure — base ReadableStream helper with auth check and `force-dynamic` in `packages/dashboard/src/lib/sse.ts`
+- [x] T042 [US1] Implement client-side SSE hook (`useSSE`) for real-time dashboard updates in `packages/dashboard/src/lib/use-sse.ts`
+- [x] T043 [US1] Create systemd service unit file for orchestrator process supervision with watchdog in `deploy/axiom-orchestrator.service`
+- [x] T044 [US1] Add orchestrator + dashboard services to `docker-compose.yml` with build contexts, health checks, and dependency ordering
+- [x] T044a [US1] Implement uptime tracking and reporting (SC-001): record health check results over time, compute rolling 30-day uptime percentage, surface on dashboard home page (T040) and `/health` response. File: `packages/orchestrator/src/health/uptime-tracker.ts`
 
 ### Phase 3 Tests
 

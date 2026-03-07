@@ -1,0 +1,28 @@
+[Unit]
+Description=Axiom Orchestrator
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=notify
+WorkingDirectory=/opt/axiom
+ExecStart=/usr/bin/node packages/orchestrator/dist/index.js
+Restart=always
+RestartSec=5
+WatchdogSec=120
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/axiom/.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/axiom/drizzle
+
+# Resource limits
+LimitNOFILE=65535
+MemoryMax=2G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

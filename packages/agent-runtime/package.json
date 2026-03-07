@@ -1,0 +1,25 @@
+{
+  "name": "@axiom/agent-runtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/openai": "^3.0.41",
+    "@axiom/shared": "workspace:*",
+    "ai": "^6.0.116",
+    "ioredis": "^5.10.0",
+    "playwright": "^1.58.2",
+    "zod": "^4.3.6"
+  }
+}

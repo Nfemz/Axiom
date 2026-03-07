@@ -3,6 +3,7 @@ node_modules/
 
 # Build
 dist/
+build/
 .next/
 .turbo/
 
@@ -11,8 +12,26 @@ dist/
 .env.local
 .env.*.local
 
+# Logs
+*.log
+
 # OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+coverage/
+
+# Temporary
+*.tmp
+*.swp
+
+# Database
+drizzle/meta/
 
 # Research cache
 .firecrawl/
