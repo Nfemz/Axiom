@@ -63,6 +63,14 @@ pnpm lint             # Lint with ESLint
 - **Agent state machine**: Valid transitions defined in `VALID_STATUS_TRANSITIONS`
 - **Encryption**: AES-256-GCM via `packages/shared/src/crypto.ts`
 
+## Testing
+
+- **Framework**: Vitest for unit and integration tests
+- **E2E**: Playwright for end-to-end tests
+- **Integration**: Testcontainers for database/Redis integration tests
+- **Coverage**: 272+ unit tests across all packages
+- **Run**: `pnpm test` (all unit tests), `pnpm test:e2e` (Playwright)
+
 ## Design Artifacts
 
 - Spec: `specs/001-agent-orchestrator/spec.md`

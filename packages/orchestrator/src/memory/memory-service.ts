@@ -1,7 +1,7 @@
 import { createLogger } from '@axiom/shared';
 import type { Database } from '../db/drizzle.js';
 import { agentMemories } from '../db/schema.js';
-import { eq, desc, sql, and } from 'drizzle-orm';
+import { eq, desc, sql, and, inArray } from 'drizzle-orm';
 
 const logger = createLogger('memory-service');
 
@@ -64,7 +64,7 @@ export async function searchByTags(
   const rows = await db
     .select()
     .from(agentMemories)
-    .where(and(eq(agentMemories.agentId, agentId), sql`${agentMemories.tags} && ${tags}`))
+    .where(and(eq(agentMemories.agentId, agentId), sql`${agentMemories.tags} && ${sql`ARRAY[${sql.join(tags.map(t => sql`${t}`), sql`, `)}]::text[]`}`))
     .orderBy(desc(agentMemories.importanceScore))
     .limit(limit);
 
@@ -104,5 +104,5 @@ async function updateAccessedAt(db: Database, ids: string[]): Promise<void> {
   await db
     .update(agentMemories)
     .set({ accessedAt: new Date() })
-    .where(sql`${agentMemories.id} = ANY(${ids})`);
+    .where(inArray(agentMemories.id, ids));
 }

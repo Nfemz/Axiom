@@ -68,8 +68,8 @@
 ### Phase 2 Tests
 
 - [x] T027c [P] Unit tests for shared types, schemas, and constants — verify Zod schemas validate/reject correctly, enum exhaustiveness, constant values in `packages/shared/tests/`
-- [ ] T027d [P] Integration tests for DB connection, migrations, and base CRUD queries using Testcontainers (PostgreSQL) in `packages/orchestrator/tests/integration/db.test.ts`
-- [ ] T027e [P] Integration tests for Redis connection, BullMQ queue creation, and Streams pub/sub using Testcontainers (Redis) in `packages/orchestrator/tests/integration/redis.test.ts`
+- [x] T027d [P] Integration tests for DB connection, migrations, and base CRUD queries using Testcontainers (PostgreSQL) in `packages/orchestrator/tests/integration/db.test.ts`
+- [x] T027e [P] Integration tests for Redis connection, BullMQ queue creation, and Streams pub/sub using Testcontainers (Redis) in `packages/orchestrator/tests/integration/redis.test.ts`
 - [x] T027f [P] Unit tests for encryption utilities (AES-256 encrypt/decrypt round-trip, key derivation) in `packages/shared/tests/crypto.test.ts`
 
 **Checkpoint**: Foundation ready — shared types compile, DB migrations run, Redis connects, BullMQ queues initialize
@@ -105,10 +105,10 @@
 
 ### Phase 3 Tests
 
-- [ ] T044b [P] [US1] Unit tests for health endpoint logic (orchestrator/redis/pg status aggregation) in `packages/orchestrator/tests/unit/health.test.ts`
-- [ ] T044c [P] [US1] Unit tests for heartbeat scheduler (interval timing, cheap-checks-first order, active hours filtering) and three-layer check logic in `packages/orchestrator/tests/unit/heartbeat.test.ts`
+- [x] T044b [P] [US1] Unit tests for health endpoint logic (orchestrator/redis/pg status aggregation) in `packages/orchestrator/tests/unit/health.test.ts`
+- [x] T044c [P] [US1] Unit tests for heartbeat scheduler (interval timing, cheap-checks-first order, active hours filtering) and three-layer check logic in `packages/orchestrator/tests/unit/heartbeat.test.ts`
 - [ ] T044d [P] [US1] Integration tests for WebAuthn registration/login flow (challenge generation, credential verification, session creation) in `packages/dashboard/tests/integration/auth.test.ts`
-- [ ] T044e [US1] E2E test: full setup wizard flow — passkey registration through test agent spawn — using Playwright in `packages/dashboard/tests/e2e/setup-wizard.spec.ts`
+- [x] T044e [US1] E2E test: full setup wizard flow — passkey registration through test agent spawn — using Playwright in `packages/dashboard/tests/e2e/setup-wizard.spec.ts`
 
 **Checkpoint**: Orchestrator starts, `/health` returns healthy, dashboard loads, passkey auth works, setup wizard completes, system status visible
 
@@ -153,9 +153,9 @@
 - [x] T069a [P] [US2] Unit tests for agent state machine (all valid transitions, rejection of invalid transitions, edge cases) in `packages/orchestrator/tests/unit/state-machine.test.ts`
 - [x] T069b [P] [US2] Unit tests for checkpoint save/load (cognitive snapshot round-trip, handoff prompt generation) in `packages/orchestrator/tests/unit/checkpoints.test.ts`
 - [x] T069c [P] [US2] Unit tests for retry policy execution (max retries, exponential/linear backoff timing) in `packages/orchestrator/tests/unit/retry.test.ts`
-- [ ] T069d [US2] Integration tests for agent spawn flow (DB record creation, sandbox mock, Redis channel wiring, message round-trip) in `packages/orchestrator/tests/integration/agent-spawn.test.ts`
-- [ ] T069e [P] [US2] Integration tests for memory service (store, embed, index, search with pgvector + FTS) using Testcontainers in `packages/orchestrator/tests/integration/memory.test.ts`
-- [ ] T069f [US2] E2E test: spawn agent from dashboard, verify agent appears in agent list with real-time status, pause/resume via dashboard in `packages/dashboard/tests/e2e/agent-lifecycle.spec.ts`
+- [x] T069d [US2] Integration tests for agent spawn flow (DB record creation, sandbox mock, Redis channel wiring, message round-trip) in `packages/orchestrator/tests/integration/agent-spawn.test.ts`
+- [x] T069e [P] [US2] Integration tests for memory service (store, embed, index, search with pgvector + FTS) using Testcontainers in `packages/orchestrator/tests/integration/memory.test.ts`
+- [x] T069f [US2] E2E test: spawn agent from dashboard, verify agent appears in agent list with real-time status, pause/resume via dashboard in `packages/dashboard/tests/e2e/agent-lifecycle.spec.ts`
 
 **Checkpoint**: Agent spawns in E2B, communicates via Redis, lifecycle operations work, dashboard shows agents in real-time, definitions can be created
 
@@ -218,7 +218,7 @@
 - [x] T090b [P] [US4] Unit tests for secret proxy (domain allowlist enforcement, blocked request detection, credential stripping) in `packages/orchestrator/tests/unit/secret-proxy.test.ts`
 - [x] T090c [P] [US4] Unit tests for prompt injection scanner (detection of known injection patterns, quarantine flow) in `packages/orchestrator/tests/unit/injection-scanner.test.ts`
 - [x] T090d [P] [US4] Unit tests for integrity check (SHA256 checksum computation, drift detection, auto-restore) in `packages/orchestrator/tests/unit/integrity-check.test.ts`
-- [ ] T090e [US4] Integration tests for audit log (append-only writes, query with filters, immutability verification) using Testcontainers in `packages/orchestrator/tests/integration/audit-log.test.ts`
+- [x] T090e [US4] Integration tests for audit log (append-only writes, query with filters, immutability verification) using Testcontainers in `packages/orchestrator/tests/integration/audit-log.test.ts`
 
 **Checkpoint**: Agents isolated, secrets only accessible via proxy with domain filtering, all actions audited, injection scanning active, integrity checks running
 
@@ -285,7 +285,7 @@
 
 - [x] T118a [P] [US6] Unit tests for alert rule engine (condition evaluation, severity routing, alert firing) in `packages/orchestrator/tests/unit/alert-engine.test.ts`
 - [x] T118b [P] [US6] Unit tests for Discord slash command handlers (mock interactions, response formatting) in `packages/discord-bot/tests/unit/commands.test.ts`
-- [ ] T118c [US6] Integration tests for Discord message routing (agent updates → Discord channels, operator replies → agent inbox via Redis mock) in `packages/discord-bot/tests/integration/message-router.test.ts`
+- [x] T118c [US6] Integration tests for Discord message routing (agent updates → Discord channels, operator replies → agent inbox via Redis mock) in `packages/discord-bot/tests/integration/message-router.test.ts`
 
 **Checkpoint**: Discord bot responds to commands, agent conversations work in channels, alerts fire and display on dashboard, skill/memory metrics visible, full settings management
 
@@ -329,8 +329,8 @@
 - [x] T133 [P] Implement priority queue scheduler (suspend lower-priority agents on resource exhaustion, elastic scaling per FR-015a) in `packages/orchestrator/src/agents/priority-scheduler.ts`
 - [x] T134 Implement conflict resolution system (detect contention, escalate to parent, resolve via LLM, publish resolution to knowledge base per FR-011b) in `packages/orchestrator/src/agents/conflict-resolution.ts`
 - [x] T135 [P] Implement quarantine review page for prompt injection flagged content in `packages/dashboard/src/app/settings/quarantine/page.tsx`
-- [ ] T136 Update CLAUDE.md with complete development guidance, commands, and conventions (finalize content started in T005a)
-- [ ] T137 Run quickstart.md validation — verify full local dev setup and production deployment flow
+- [x] T136 Update CLAUDE.md with complete development guidance, commands, and conventions (finalize content started in T005a)
+- [x] T137 Run quickstart.md validation — verify full local dev setup and production deployment flow
 
 ### Phase 10 Tests
 
