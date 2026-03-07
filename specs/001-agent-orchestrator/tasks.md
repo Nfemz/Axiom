@@ -201,23 +201,23 @@
 
 ### Implementation for User Story 4
 
-- [ ] T081 [P] [US4] Implement secret vault service (create, read, update, delete secrets with AES-256 encryption) in `packages/orchestrator/src/secrets/vault.ts`
-- [ ] T082 [US4] Implement secret proxy (agent requests secret via Redis, orchestrator verifies allowed_agents + allowed_domains, injects via E2B API per FR-026) in `packages/orchestrator/src/secrets/proxy.ts`
-- [ ] T083 [US4] Implement domain allowlist enforcement (block outbound requests to non-allowlisted domains, trigger security alert per FR-026) in `packages/orchestrator/src/secrets/domain-filter.ts`
-- [ ] T084 [P] [US4] Implement audit log service (append-only writes, query with filters, immutable per FR-007) in `packages/orchestrator/src/security/audit-log.ts`
-- [ ] T085 [US4] Implement prompt injection scanner (scan external content for injection markers, quarantine flagged content per FR-023) in `packages/orchestrator/src/security/injection-scanner.ts`
-- [ ] T086 [US4] Implement agent integrity verification (SHA256 checksum of mission + config at spawn, periodic verification, auto-restore on drift per FR-024) in `packages/orchestrator/src/security/integrity-check.ts`
-- [ ] T087 [US4] Integrate audit logging into agent lifecycle (spawn, pause, resume, terminate, resteer), secret access, and security events across orchestrator services
-- [ ] T088 [P] [US4] Implement secrets API — GET /api/secrets (names only), POST, PATCH, DELETE per contracts/api.md in `packages/dashboard/src/app/api/secrets/route.ts` and `packages/dashboard/src/app/api/secrets/[id]/route.ts`
-- [ ] T089 [P] [US4] Implement secrets vault management page (list, create, edit allowed agents/domains, delete) in `packages/dashboard/src/app/secrets/page.tsx`
-- [ ] T090 [P] [US4] Implement audit log viewer page (filterable by agent, action type, time range, security events) in `packages/dashboard/src/app/settings/audit/page.tsx`
+- [x] T081 [P] [US4] Implement secret vault service (create, read, update, delete secrets with AES-256 encryption) in `packages/orchestrator/src/secrets/vault.ts`
+- [x] T082 [US4] Implement secret proxy (agent requests secret via Redis, orchestrator verifies allowed_agents + allowed_domains, injects via E2B API per FR-026) in `packages/orchestrator/src/secrets/proxy.ts`
+- [x] T083 [US4] Implement domain allowlist enforcement (block outbound requests to non-allowlisted domains, trigger security alert per FR-026) in `packages/orchestrator/src/secrets/domain-filter.ts`
+- [x] T084 [P] [US4] Implement audit log service (append-only writes, query with filters, immutable per FR-007) in `packages/orchestrator/src/security/audit-log.ts`
+- [x] T085 [US4] Implement prompt injection scanner (scan external content for injection markers, quarantine flagged content per FR-023) in `packages/orchestrator/src/security/injection-scanner.ts`
+- [x] T086 [US4] Implement agent integrity verification (SHA256 checksum of mission + config at spawn, periodic verification, auto-restore on drift per FR-024) in `packages/orchestrator/src/security/integrity-check.ts`
+- [x] T087 [US4] Integrate audit logging into agent lifecycle (spawn, pause, resume, terminate, resteer), secret access, and security events across orchestrator services
+- [x] T088 [P] [US4] Implement secrets API — GET /api/secrets (names only), POST, PATCH, DELETE per contracts/api.md in `packages/dashboard/src/app/api/secrets/route.ts` and `packages/dashboard/src/app/api/secrets/[id]/route.ts`
+- [x] T089 [P] [US4] Implement secrets vault management page (list, create, edit allowed agents/domains, delete) in `packages/dashboard/src/app/secrets/page.tsx`
+- [x] T090 [P] [US4] Implement audit log viewer page (filterable by agent, action type, time range, security events) in `packages/dashboard/src/app/settings/audit/page.tsx`
 
 ### Phase 6 Tests
 
-- [ ] T090a [P] [US4] Unit tests for secret vault (AES-256 encrypt/decrypt, per-agent access control, CRUD operations) in `packages/orchestrator/tests/unit/vault.test.ts`
-- [ ] T090b [P] [US4] Unit tests for secret proxy (domain allowlist enforcement, blocked request detection, credential stripping) in `packages/orchestrator/tests/unit/secret-proxy.test.ts`
-- [ ] T090c [P] [US4] Unit tests for prompt injection scanner (detection of known injection patterns, quarantine flow) in `packages/orchestrator/tests/unit/injection-scanner.test.ts`
-- [ ] T090d [P] [US4] Unit tests for integrity check (SHA256 checksum computation, drift detection, auto-restore) in `packages/orchestrator/tests/unit/integrity-check.test.ts`
+- [x] T090a [P] [US4] Unit tests for secret vault (AES-256 encrypt/decrypt, per-agent access control, CRUD operations) in `packages/orchestrator/tests/unit/vault.test.ts`
+- [x] T090b [P] [US4] Unit tests for secret proxy (domain allowlist enforcement, blocked request detection, credential stripping) in `packages/orchestrator/tests/unit/secret-proxy.test.ts`
+- [x] T090c [P] [US4] Unit tests for prompt injection scanner (detection of known injection patterns, quarantine flow) in `packages/orchestrator/tests/unit/injection-scanner.test.ts`
+- [x] T090d [P] [US4] Unit tests for integrity check (SHA256 checksum computation, drift detection, auto-restore) in `packages/orchestrator/tests/unit/integrity-check.test.ts`
 - [ ] T090e [US4] Integration tests for audit log (append-only writes, query with filters, immutability verification) using Testcontainers in `packages/orchestrator/tests/integration/audit-log.test.ts`
 
 **Checkpoint**: Agents isolated, secrets only accessible via proxy with domain filtering, all actions audited, injection scanning active, integrity checks running
