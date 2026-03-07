@@ -122,37 +122,37 @@
 
 ### Implementation for User Story 2
 
-- [ ] T045 [US2] Implement agent state machine (spawning/running/paused/suspended/error/terminated transitions with validation) in `packages/orchestrator/src/agents/state-machine.ts`. Paused = operator-requested temporary halt (context preserved in sandbox, resume instantly). Suspended = idle agent compute freed (E2B sandbox paused, resume requires sandbox restore from checkpoint per FR-015). Terminated = final state.
-- [ ] T046 [US2] Implement E2B sandbox lifecycle (create sandbox, inject context files + env vars, connect, pause, resume, kill) in `packages/orchestrator/src/agents/sandbox.ts`
-- [ ] T047 [US2] Implement agent spawn service (create DB record, spawn sandbox, start agent-runtime, wire Redis channels) in `packages/orchestrator/src/agents/spawn.ts`
-- [ ] T048 [US2] Implement agent lifecycle service (pause, resume, suspend, unsuspend, terminate, resteer with state transitions and audit logging) in `packages/orchestrator/src/agents/lifecycle.ts`. Include auto-suspend logic: idle agents (goal complete, no continuous-presence flag) are suspended to free compute per FR-015, and resumed on demand when new work arrives or pipeline stage triggers.
-- [ ] T049 [US2] Implement BullMQ spawn worker (process agent:spawn queue, handle retries per agent retry_policy) in `packages/orchestrator/src/agents/spawn-worker.ts`
-- [ ] T050 [US2] Implement orchestrator inbox consumer (process agent→orchestrator messages: progress, decision-request, escalation, budget-request, complete, error, heartbeat) in `packages/orchestrator/src/comms/inbox-consumer.ts`
-- [ ] T051 [US2] Implement orchestrator outbox publisher (send orchestrator→agent messages: resteer, pause, resume, terminate, decision-response) in `packages/orchestrator/src/comms/outbox-publisher.ts`
-- [ ] T052 [P] [US2] Implement agent-runtime entry point (connect to Redis, receive initial context, start LLM loop, handle orchestrator messages) in `packages/agent-runtime/src/index.ts`
-- [ ] T053 [P] [US2] Implement agent-runtime Redis comms (subscribe to agent:{id}:inbox, publish to orchestrator:inbox, heartbeat sender) in `packages/agent-runtime/src/comms/redis-client.ts`
-- [ ] T054 [US2] Implement agent LLM call loop (Vercel AI SDK generateText, tool call cycle, budget check per turn, autonomous external failure recovery per FR-012b — agent determines own retry/workaround strategy for rate-limits, blocking, outages before escalating to operator as last resort) in `packages/agent-runtime/src/loop/agent-loop.ts`
-- [ ] T055 [US2] Implement agent-runtime message handler (process resteer, pause, resume, terminate, integrity-check from orchestrator) in `packages/agent-runtime/src/comms/message-handler.ts`
-- [ ] T056 [US2] Implement checkpoint system (save/load cognitive snapshots: goal, progress, decision log, pending actions, handoff prompt per FR-015b) in `packages/orchestrator/src/agents/checkpoints.ts`
-- [ ] T057 [P] [US2] Implement basic agent memory — write, read, recall operations (private tier per FR-020d) in `packages/agent-runtime/src/memory/memory-ops.ts`
-- [ ] T058 [P] [US2] Implement orchestrator-side memory service (store, embed, index, search with pgvector HNSW + FTS) in `packages/orchestrator/src/memory/memory-service.ts`
-- [ ] T059 [US2] Implement auto-recall on agent turn (search indexed memory, inject relevant context per FR-020b) in `packages/agent-runtime/src/memory/auto-recall.ts`
-- [ ] T060 [US2] Implement pre-compaction flush (persist in-context info to durable memory before compaction per FR-020a) in `packages/agent-runtime/src/memory/pre-compaction.ts`
-- [ ] T061 [US2] Implement shared knowledge base read/write operations (publish learnings, query shared entries per FR-012d) in `packages/orchestrator/src/memory/knowledge-base.ts`
-- [ ] T062 [P] [US2] Implement agents API — GET /api/agents (tree), POST /api/agents (spawn), GET /api/agents/:id, PATCH /api/agents/:id (control), DELETE /api/agents/:id in `packages/dashboard/src/app/api/agents/route.ts` and `packages/dashboard/src/app/api/agents/[id]/route.ts`
-- [ ] T063 [P] [US2] Implement agent definitions API — CRUD endpoints per contracts/api.md in `packages/dashboard/src/app/api/definitions/route.ts` and `packages/dashboard/src/app/api/definitions/[id]/route.ts`
-- [ ] T064 [US2] Implement SSE stream for agent status changes (agent:status, agent:progress, agent:spawn, agent:terminate) in `packages/dashboard/src/app/api/stream/agents/route.ts`
-- [ ] T065 [P] [US2] Implement agent list page (real-time status, current task, budget usage) in `packages/dashboard/src/app/agents/page.tsx`
-- [ ] T066 [P] [US2] Implement agent detail page (status, sessions, memory entries, checkpoints, child agents) in `packages/dashboard/src/app/agents/[id]/page.tsx`
-- [ ] T067 [P] [US2] Implement agent definition builder page (mission prompt, AI provider + model selection per FR-016, budget, capabilities, tools, approval policies, retry/heartbeat config) in `packages/dashboard/src/app/definitions/page.tsx`
-- [ ] T068 [US2] Implement agent hierarchy tree visualization component (collapsible, real-time status per FR-010b) in `packages/dashboard/src/components/agent-tree.tsx`
-- [ ] T069 [US2] Implement configurable retry policy execution (max retries, exponential/linear backoff) in `packages/orchestrator/src/agents/retry.ts`
+- [x] T045 [US2] Implement agent state machine (spawning/running/paused/suspended/error/terminated transitions with validation) in `packages/orchestrator/src/agents/state-machine.ts`. Paused = operator-requested temporary halt (context preserved in sandbox, resume instantly). Suspended = idle agent compute freed (E2B sandbox paused, resume requires sandbox restore from checkpoint per FR-015). Terminated = final state.
+- [x] T046 [US2] Implement E2B sandbox lifecycle (create sandbox, inject context files + env vars, connect, pause, resume, kill) in `packages/orchestrator/src/agents/sandbox.ts`
+- [x] T047 [US2] Implement agent spawn service (create DB record, spawn sandbox, start agent-runtime, wire Redis channels) in `packages/orchestrator/src/agents/spawn.ts`
+- [x] T048 [US2] Implement agent lifecycle service (pause, resume, suspend, unsuspend, terminate, resteer with state transitions and audit logging) in `packages/orchestrator/src/agents/lifecycle.ts`. Include auto-suspend logic: idle agents (goal complete, no continuous-presence flag) are suspended to free compute per FR-015, and resumed on demand when new work arrives or pipeline stage triggers.
+- [x] T049 [US2] Implement BullMQ spawn worker (process agent:spawn queue, handle retries per agent retry_policy) in `packages/orchestrator/src/agents/spawn-worker.ts`
+- [x] T050 [US2] Implement orchestrator inbox consumer (process agent→orchestrator messages: progress, decision-request, escalation, budget-request, complete, error, heartbeat) in `packages/orchestrator/src/comms/inbox-consumer.ts`
+- [x] T051 [US2] Implement orchestrator outbox publisher (send orchestrator→agent messages: resteer, pause, resume, terminate, decision-response) in `packages/orchestrator/src/comms/outbox-publisher.ts`
+- [x] T052 [P] [US2] Implement agent-runtime entry point (connect to Redis, receive initial context, start LLM loop, handle orchestrator messages) in `packages/agent-runtime/src/index.ts`
+- [x] T053 [P] [US2] Implement agent-runtime Redis comms (subscribe to agent:{id}:inbox, publish to orchestrator:inbox, heartbeat sender) in `packages/agent-runtime/src/comms/redis-client.ts`
+- [x] T054 [US2] Implement agent LLM call loop (Vercel AI SDK generateText, tool call cycle, budget check per turn, autonomous external failure recovery per FR-012b — agent determines own retry/workaround strategy for rate-limits, blocking, outages before escalating to operator as last resort) in `packages/agent-runtime/src/loop/agent-loop.ts`
+- [x] T055 [US2] Implement agent-runtime message handler (process resteer, pause, resume, terminate, integrity-check from orchestrator) in `packages/agent-runtime/src/comms/message-handler.ts`
+- [x] T056 [US2] Implement checkpoint system (save/load cognitive snapshots: goal, progress, decision log, pending actions, handoff prompt per FR-015b) in `packages/orchestrator/src/agents/checkpoints.ts`
+- [x] T057 [P] [US2] Implement basic agent memory — write, read, recall operations (private tier per FR-020d) in `packages/agent-runtime/src/memory/memory-ops.ts`
+- [x] T058 [P] [US2] Implement orchestrator-side memory service (store, embed, index, search with pgvector HNSW + FTS) in `packages/orchestrator/src/memory/memory-service.ts`
+- [x] T059 [US2] Implement auto-recall on agent turn (search indexed memory, inject relevant context per FR-020b) in `packages/agent-runtime/src/memory/auto-recall.ts`
+- [x] T060 [US2] Implement pre-compaction flush (persist in-context info to durable memory before compaction per FR-020a) in `packages/agent-runtime/src/memory/pre-compaction.ts`
+- [x] T061 [US2] Implement shared knowledge base read/write operations (publish learnings, query shared entries per FR-012d) in `packages/orchestrator/src/memory/knowledge-base.ts`
+- [x] T062 [P] [US2] Implement agents API — GET /api/agents (tree), POST /api/agents (spawn), GET /api/agents/:id, PATCH /api/agents/:id (control), DELETE /api/agents/:id in `packages/dashboard/src/app/api/agents/route.ts` and `packages/dashboard/src/app/api/agents/[id]/route.ts`
+- [x] T063 [P] [US2] Implement agent definitions API — CRUD endpoints per contracts/api.md in `packages/dashboard/src/app/api/definitions/route.ts` and `packages/dashboard/src/app/api/definitions/[id]/route.ts`
+- [x] T064 [US2] Implement SSE stream for agent status changes (agent:status, agent:progress, agent:spawn, agent:terminate) in `packages/dashboard/src/app/api/stream/agents/route.ts`
+- [x] T065 [P] [US2] Implement agent list page (real-time status, current task, budget usage) in `packages/dashboard/src/app/agents/page.tsx`
+- [x] T066 [P] [US2] Implement agent detail page (status, sessions, memory entries, checkpoints, child agents) in `packages/dashboard/src/app/agents/[id]/page.tsx`
+- [x] T067 [P] [US2] Implement agent definition builder page (mission prompt, AI provider + model selection per FR-016, budget, capabilities, tools, approval policies, retry/heartbeat config) in `packages/dashboard/src/app/definitions/page.tsx`
+- [x] T068 [US2] Implement agent hierarchy tree visualization component (collapsible, real-time status per FR-010b) in `packages/dashboard/src/components/agent-tree.tsx`
+- [x] T069 [US2] Implement configurable retry policy execution (max retries, exponential/linear backoff) in `packages/orchestrator/src/agents/retry.ts`
 
 ### Phase 4 Tests
 
-- [ ] T069a [P] [US2] Unit tests for agent state machine (all valid transitions, rejection of invalid transitions, edge cases) in `packages/orchestrator/tests/unit/state-machine.test.ts`
-- [ ] T069b [P] [US2] Unit tests for checkpoint save/load (cognitive snapshot round-trip, handoff prompt generation) in `packages/orchestrator/tests/unit/checkpoints.test.ts`
-- [ ] T069c [P] [US2] Unit tests for retry policy execution (max retries, exponential/linear backoff timing) in `packages/orchestrator/tests/unit/retry.test.ts`
+- [x] T069a [P] [US2] Unit tests for agent state machine (all valid transitions, rejection of invalid transitions, edge cases) in `packages/orchestrator/tests/unit/state-machine.test.ts`
+- [x] T069b [P] [US2] Unit tests for checkpoint save/load (cognitive snapshot round-trip, handoff prompt generation) in `packages/orchestrator/tests/unit/checkpoints.test.ts`
+- [x] T069c [P] [US2] Unit tests for retry policy execution (max retries, exponential/linear backoff timing) in `packages/orchestrator/tests/unit/retry.test.ts`
 - [ ] T069d [US2] Integration tests for agent spawn flow (DB record creation, sandbox mock, Redis channel wiring, message round-trip) in `packages/orchestrator/tests/integration/agent-spawn.test.ts`
 - [ ] T069e [P] [US2] Integration tests for memory service (store, embed, index, search with pgvector + FTS) using Testcontainers in `packages/orchestrator/tests/integration/memory.test.ts`
 - [ ] T069f [US2] E2E test: spawn agent from dashboard, verify agent appears in agent list with real-time status, pause/resume via dashboard in `packages/dashboard/tests/e2e/agent-lifecycle.spec.ts`
