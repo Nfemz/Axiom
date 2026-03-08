@@ -1,4 +1,5 @@
 import { createSSEResponse } from "@/lib/sse";
+import { requireAuth } from "@/lib/auth-middleware";
 import Redis from "ioredis";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   const { id } = await params;
 
   return createSSEResponse((send) => {

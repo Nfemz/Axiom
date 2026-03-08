@@ -26,7 +26,7 @@ export function useSSE(url: string): UseSSEResult {
   const maxRetries = 10;
 
   const connect = useCallback(() => {
-    const es = new EventSource(url);
+    const es = new EventSource(url, { withCredentials: true });
 
     es.onopen = () => {
       setConnected(true);
