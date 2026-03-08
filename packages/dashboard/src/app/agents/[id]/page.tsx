@@ -226,27 +226,99 @@ function InfoField({ label, value }: { label: string; value: string }) {
   );
 }
 
+const TAB_ENDPOINTS: Record<TabKey, string> = {
+  sessions: "sessions",
+  memory: "memory",
+  checkpoints: "checkpoints",
+  children: "children",
+};
+
+const TAB_DATA_KEY: Record<TabKey, string> = {
+  sessions: "sessions",
+  memory: "memories",
+  checkpoints: "checkpoints",
+  children: "children",
+};
+
 function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    // TODO: Fetch real data from API endpoints
-    // e.g., /api/agents/{id}/sessions, /api/agents/{id}/memory, etc.
-    const timer = setTimeout(() => {
-      setItems([]);
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    setError(null);
+
+    const endpoint = `/api/agents/${agentId}/${TAB_ENDPOINTS[tab]}`;
+    fetch(endpoint)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch ${tab}: ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        const key = TAB_DATA_KEY[tab];
+        setItems(json[key] ?? []);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setItems([]);
+      })
+      .finally(() => setLoading(false));
   }, [tab, agentId]);
 
   if (loading) return <p style={{ color: "#9ca3af" }}>Loading {tab}...</p>;
+  if (error) return <p style={{ color: "#ef4444" }}>Error: {error}</p>;
   if (items.length === 0) return <p style={{ color: "#6b7280" }}>No {tab} found for this agent.</p>;
 
   return (
-    <pre style={{ backgroundColor: "#111827", padding: "1rem", borderRadius: "4px", overflow: "auto", fontSize: "0.8rem" }}>
-      {JSON.stringify(items, null, 2)}
-    </pre>
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+        <thead>
+          <tr>
+            {Object.keys(items[0]).map((key) => (
+              <th
+                key={key}
+                style={{
+                  textAlign: "left",
+                  padding: "0.5rem 0.75rem",
+                  borderBottom: "1px solid #374151",
+                  color: "#9ca3af",
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                }}
+              >
+                {key}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, idx) => (
+            <tr key={String(item.id ?? idx)}>
+              {Object.values(item).map((val, i) => (
+                <td
+                  key={i}
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    borderBottom: "1px solid #1f2937",
+                    color: "#e5e7eb",
+                    maxWidth: "300px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {val === null || val === undefined
+                    ? "-"
+                    : typeof val === "object"
+                      ? JSON.stringify(val)
+                      : String(val)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

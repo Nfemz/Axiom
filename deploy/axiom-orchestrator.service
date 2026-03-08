@@ -4,12 +4,11 @@ After=network.target docker.service
 Requires=docker.service
 
 [Service]
-Type=notify
+Type=simple
 WorkingDirectory=/opt/axiom
 ExecStart=/usr/bin/node packages/orchestrator/dist/index.js
 Restart=always
 RestartSec=5
-WatchdogSec=120
 Environment=NODE_ENV=production
 EnvironmentFile=/opt/axiom/.env
 

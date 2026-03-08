@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -58,14 +58,34 @@ const TYPE_CLASSES: Record<string, string> = {
 
 // ─── Component ──────────────────────────────────────────────────────
 
+interface MemoryHealthMetrics {
+  totalMemories: number;
+  avgImportanceScore: number;
+  writeRateLastHour: number;
+  knowledgeBaseEntries: number;
+  knowledgeGrowthLast24h: number;
+}
+
 export default function MemoryPage() {
   const [operations] = useState<MemoryOperation[]>(PLACEHOLDER_OPS);
+  const [metrics, setMetrics] = useState<MemoryHealthMetrics | null>(null);
+
+  useEffect(() => {
+    fetch("/api/system/memory-health")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setMetrics(data);
+      })
+      .catch(() => {
+        // Fall back to defaults if endpoint unavailable
+      });
+  }, []);
 
   const summaryStats = {
-    totalMemories: 1284,
-    writeRate: "3.2/hr",
-    readRate: "8.7/hr",
-    knowledgeEntries: 47,
+    totalMemories: metrics?.totalMemories ?? 0,
+    writeRate: metrics ? `${metrics.writeRateLastHour}/hr` : "-",
+    readRate: "-",
+    knowledgeEntries: metrics?.knowledgeBaseEntries ?? 0,
   };
 
   return (

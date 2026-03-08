@@ -2,221 +2,222 @@
 
 **Spec**: `specs/001-agent-orchestrator/`
 **Codebase**: `/Users/nick/Desktop/Development/Axiom`
-**Date**: 2026-03-08 (Re-audit after spec-fixer pass)
-**Overall Coverage**: 100% (172/172 tasks have files, 166 substantively verified)
+**Date**: 2026-03-08 (Fresh re-audit)
+**Overall Coverage**: 88% (152 verified / 173 total task items)
 
 ## Summary
 
-All previously-identified critical and major gaps have been resolved. Dashboard API routes are now wired to PostgreSQL via Drizzle ORM (previously returning placeholder data). SSE streams subscribe to Redis pub/sub channels. HNSW, GIN, and FTS indexes exist as migrations. The `alertRules` table now has `updatedAt`. API contracts have been updated to reflect the step-based auth and query parameter multiplexing patterns. The remaining items are pre-existing architectural placeholders (simulated LLM calls in agent runtime, E2B desktop integration, skipped E2E tests) that were not part of the original gap report.
+The codebase has strong foundational implementation — all 17 DB entities exist, all 49 API endpoints match the contract, and core orchestrator/agent-runtime/dashboard/discord-bot packages are substantively implemented. However, this fresh audit identified **5 critical gaps** (systemd watchdog bug, stub backup API, stub E2E tests, 5 stub unit test files, missing DB indexes), **7 major gaps** (missing permission cascading, in-memory setup state, stub agent detail tabs, token economics verification needed, partial heartbeat/discord tests, missing memory health endpoint), and **5 minor gaps**.
 
-**Key changes from previous audit**: GAP-C001 (agents/:id route) resolved — all handlers query real DB. GAP-C002 (SSE streams) confirmed already resolved — all 4 routes subscribe to Redis. GAP-C003 (~20 dashboard routes) resolved — all import `getDb` and run drizzle queries. GAP-M001-M003 (indexes) confirmed resolved via migration. GAP-M004 (auth contract) resolved — contract updated. GAP-M005 (alertRules updatedAt) resolved — schema + migration. GAP-N001 (WebAuthn tests) resolved — credential store tests implemented. GAP-N002 (tool discovery) resolved — type-dispatched executors replace TODO. GAP-N003 (financial/alerts contract) resolved — contract updated.
+## Critical Gaps (5)
 
----
+### [GAP-C001] systemd watchdog will kill orchestrator — no sd_notify() call
+- **Requirement**: FR-001 (auto-recover from failures)
+- **Expected**: `deploy/axiom-orchestrator.service` uses `Type=notify` with `WatchdogSec=120`, requiring periodic `sd_notify("WATCHDOG=1")` calls
+- **Actual**: `packages/orchestrator/src/index.ts` never calls `sd_notify()`. Watchdog will terminate the process after 120s.
+- **Impact**: Orchestrator killed by systemd every 2 minutes in production
+- **Proposed Fix**: Change `Type=notify` to `Type=simple` OR add `sd-notify` npm package and call from heartbeat loop
+- **Scope**: one-liner (change Type) or small (add sd-notify)
+- **Files**: `deploy/axiom-orchestrator.service`, `packages/orchestrator/src/index.ts`
 
-## Critical Gaps (0)
+### [GAP-C002] Backup API is a stub — returns hardcoded empty data
+- **Requirement**: FR-028, T132
+- **Expected**: POST `/api/system/backup` triggers real backup; POST `/api/system/backup/restore` restores from snapshot
+- **Actual**: GET returns `{ backups: [], total: 0 }`, POST returns `{ status: "initiated" }` with no actual backup logic
+- **Impact**: Operator cannot trigger or manage backups from dashboard
+- **Proposed Fix**: Wire route handlers to existing backup service in `packages/orchestrator/src/db/backup.ts`
+- **Scope**: small
+- **Files**: `packages/dashboard/src/app/api/system/backup/route.ts`
 
-No critical gaps remain.
+### [GAP-C003] E2E tests are all skipped stubs
+- **Requirement**: T044e (setup wizard E2E), T069f (agent lifecycle E2E)
+- **Expected**: Playwright tests exercise full UI flows
+- **Actual**: `setup-wizard.spec.ts` — main test is `test.skip`; `agent-lifecycle.spec.ts` — all 3 tests are `test.skip`
+- **Impact**: No automated E2E validation of critical user flows
+- **Proposed Fix**: Implement skipped test cases with real Playwright interactions
+- **Scope**: medium
+- **Files**: `packages/dashboard/tests/e2e/setup-wizard.spec.ts`, `packages/dashboard/tests/e2e/agent-lifecycle.spec.ts`
 
----
+### [GAP-C004] Five unit test files are export-only stubs (typeof checks only)
+- **Requirement**: T103d (pipeline), T122a (identity-service), T137a (skill-registry), T137b (skill-lifecycle), T137d (memory-consolidation)
+- **Expected**: Tests verify actual behavior (inputs → outputs, edge cases)
+- **Actual**: Each file only checks `typeof export === "function"`. No behavioral assertions.
+- **Impact**: Zero test coverage for 5 critical services
+- **Proposed Fix**: Add real behavioral tests with mocked dependencies
+- **Scope**: medium (5 files × ~80-120 lines each)
+- **Files**: `packages/orchestrator/tests/unit/pipeline.test.ts`, `packages/orchestrator/tests/unit/identity-service.test.ts`, `packages/orchestrator/tests/unit/skill-registry.test.ts`, `packages/orchestrator/tests/unit/skill-lifecycle.test.ts`, `packages/orchestrator/tests/unit/memory-consolidation.test.ts`
 
-## Major Gaps (0)
+### [GAP-C005] Missing HNSW/GIN/FTS indexes on memory and knowledge tables
+- **Requirement**: Data model spec requires HNSW on `embedding`, GIN on `tags`, FTS on `content`
+- **Expected**: Indexes exist for performant vector search, tag queries, and full-text search
+- **Actual**: Only BTree indexes on agent_id/importance_score for memories; only BTree on category for shared knowledge
+- **Impact**: Full table scans on vector similarity, tag, and full-text queries at scale
+- **Proposed Fix**: Add Drizzle migration with raw SQL for HNSW (vector_cosine_ops), GIN, and FTS indexes
+- **Scope**: small (single migration file)
+- **Files**: `packages/orchestrator/src/db/schema.ts`, `drizzle/` (new migration)
 
-No major gaps remain.
+## Major Gaps (7)
 
----
+### [GAP-M001] No permission cascading from parent to child agents
+- **Requirement**: FR-002 ("Budget, permissions, and capability constraints cascade downward")
+- **Expected**: Child agent permissions inherited from and constrained by parent
+- **Actual**: Budget cascading exists in `spawn.ts`, but no permission propagation logic
+- **Proposed Fix**: Add permission inheritance in `spawnAgent()` — merge parent permissions, ensure child is subset
+- **Scope**: small
+- **Files**: `packages/orchestrator/src/agents/spawn.ts`
 
-## Minor Gaps (2)
-
-### [GAP-N001] Setup wizard uses in-memory state instead of DB persistence
-- **Requirement**: System setup wizard state should persist across server restarts
-- **Expected**: Setup state persisted to `system_config` table
-- **Actual**: `packages/dashboard/src/app/api/system/setup/route.ts` uses `let setupState` in-memory variable
-- **Impact**: Setup state is lost on server restart. Low severity — setup runs once.
-- **Proposed Fix**: Wire to `systemConfig` table's `setupComplete` field
+### [GAP-M002] Setup wizard API uses in-memory state, not persisted to DB
+- **Requirement**: FR-029, T036
+- **Expected**: Setup wizard state persists across server restarts
+- **Actual**: Uses `let setupState` in-memory (line 10) with comment "will be persisted to DB later"
+- **Proposed Fix**: Store state in `system_config` table (which already has `setup_complete`)
 - **Scope**: small
 - **Files**: `packages/dashboard/src/app/api/system/setup/route.ts`
 
-### [GAP-N002] Backup/restore routes return stub responses
-- **Requirement**: Manual backup trigger and restore from snapshot
-- **Expected**: POST `/api/system/backup` triggers `pg_dump`, POST `/api/system/backup/restore` triggers `pg_restore`
-- **Actual**: Both routes return `{ status: "initiated" }` without calling actual backup/restore logic. The backup service itself (`packages/orchestrator/src/db/backup.ts`) is fully implemented.
-- **Impact**: Backup/restore cannot be triggered from dashboard UI (CLI/cron still work)
-- **Proposed Fix**: Import and call backup service from the dashboard route, or proxy via BullMQ job queue
+### [GAP-M003] Agent detail page TabContent is a stub
+- **Requirement**: T066 (agent detail page with sessions, memory, checkpoints, child agents)
+- **Expected**: Tabs fetch real data from `/api/agents/:id/sessions`, `/memory`, `/checkpoints`, `/children`
+- **Actual**: TabContent uses `setTimeout` instead of real API calls. Has TODO comment.
+- **Proposed Fix**: Replace setTimeout with fetch calls to existing sub-routes
 - **Scope**: small
-- **Files**: `packages/dashboard/src/app/api/system/backup/route.ts`, `packages/dashboard/src/app/api/system/backup/restore/route.ts`
+- **Files**: `packages/dashboard/src/app/agents/[id]/page.tsx`
 
----
+### [GAP-M004] Token economics dashboard component needs verification
+- **Requirement**: FR-008d, T117
+- **Expected**: Cost charts showing per-agent per-model cost breakdown, 7d/30d trends, projected spend
+- **Actual**: Backend data exists but frontend visualization flagged as potentially missing
+- **Proposed Fix**: Verify `cost-charts.tsx` renders real data; implement if stub
+- **Scope**: small to medium
+- **Files**: `packages/dashboard/src/components/cost-charts.tsx`
 
-## Observations (10)
+### [GAP-M005] Heartbeat unit tests are partial
+- **Requirement**: T044c
+- **Expected**: Tests verify check logic (cheap-checks-first, three-layer detection, active hours)
+- **Actual**: Only tests start/stop and that exports are functions (47 lines)
+- **Proposed Fix**: Add tests for check ordering, threshold detection, active hours filtering
+- **Scope**: small
+- **Files**: `packages/orchestrator/tests/unit/heartbeat.test.ts`
 
-### [OBS-001] Agent LLM calls are simulated in agent-runtime
-`executeTurn()` in `packages/agent-runtime/src/loop/agent-loop.ts` uses `sleep(500)` with simulated token counts instead of calling the Vercel AI SDK. The loop structure (pause/resume/resteer/budget/error handling/self-learning/degradation) is fully implemented. This is by design — the agent-runtime runs in E2B sandboxes and LLM integration depends on runtime configuration.
+### [GAP-M006] Discord bot command tests only verify structure
+- **Requirement**: T118b
+- **Expected**: Tests verify command execution with mock interactions
+- **Actual**: Verifies command names/structure only, no execution tests (47 lines)
+- **Proposed Fix**: Add tests that mock Discord interactions and verify response payloads
+- **Scope**: small
+- **Files**: `packages/discord-bot/tests/unit/commands.test.ts`
 
-### [OBS-002] Computer-use tool returns mock data
-`packages/agent-runtime/src/tools/computer-use.ts` has placeholder action implementations (screenshot, click, type). These require the `@e2b/desktop` SDK which is only available inside E2B sandboxes.
+### [GAP-M007] Memory health metrics endpoint missing
+- **Requirement**: FR-020g
+- **Expected**: Dashboard surfaces memory write/read rates, retrieval quality, knowledge base growth
+- **Actual**: Settings/memory page exists (170 lines) but no backend endpoint provides real metrics
+- **Proposed Fix**: Add `/api/system/memory-health` endpoint querying memory tables for aggregated metrics
+- **Scope**: small
+- **Files**: `packages/dashboard/src/app/api/` (new route), `packages/dashboard/src/app/settings/memory/page.tsx`
 
-### [OBS-003] E2E tests are skipped skeletons
-`setup-wizard.spec.ts` and `agent-lifecycle.spec.ts` use `test.skip()` with TODO comments. These require a running server with a real database. Not a code gap but a test infrastructure gap.
+## Minor Gaps (5)
 
-### [OBS-004] Memory consolidation uses string concatenation instead of LLM summarization
-`packages/orchestrator/src/memory/consolidation.ts` — `generateReflection()` concatenates memory content instead of calling an LLM. The pipeline structure (pruning, consolidation, reflection) is correct.
+### [GAP-N001] No payment processor integration (FR-019)
+- Revenue recording and split logic exists, but no Stripe SDK or external payment processor
+- **Scope**: large (external API integration, out of current sprint)
 
-### [OBS-005] Auto-restart handled by infrastructure, not application code
-SC-AS1.4 relies on systemd `Restart=always` and Docker Compose health checks. Architecturally correct.
+### [GAP-N002] Memory 3-tier isolation not explicitly enforced (FR-020d)
+- Memories scoped by `agent_id` and shared knowledge is separate, but no explicit query-layer enforcement prevents cross-agent access
+- **Scope**: small
 
-### [OBS-006] Pipeline stages are generic, not hardcoded
-The pipeline service accepts arbitrary stage arrays rather than enforcing the 5-stage flow from the spec. More flexible design.
+### [GAP-N003] Extra `updated_at` on AlertRule table
+- Data model spec doesn't include it. Harmless deviation.
 
-### [OBS-007] Test count exceeds spec expectations
-309+ tests across all packages (was 272+ before this fix pass), exceeding the 41 test tasks defined in tasks.md.
+### [GAP-N004] Extra GET on /api/system/backup
+- Contract only specifies POST. GET lists backups — harmless addition.
 
-### [OBS-008] Auth register/login use `step: "options"` not `step: "challenge"`
-The contract was updated to describe step-based dispatch, but the implementation uses `"options"` for the challenge generation step. The contract examples now say `"challenge"`. This is a naming inconsistency — functionally equivalent.
+### [GAP-N005] WebAuthn credential store is in-memory
+- `packages/dashboard/src/lib/webauthn-store.ts` uses in-memory `Map` instead of `operatorCredentials` DB table. Credentials lost on restart.
+- **Scope**: small
 
-### [OBS-009] SSE streams have no auth middleware
-All 4 SSE endpoints (`/api/stream/agents`, `/api/stream/costs`, `/api/stream/alerts`, `/api/stream/pipeline/:id`) skip `requireAuth()`. This may be intentional for EventSource browser API compatibility (cookies aren't sent with EventSource by default), but diverges from the contract requirement that all non-auth routes require authentication.
+## Observations (4)
 
-### [OBS-010] WebAuthn credential store is in-memory
-`packages/dashboard/src/lib/webauthn-store.ts` uses an in-memory `Map` rather than the `operatorCredentials` DB table. Credentials are lost on server restart. The DB table exists and is correctly defined in the schema.
-
----
+1. **Agent LLM calls are simulated** — `agent-loop.ts` uses `sleep(500)` with simulated tokens instead of Vercel AI SDK. Intentional for E2B sandbox dependency.
+2. **Computer-use tool returns mock data** — `computer-use.ts` has placeholder actions. Requires `@e2b/desktop` in sandbox.
+3. **SSE streams have no auth middleware** — All 4 SSE endpoints skip `requireAuth()`. May be intentional for EventSource browser API compatibility.
+4. **Auth uses `step: "options"` not `step: "challenge"`** — Naming inconsistency vs contract, functionally equivalent.
 
 ## Task Status Summary
 
-| Phase | Total | Verified | Stub/TODO | Missing | Incomplete |
-|-------|-------|----------|-----------|---------|------------|
-| Phase 1: Setup | 13 | 13 | 0 | 0 | 0 |
-| Phase 2: Foundational | 14 | 14 | 0 | 0 | 0 |
-| Phase 2 Tests | 4 | 4 | 0 | 0 | 0 |
-| Phase 3: US1 | 17 | 17 | 0 | 0 | 0 |
-| Phase 3 Tests | 4 | 4 | 0 | 0 | 0 |
-| Phase 4: US2 | 25 | 25 | 0 | 0 | 0 |
-| Phase 4 Tests | 6 | 6 | 0 | 0 | 0 |
-| Phase 5: US3 | 12 | 12 | 0 | 0 | 0 |
-| Phase 5 Tests | 4 | 4 | 0 | 0 | 0 |
-| Phase 6: US4 | 10 | 10 | 0 | 0 | 0 |
-| Phase 6 Tests | 5 | 5 | 0 | 0 | 0 |
-| Phase 7: US5 | 13 | 13 | 0 | 0 | 0 |
-| Phase 7 Tests | 4 | 4 | 0 | 0 | 0 |
-| Phase 8: US6 | 15 | 15 | 0 | 0 | 0 |
-| Phase 8 Tests | 3 | 3 | 0 | 0 | 0 |
-| Phase 9: US7 | 4 | 4 | 0 | 0 | 0 |
-| Phase 9 Tests | 1 | 1 | 0 | 0 | 0 |
-| Phase 10: Polish | 15 | 15 | 0 | 0 | 0 |
-| Phase 10 Tests | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **172** | **172** | **0** | **0** | **0** |
+| Phase | Total | Verified | Stub/TODO | Partial |
+|-------|-------|----------|-----------|---------|
+| Phase 1: Setup | 13 | 13 | 0 | 0 |
+| Phase 2: Foundational | 14 | 14 | 0 | 0 |
+| Phase 2 Tests | 4 | 4 | 0 | 0 |
+| Phase 3: US1 | 17 | 15 | 0 | 2 |
+| Phase 3 Tests | 4 | 2 | 1 | 1 |
+| Phase 4: US2 | 25 | 24 | 0 | 1 |
+| Phase 4 Tests | 6 | 4 | 2 | 0 |
+| Phase 5: US3 | 11 | 11 | 0 | 0 |
+| Phase 5 Tests | 4 | 4 | 0 | 0 |
+| Phase 6: US4 | 10 | 10 | 0 | 0 |
+| Phase 6 Tests | 5 | 5 | 0 | 0 |
+| Phase 7: US5 | 13 | 12 | 1 | 0 |
+| Phase 7 Tests | 4 | 3 | 1 | 0 |
+| Phase 8: US6 | 15 | 15 | 0 | 0 |
+| Phase 8 Tests | 3 | 1 | 0 | 2 |
+| Phase 9: US7 | 4 | 4 | 0 | 0 |
+| Phase 9 Tests | 1 | 0 | 1 | 0 |
+| Phase 10 | 15 | 14 | 0 | 1 |
+| Phase 10 Tests | 5 | 2 | 3 | 0 |
+| **TOTAL** | **173** | **152** | **9** | **7** |
 
 ## FR Coverage Summary
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| FR-001 | Implemented | systemd + Docker restart, graceful shutdown |
-| FR-002 | Implemented | Hierarchical spawn with budget cascade enforcement |
-| FR-003 | Implemented | API > headless > pixel tiering with escalation |
-| FR-005 | Implemented | AES-256-GCM + TLS config flags |
-| FR-006 | Implemented | Vault + per-agent access control |
-| FR-007 | Implemented | Append-only audit log, no update/delete |
-| FR-008a | Implemented | 20/80 default split, configurable |
-| FR-008b | Implemented | Per-call token tracking with computed cost |
-| FR-008c | Implemented | Pre-authorization budget check |
-| FR-008d | Implemented | Financial dashboard page + cost-charts component |
-| FR-009 | Implemented | Identity service + runtime tools |
-| FR-010 | Implemented | Dashboard pages + SSE wired to Redis pub/sub |
-| FR-010b | Implemented | agent-tree.tsx hierarchy visualization |
-| FR-011 | Implemented | Workflow coordinator + lead agent pattern |
-| FR-011b | Implemented | Conflict detection + escalation to parent |
-| FR-012a | Implemented | 3-layer checks: timeout, resource, stall detection |
-| FR-012b | Implemented | Retry with exponential/linear backoff |
-| FR-012c | Implemented | Self-learning from failures integrated in loop |
-| FR-012d | Implemented | Shared knowledge base read/write |
-| FR-013 | Implemented | LLM goal decomposition with fallback |
-| FR-014 | Implemented | Alert rule engine with severity routing |
-| FR-015a | Implemented | Priority scheduler with suspend candidates |
-| FR-015b | Implemented | Checkpoint save/load with handoff prompt |
-| FR-015c | Implemented | Graceful degradation mode integrated in loop |
-| FR-016 | Implemented | Anthropic, OpenAI, Google, OpenRouter |
-| FR-018 | Implemented | Capability assessment + upgrade request |
-| FR-019 | Implemented | Financial ledger with transaction types |
-| FR-020a | Implemented | Pre-compaction flush |
-| FR-020b | Implemented | Auto-recall on agent turn |
-| FR-020d | Implemented | Private/shared/orchestrator tiers |
-| FR-020e | Implemented | Write-time noise filter + read-time multi-stage scoring |
-| FR-020f | Implemented | Reflection + consolidation + pruning |
-| FR-020g | Implemented | Memory metrics tracked |
-| FR-021 | Implemented | 30-min default heartbeat interval |
-| FR-021a | Implemented | Standing order evaluation (4 order types) |
-| FR-022 | Implemented | Skill authoring with validation gate |
-| FR-022a | Implemented | Monotonic version counter |
-| FR-022b | Implemented | Discovery with type-dispatched executors (npm/api/mcp) |
-| FR-022c | Implemented | Auto-deprecate after 3 consecutive failures |
-| FR-022d | Implemented | Invocation/success/failure metrics |
-| FR-023 | Implemented | 12 injection patterns, severity levels, quarantine |
-| FR-024 | Implemented | SHA-256 checksum + drift detection |
-| FR-025 | Implemented | Trusted/unknown/blocked tool tiering |
-| FR-026 | Implemented | Domain allowlist with wildcard support |
-| FR-027 | Implemented | WebAuthn registration + login + iron-session |
-| FR-028 | Implemented | pg_dump + 90-day retention + pruning |
-| FR-029 | Implemented | 5-step setup wizard |
-| FR-030 | Implemented | /health endpoint, no auth required |
-
-## Data Model Compliance
-
-| Entity | Fields | Indexes | Status |
-|--------|--------|---------|--------|
-| Agent | 18/18 | parent_id, status, definition_id | Complete |
-| AgentDefinition | 12/12 | — | Complete |
-| AgentMemory | 10/10 | BTree(agent_id+importance), HNSW(embedding), GIN(tags) | Complete |
-| AgentSession | 5/5 | agent_id | Complete |
-| Checkpoint | 8/8 | agent_id | Complete |
-| SharedKnowledgeEntry | 10/10 | category, HNSW(embedding), GIN(tags), FTS(content) | Complete |
-| Skill | 14/14 | status | Complete |
-| AuditLogEntry | 7/7 | agent_id, timestamp, security_event | Complete |
-| FinancialTransaction | 10/10 | agent_id, type, created_at | Complete |
-| LLMUsageLog | 11/11 | agent_id, created_at | Complete |
-| Identity | 8/8 | agent_id | Complete |
-| Secret | 6/6 | — | Complete |
-| Pipeline | 10/10 | status | Complete |
-| AlertRule | 7/7 | — | Complete (updatedAt added) |
-| AlertEvent | 8/8 | rule_id, created_at | Complete |
-| OperatorCredential | 5/5 | credential_id (unique) | Complete |
-| SystemConfig | 9/9 | — | Complete, defaults correct |
-
-**Default values verified**: heartbeat_interval_ms=1800000, revenue_split_operator=0.20, revenue_split_reinvest=0.80, backup_retention_days=90, skill auto-deprecate threshold=3.
-
-## API Contract Compliance
-
-| Category | Endpoints | Exist | Correct Methods | DB Wired |
-|----------|-----------|-------|----------------|----------|
-| Auth | 3 (consolidated) | 3 | Yes | Yes |
-| Agents | 9 | 9 | Yes | Yes |
-| Definitions | 5 | 5 | Yes | Yes |
-| Secrets | 4 | 4 | Yes | Yes |
-| Pipelines | 4 | 4 | Yes | Yes |
-| Financial | 3 (consolidated) | 3 | Yes | Yes |
-| Identities | 2 | 2 | Yes | Yes |
-| Skills | 3 | 3 | Yes | Yes |
-| Alerts | 5 (consolidated) | 5 | Yes | Yes |
-| System | 6 | 6 | Yes | Partial (setup in-memory) |
-| SSE Streams | 4 | 4 | Yes | Yes (Redis pub/sub) |
-| Health | 1 | 1 | Yes | Yes |
-| **TOTAL** | **49** | **49** | **49/49** | **47/49** |
-
-## Comparison: Before vs After Fix Pass
-
-| Metric | Before (2026-03-07) | After (2026-03-08) |
-|--------|--------------------|--------------------|
-| Critical Gaps | 3 | **0** |
-| Major Gaps | 5 | **0** |
-| Minor Gaps | 4 | **2** |
-| API Routes DB-Wired | ~6/52 | **47/49** |
-| FR Coverage | 30/30 (2 partial) | **30/30 (all implemented)** |
-| Data Model Complete | 15/17 entities | **17/17 entities** |
-| Tests Passing | 272+ | **309+** |
-| Build Status | Passing | **Passing** |
+| FR-001 | Partial | systemd watchdog bug — no sd_notify() |
+| FR-002 | Partial | Missing permission cascading |
+| FR-003 | Covered | Tiered tool interaction |
+| FR-004 | Covered | Strict isolation |
+| FR-005 | Covered | TLS + AES-256-GCM |
+| FR-006/026 | Covered | Vault + proxy + domain allowlist |
+| FR-007 | Covered | Append-only audit log |
+| FR-008/a/b/c | Covered | Budget, splits, LLM costs, pre-auth |
+| FR-008d | Unclear | Backend exists, frontend needs verification |
+| FR-009 | Covered | Identity registry + agent tools |
+| FR-010/a/b | Covered | SSE, Discord, agent tree |
+| FR-011/a/b | Covered | Workflows, resteering, conflict resolution |
+| FR-012/a-d | Covered | 3-layer detection, self-learning, knowledge base |
+| FR-013 | Covered | Dynamic goal decomposition |
+| FR-014 | Covered | Alert engine |
+| FR-015/a-c | Covered | Checkpoints, priority scheduler, degradation |
+| FR-016 | Covered | Multi-provider LLM |
+| FR-017/018 | Covered | Definitions + capability self-assessment |
+| FR-019 | Partial | No payment processor SDK |
+| FR-020/a-f | Covered | Memory system substantive |
+| FR-020d | Partial | 3-tier isolation not enforced at query layer |
+| FR-020g | Partial | Memory health metrics endpoint missing |
+| FR-021/a | Covered | Heartbeat + standing orders |
+| FR-022/a-d | Covered | Full skill system |
+| FR-023 | Covered | Injection scanning |
+| FR-024 | Covered | Integrity checks |
+| FR-025 | Covered | Tiered tool security gate |
+| FR-027 | Partial | WebAuthn works but credential store is in-memory |
+| FR-028 | Partial | Backend exists, API route is stub |
+| FR-029 | Partial | Works but in-memory state |
+| FR-030 | Covered | Health endpoint |
 
 ## Next Steps
 
-The codebase is at production readiness for the orchestrator platform. The 2 remaining minor gaps are:
+**Priority 1 — Fix Critical Gaps (blocks production):**
+1. Fix systemd watchdog (GAP-C001) — change to `Type=simple`
+2. Wire backup API route to real backup service (GAP-C002)
+3. Add missing HNSW/GIN/FTS indexes via migration (GAP-C005)
+4. Implement 5 stub unit test files with real behavioral tests (GAP-C004)
 
-1. **[Minor] Wire setup wizard to DB** — Replace in-memory `setupState` with `systemConfig.setupComplete`
-2. **[Minor] Wire backup/restore dashboard routes** — Connect to existing backup service via BullMQ job queue
+**Priority 2 — Close Major Gaps:**
+5. Add permission cascading in spawn.ts (GAP-M001)
+6. Persist setup wizard state to DB (GAP-M002)
+7. Wire agent detail page tabs to real API (GAP-M003)
+8. Verify/implement token economics component (GAP-M004)
+9. Add memory health metrics endpoint (GAP-M007)
+10. Wire WebAuthn credential store to DB (GAP-N005)
+
+**Priority 3 — Fix Test Gaps:**
+11. Implement E2E test cases (GAP-C003)
+12. Expand heartbeat and Discord command tests (GAP-M005, GAP-M006)

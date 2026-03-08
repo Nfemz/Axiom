@@ -1,112 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import CostCharts from "@/components/cost-charts";
 
 interface Transaction {
   id: string;
-  type: "expense" | "revenue";
-  amount: number;
-  agent: string;
+  type: string;
+  amount: string;
+  agentId: string | null;
   category: string;
-  description: string;
-  date: string;
+  description: string | null;
+  createdAt: string;
 }
 
-interface AgentCost {
-  agentId: string;
-  agentName: string;
-  totalCost: number;
-  inputTokens: number;
-  outputTokens: number;
-  requestCount: number;
+interface SummaryData {
+  totalRevenue: number;
+  totalExpenses: number;
+  netBalance: number;
+  llmCosts: number;
 }
-
-const PLACEHOLDER_TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    type: "expense",
-    amount: 0.42,
-    agent: "research-agent-01",
-    category: "LLM",
-    description: "Claude 3.5 Sonnet - market analysis",
-    date: "2026-03-07T10:30:00Z",
-  },
-  {
-    id: "2",
-    type: "expense",
-    amount: 1.15,
-    agent: "code-agent-02",
-    category: "LLM",
-    description: "GPT-4o - code generation",
-    date: "2026-03-07T09:15:00Z",
-  },
-  {
-    id: "3",
-    type: "expense",
-    amount: 0.08,
-    agent: "research-agent-01",
-    category: "Sandbox",
-    description: "E2B sandbox runtime (12 min)",
-    date: "2026-03-07T08:00:00Z",
-  },
-  {
-    id: "4",
-    type: "revenue",
-    amount: 25.0,
-    agent: "content-agent-03",
-    category: "Delivery",
-    description: "Blog post delivered",
-    date: "2026-03-06T16:00:00Z",
-  },
-];
-
-const PLACEHOLDER_AGENT_COSTS: AgentCost[] = [
-  {
-    agentId: "1",
-    agentName: "research-agent-01",
-    totalCost: 4.82,
-    inputTokens: 125000,
-    outputTokens: 42000,
-    requestCount: 38,
-  },
-  {
-    agentId: "2",
-    agentName: "code-agent-02",
-    totalCost: 12.35,
-    inputTokens: 340000,
-    outputTokens: 98000,
-    requestCount: 72,
-  },
-  {
-    agentId: "3",
-    agentName: "content-agent-03",
-    totalCost: 2.1,
-    inputTokens: 55000,
-    outputTokens: 31000,
-    requestCount: 15,
-  },
-];
-
-const PLACEHOLDER_SUMMARY = {
-  totalRevenue: 125.0,
-  totalExpenses: 19.27,
-  netBalance: 105.73,
-  llmCosts: 17.17,
-};
 
 function formatCurrency(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
-function formatTokens(count: number): string {
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
-  return count.toString();
-}
-
 export default function FinancialPage() {
-  const [transactions] = useState<Transaction[]>(PLACEHOLDER_TRANSACTIONS);
-  const [agentCosts] = useState<AgentCost[]>(PLACEHOLDER_AGENT_COSTS);
-  const [summary] = useState(PLACEHOLDER_SUMMARY);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [txRes, summaryRes] = await Promise.all([
+        fetch("/api/financial?view=transactions"),
+        fetch("/api/financial?view=summary"),
+      ]);
+
+      if (!txRes.ok || !summaryRes.ok) {
+        throw new Error("Failed to fetch financial data");
+      }
+
+      const txData = await txRes.json();
+      const summaryData: SummaryData = await summaryRes.json();
+
+      setTransactions(txData.transactions ?? []);
+      setSummary(summaryData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -116,82 +67,56 @@ export default function FinancialPage() {
         </h1>
 
         {/* Summary Cards */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-            <p className="mt-1 text-2xl font-bold text-green-600">
-              {formatCurrency(summary.totalRevenue)}
-            </p>
+        {summary && (
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+              <p className="mt-1 text-2xl font-bold text-green-600">
+                {formatCurrency(summary.totalRevenue)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Total Expenses</p>
+              <p className="mt-1 text-2xl font-bold text-red-600">
+                {formatCurrency(summary.totalExpenses)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Net Balance</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {formatCurrency(summary.netBalance)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">LLM Costs</p>
+              <p className="mt-1 text-2xl font-bold text-orange-600">
+                {formatCurrency(summary.llmCosts)}
+              </p>
+            </div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Expenses</p>
-            <p className="mt-1 text-2xl font-bold text-red-600">
-              {formatCurrency(summary.totalExpenses)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Net Balance</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
-              {formatCurrency(summary.netBalance)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">LLM Costs</p>
-            <p className="mt-1 text-2xl font-bold text-orange-600">
-              {formatCurrency(summary.llmCosts)}
-            </p>
-          </div>
-        </div>
+        )}
 
-        {/* Per-Agent Cost Breakdown */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            Per-Agent Cost Breakdown
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Agent
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Total Cost
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Input Tokens
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Output Tokens
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Requests
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {agentCosts.map((agent) => (
-                  <tr key={agent.agentId} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                      {agent.agentName}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {formatCurrency(agent.totalCost)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {formatTokens(agent.inputTokens)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {formatTokens(agent.outputTokens)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {agent.requestCount}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {loading && !summary && (
+          <div className="mb-8 flex items-center justify-center py-8">
+            <p className="text-sm text-gray-500">Loading financial data...</p>
           </div>
+        )}
+
+        {error && (
+          <div className="mb-8 rounded-lg border border-red-200 bg-red-50 p-6">
+            <p className="text-sm text-red-700">Error: {error}</p>
+            <button
+              onClick={() => void fetchData()}
+              className="mt-2 text-sm font-medium text-red-600 underline hover:text-red-800"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Token Economics (Cost Charts) */}
+        <div className="mb-8">
+          <CostCharts />
         </div>
 
         {/* Transactions */}
@@ -245,23 +170,23 @@ export default function FinancialPage() {
                       }`}
                     >
                       {tx.type === "revenue" ? "+" : "-"}
-                      {formatCurrency(tx.amount)}
+                      {formatCurrency(parseFloat(tx.amount))}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {tx.agent}
+                      {tx.agentId ?? "-"}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {tx.category}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {tx.description}
+                      {tx.description ?? "-"}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {new Date(tx.date).toLocaleString()}
+                      {new Date(tx.createdAt).toLocaleString()}
                     </td>
                   </tr>
                 ))}
-                {transactions.length === 0 && (
+                {transactions.length === 0 && !loading && (
                   <tr>
                     <td
                       colSpan={6}

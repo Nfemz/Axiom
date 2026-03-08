@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -21,19 +21,31 @@ interface ModelCost {
   avgCostPerRequest: number;
 }
 
+interface CostsResponse {
+  costs: Array<{
+    id: string;
+    agentId: string;
+    modelProvider: string;
+    modelId: string;
+    inputTokens: number;
+    outputTokens: number;
+    computedCostUsd: string;
+    createdAt: string;
+  }>;
+  totalTokens: { input: number; output: number };
+  totalCost: number;
+  currency: string;
+}
+
+interface SummaryResponse {
+  totalRevenue: number;
+  totalExpenses: number;
+  netBalance: number;
+  llmCosts: number;
+  currency: string;
+}
+
 type TimeRange = "7d" | "30d";
-
-const PLACEHOLDER_AGENT_COSTS: AgentCost[] = [
-  { agentId: "1", agentName: "research-agent-01", totalCost: 4.82, inputTokens: 125000, outputTokens: 42000, requestCount: 38 },
-  { agentId: "2", agentName: "code-agent-02", totalCost: 12.35, inputTokens: 340000, outputTokens: 98000, requestCount: 72 },
-  { agentId: "3", agentName: "content-agent-03", totalCost: 2.10, inputTokens: 55000, outputTokens: 31000, requestCount: 15 },
-];
-
-const PLACEHOLDER_MODEL_COSTS: ModelCost[] = [
-  { modelId: "claude-3.5-sonnet", provider: "Anthropic", totalCost: 8.92, requestCount: 64, avgCostPerRequest: 0.139 },
-  { modelId: "gpt-4o", provider: "OpenAI", totalCost: 7.15, requestCount: 42, avgCostPerRequest: 0.170 },
-  { modelId: "gemini-pro", provider: "Google", totalCost: 3.20, requestCount: 19, avgCostPerRequest: 0.168 },
-];
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -47,21 +59,123 @@ function formatTokens(count: number): string {
   return count.toString();
 }
 
-function computeProjectedMonthly(costs: AgentCost[], range: TimeRange): number {
-  const total = costs.reduce((sum, c) => sum + c.totalCost, 0);
+function computeProjectedMonthly(totalCost: number, range: TimeRange): number {
   const days = range === "7d" ? 7 : 30;
-  return (total / days) * 30;
+  return (totalCost / days) * 30;
+}
+
+function aggregateByAgent(costs: CostsResponse["costs"]): AgentCost[] {
+  const byAgent = new Map<string, AgentCost>();
+  for (const row of costs) {
+    const key = row.agentId;
+    const existing = byAgent.get(key);
+    if (existing) {
+      existing.totalCost += parseFloat(row.computedCostUsd);
+      existing.inputTokens += row.inputTokens;
+      existing.outputTokens += row.outputTokens;
+      existing.requestCount += 1;
+    } else {
+      byAgent.set(key, {
+        agentId: key,
+        agentName: key,
+        totalCost: parseFloat(row.computedCostUsd),
+        inputTokens: row.inputTokens,
+        outputTokens: row.outputTokens,
+        requestCount: 1,
+      });
+    }
+  }
+  return Array.from(byAgent.values()).sort((a, b) => b.totalCost - a.totalCost);
+}
+
+function aggregateByModel(costs: CostsResponse["costs"]): ModelCost[] {
+  const byModel = new Map<string, ModelCost>();
+  for (const row of costs) {
+    const key = row.modelId;
+    const existing = byModel.get(key);
+    const cost = parseFloat(row.computedCostUsd);
+    if (existing) {
+      existing.totalCost += cost;
+      existing.requestCount += 1;
+      existing.avgCostPerRequest = existing.totalCost / existing.requestCount;
+    } else {
+      byModel.set(key, {
+        modelId: key,
+        provider: row.modelProvider,
+        totalCost: cost,
+        requestCount: 1,
+        avgCostPerRequest: cost,
+      });
+    }
+  }
+  return Array.from(byModel.values()).sort((a, b) => b.totalCost - a.totalCost);
 }
 
 // ─── Component ──────────────────────────────────────────────────────
 
 export default function CostCharts() {
   const [range, setRange] = useState<TimeRange>("7d");
-  const [agentCosts] = useState<AgentCost[]>(PLACEHOLDER_AGENT_COSTS);
-  const [modelCosts] = useState<ModelCost[]>(PLACEHOLDER_MODEL_COSTS);
+  const [agentCosts, setAgentCosts] = useState<AgentCost[]>([]);
+  const [modelCosts, setModelCosts] = useState<ModelCost[]>([]);
+  const [totalCost, setTotalCost] = useState(0);
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const projectedMonthly = computeProjectedMonthly(agentCosts, range);
-  const totalSpend = agentCosts.reduce((sum, c) => sum + c.totalCost, 0);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [costsRes, summaryRes] = await Promise.all([
+        fetch("/api/financial?view=costs"),
+        fetch("/api/financial?view=summary"),
+      ]);
+
+      if (!costsRes.ok || !summaryRes.ok) {
+        throw new Error("Failed to fetch financial data");
+      }
+
+      const costsData: CostsResponse = await costsRes.json();
+      const summaryData: SummaryResponse = await summaryRes.json();
+
+      setAgentCosts(aggregateByAgent(costsData.costs));
+      setModelCosts(aggregateByModel(costsData.costs));
+      setTotalCost(costsData.totalCost);
+      setSummary(summaryData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  const projectedMonthly = computeProjectedMonthly(totalCost, range);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-gray-500">Loading cost data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <p className="text-sm text-red-700">Error loading cost data: {error}</p>
+        <button
+          onClick={() => void fetchData()}
+          className="mt-2 text-sm font-medium text-red-600 underline hover:text-red-800"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -93,17 +207,28 @@ export default function CostCharts() {
       </div>
 
       {/* Summary Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">
-            Total Spend ({range === "7d" ? "Last 7 Days" : "Last 30 Days"})
+            Total LLM Spend
           </p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(totalSpend)}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Projected Monthly</p>
           <p className="mt-1 text-2xl font-bold text-orange-600">{formatCurrency(projectedMonthly)}</p>
         </div>
+        {summary && (
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Net Balance (ROI)</p>
+            <p className={`mt-1 text-2xl font-bold ${summary.netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {formatCurrency(summary.netBalance)}
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Rev {formatCurrency(summary.totalRevenue)} / Exp {formatCurrency(summary.totalExpenses)}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Per-Agent Cost Breakdown */}

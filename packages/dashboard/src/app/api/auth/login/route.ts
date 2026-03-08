@@ -6,7 +6,7 @@ import {
   verifyAuthenticationResponse,
 } from "@simplewebauthn/server";
 import { sessionOptions, type SessionData } from "@/lib/session";
-import { getAllCredentials, getCredentialById } from "@/lib/webauthn-store";
+import { getAllCredentials, getCredentialById, updateCredentialCounter } from "@/lib/webauthn-store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
   if (body.step === "options") {
-    const credentials = getAllCredentials();
+    const credentials = await getAllCredentials();
 
     const options = await generateAuthenticationOptions({
       rpID,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
     }
 
-    const credential = getCredentialById(credentialId);
+    const credential = await getCredentialById(credentialId);
     if (!credential) {
       return NextResponse.json({ error: "Unknown credential" }, { status: 400 });
     }
@@ -64,6 +64,10 @@ export async function POST(request: NextRequest) {
     if (!verification.verified) {
       return NextResponse.json({ error: "Verification failed" }, { status: 400 });
     }
+
+    // Update the credential counter to prevent replay attacks
+    const newCounter = verification.authenticationInfo.newCounter;
+    await updateCredentialCounter(credentialId, newCounter);
 
     session.challenge = undefined;
     session.userId = USER_ID;

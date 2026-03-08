@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
   if (body.step === "options") {
-    const existingCredentials = getCredentialsForUser(USER_ID);
+    const existingCredentials = await getCredentialsForUser(USER_ID);
 
     const options = await generateRegistrationOptions({
       rpName,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Verification failed" }, { status: 400 });
     }
 
-    storeCredential(USER_ID, verification.registrationInfo.credential);
+    await storeCredential(USER_ID, verification.registrationInfo.credential);
 
     session.challenge = undefined;
     session.userId = USER_ID;

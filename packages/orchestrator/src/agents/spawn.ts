@@ -78,7 +78,8 @@ async function createAgentRecord(
   const modelId = modelOverride?.modelId ?? definition.modelId;
   const agentBudget = budget ?? Number(definition.defaultBudget);
 
-  // Enforce budget cascade: child budget cannot exceed parent's remaining budget
+  // Enforce budget cascade and permission inheritance from parent
+  let permissions: Record<string, unknown> = definition.capabilities as Record<string, unknown> ?? {};
   if (params.parentId) {
     const parent = await findAgentById(db, params.parentId);
     if (parent) {
@@ -88,6 +89,16 @@ async function createAgentRecord(
           `Child budget ($${agentBudget}) exceeds parent remaining budget ($${parentRemaining})`,
         );
       }
+
+      // Permission cascade: child permissions are the intersection of
+      // what the child requests and what the parent is allowed
+      const parentPerms = (parent.permissions ?? {}) as Record<string, unknown>;
+      permissions = intersectPermissions(permissions, parentPerms);
+      log.info("Cascaded permissions from parent", {
+        parentId: params.parentId,
+        parentPermKeys: Object.keys(parentPerms),
+        childPermKeys: Object.keys(permissions),
+      });
     }
   }
 
@@ -102,6 +113,7 @@ async function createAgentRecord(
     modelId,
     currentTask: goal,
     budgetTotal: String(agentBudget),
+    permissions,
     spawnContext: { goal, parentId: parentId ?? null },
   });
 
@@ -156,6 +168,52 @@ async function markRunning(db: Database, agentId: string) {
 
   return updated;
 }
+
+// ── Permission Helpers ──────────────────────────────────────────────────────
+
+/**
+ * Compute the intersection of child-requested and parent-allowed permissions.
+ * Only keys present in BOTH objects survive. For boolean values, the child only
+ * gets `true` if the parent also has `true`. For array values (e.g. allowed
+ * domains), the result is the intersection of both arrays. For nested objects,
+ * the intersection recurses. Any other value types use the parent's value.
+ */
+function intersectPermissions(
+  childRequested: Record<string, unknown>,
+  parentAllowed: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const key of Object.keys(childRequested)) {
+    if (!(key in parentAllowed)) continue;
+
+    const childVal = childRequested[key];
+    const parentVal = parentAllowed[key];
+
+    if (typeof childVal === "boolean" && typeof parentVal === "boolean") {
+      result[key] = childVal && parentVal;
+    } else if (Array.isArray(childVal) && Array.isArray(parentVal)) {
+      const parentSet = new Set(parentVal.map(String));
+      result[key] = childVal.filter((v) => parentSet.has(String(v)));
+    } else if (isPlainObject(childVal) && isPlainObject(parentVal)) {
+      result[key] = intersectPermissions(
+        childVal as Record<string, unknown>,
+        parentVal as Record<string, unknown>,
+      );
+    } else {
+      // Scalar or mismatched types — defer to parent's value
+      result[key] = parentVal;
+    }
+  }
+
+  return result;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// ── Error Handling ─────────────────────────────────────────────────────────
 
 async function handleSpawnError(
   db: Database,
