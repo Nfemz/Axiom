@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
+import type { WebAuthnCredential } from "@simplewebauthn/server";
+import { describe, expect, it } from "vitest";
 import {
-  storeCredential,
+  getAllCredentials,
   getCredentialById,
   getCredentialsForUser,
-  getAllCredentials,
   hasAnyCredentials,
+  storeCredential,
 } from "../../src/lib/webauthn-store";
-import type { WebAuthnCredential } from "@simplewebauthn/server";
 
 /**
  * WebAuthn integration tests (T044d)
@@ -36,8 +36,8 @@ describe("WebAuthn Credential Store", () => {
 
     const retrieved = await getCredentialById(mockCredential.id);
     expect(retrieved).toBeDefined();
-    expect(retrieved!.id).toBe(mockCredential.id);
-    expect(retrieved!.counter).toBe(0);
+    expect(retrieved?.id).toBe(mockCredential.id);
+    expect(retrieved?.counter).toBe(0);
   });
 
   it("should return undefined for unknown credential ID", async () => {
@@ -84,7 +84,9 @@ describe("WebAuthn Auth Flow Validation", () => {
   it("should reject login verify without credential ID", async () => {
     // Simulates the check in login/route.ts: if (!credentialId)
     const body = { response: {} };
-    const credentialId = (body.response as Record<string, unknown>)?.id as string | undefined;
+    const credentialId = (body.response as Record<string, unknown>)?.id as
+      | string
+      | undefined;
     expect(credentialId).toBeUndefined();
   });
 

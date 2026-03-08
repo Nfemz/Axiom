@@ -1,23 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CostCharts from "@/components/cost-charts";
 
 interface Transaction {
+  agentId: string | null;
+  amount: string;
+  category: string;
+  createdAt: string;
+  description: string | null;
   id: string;
   type: string;
-  amount: string;
-  agentId: string | null;
-  category: string;
-  description: string | null;
-  createdAt: string;
 }
 
 interface SummaryData {
-  totalRevenue: number;
-  totalExpenses: number;
-  netBalance: number;
   llmCosts: number;
+  netBalance: number;
+  totalExpenses: number;
+  totalRevenue: number;
 }
 
 function formatCurrency(amount: number): string {
@@ -39,7 +39,7 @@ export default function FinancialPage() {
         fetch("/api/financial?view=summary"),
       ]);
 
-      if (!txRes.ok || !summaryRes.ok) {
+      if (!(txRes.ok && summaryRes.ok)) {
         throw new Error("Failed to fetch financial data");
       }
 
@@ -62,7 +62,7 @@ export default function FinancialPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">
+        <h1 className="mb-8 font-bold text-2xl text-gray-900">
           Financial Dashboard
         </h1>
 
@@ -70,26 +70,28 @@ export default function FinancialPage() {
         {summary && (
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-              <p className="mt-1 text-2xl font-bold text-green-600">
+              <p className="font-medium text-gray-500 text-sm">Total Revenue</p>
+              <p className="mt-1 font-bold text-2xl text-green-600">
                 {formatCurrency(summary.totalRevenue)}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-gray-500">Total Expenses</p>
-              <p className="mt-1 text-2xl font-bold text-red-600">
+              <p className="font-medium text-gray-500 text-sm">
+                Total Expenses
+              </p>
+              <p className="mt-1 font-bold text-2xl text-red-600">
                 {formatCurrency(summary.totalExpenses)}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-gray-500">Net Balance</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">
+              <p className="font-medium text-gray-500 text-sm">Net Balance</p>
+              <p className="mt-1 font-bold text-2xl text-gray-900">
                 {formatCurrency(summary.netBalance)}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-gray-500">LLM Costs</p>
-              <p className="mt-1 text-2xl font-bold text-orange-600">
+              <p className="font-medium text-gray-500 text-sm">LLM Costs</p>
+              <p className="mt-1 font-bold text-2xl text-orange-600">
                 {formatCurrency(summary.llmCosts)}
               </p>
             </div>
@@ -98,16 +100,17 @@ export default function FinancialPage() {
 
         {loading && !summary && (
           <div className="mb-8 flex items-center justify-center py-8">
-            <p className="text-sm text-gray-500">Loading financial data...</p>
+            <p className="text-gray-500 text-sm">Loading financial data...</p>
           </div>
         )}
 
         {error && (
           <div className="mb-8 rounded-lg border border-red-200 bg-red-50 p-6">
-            <p className="text-sm text-red-700">Error: {error}</p>
+            <p className="text-red-700 text-sm">Error: {error}</p>
             <button
+              className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-800"
               onClick={() => void fetchData()}
-              className="mt-2 text-sm font-medium text-red-600 underline hover:text-red-800"
+              type="button"
             >
               Retry
             </button>
@@ -121,39 +124,39 @@ export default function FinancialPage() {
 
         {/* Transactions */}
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          <h2 className="mb-4 font-semibold text-gray-900 text-lg">
             Recent Transactions
           </h2>
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Agent
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                     Date
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50">
+                  <tr className="hover:bg-gray-50" key={tx.id}>
                     <td className="whitespace-nowrap px-6 py-4">
                       <span
-                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${
                           tx.type === "revenue"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
@@ -163,25 +166,25 @@ export default function FinancialPage() {
                       </span>
                     </td>
                     <td
-                      className={`whitespace-nowrap px-6 py-4 text-sm font-medium ${
+                      className={`whitespace-nowrap px-6 py-4 font-medium text-sm ${
                         tx.type === "revenue"
                           ? "text-green-600"
                           : "text-red-600"
                       }`}
                     >
                       {tx.type === "revenue" ? "+" : "-"}
-                      {formatCurrency(parseFloat(tx.amount))}
+                      {formatCurrency(Number.parseFloat(tx.amount))}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                       {tx.agentId ?? "-"}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                       {tx.category}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-gray-500 text-sm">
                       {tx.description ?? "-"}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                       {new Date(tx.createdAt).toLocaleString()}
                     </td>
                   </tr>
@@ -189,8 +192,8 @@ export default function FinancialPage() {
                 {transactions.length === 0 && !loading && (
                   <tr>
                     <td
+                      className="px-6 py-12 text-center text-gray-500 text-sm"
                       colSpan={6}
-                      className="px-6 py-12 text-center text-sm text-gray-500"
                     >
                       No transactions recorded yet.
                     </td>

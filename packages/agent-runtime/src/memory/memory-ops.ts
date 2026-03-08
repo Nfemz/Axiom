@@ -1,21 +1,26 @@
-import type { AgentComms } from '../comms/redis-client.js';
+import type { AgentComms } from "../comms/redis-client.js";
 
 export interface MemoryEntry {
   content: string;
-  memoryType: 'fact' | 'decision' | 'preference' | 'reflection' | 'consolidation';
-  tags: string[];
   importanceScore: number;
+  memoryType:
+    | "fact"
+    | "decision"
+    | "preference"
+    | "reflection"
+    | "consolidation";
+  tags: string[];
 }
 
 export interface MemoryOps {
-  write(entry: MemoryEntry): Promise<void>;
   read(query: string, limit?: number): Promise<MemoryEntry[]>;
   recall(tags: string[]): Promise<MemoryEntry[]>;
+  write(entry: MemoryEntry): Promise<void>;
 }
 
 interface PendingRequest {
-  resolve: (entries: MemoryEntry[]) => void;
   reject: (error: Error) => void;
+  resolve: (entries: MemoryEntry[]) => void;
 }
 
 export function createMemoryOps(comms: AgentComms, agentId: string): MemoryOps {
@@ -23,13 +28,13 @@ export function createMemoryOps(comms: AgentComms, agentId: string): MemoryOps {
 
   const write = async (entry: MemoryEntry): Promise<void> => {
     await comms.sendToOrchestrator({
-      type: 'memory-write',
+      type: "memory-write",
       agentId,
       entry,
     });
   };
 
-  const read = async (query: string, limit: number = 10): Promise<MemoryEntry[]> => {
+  const read = async (query: string, limit = 10): Promise<MemoryEntry[]> => {
     const requestId = crypto.randomUUID();
 
     const promise = new Promise<MemoryEntry[]>((resolve, reject) => {
@@ -37,7 +42,7 @@ export function createMemoryOps(comms: AgentComms, agentId: string): MemoryOps {
     });
 
     await comms.sendToOrchestrator({
-      type: 'memory-read',
+      type: "memory-read",
       agentId,
       requestId,
       query,
@@ -55,7 +60,7 @@ export function createMemoryOps(comms: AgentComms, agentId: string): MemoryOps {
     return promise;
   };
 
-  const recall = async (tags: string[], limit: number = 10): Promise<MemoryEntry[]> => {
+  const recall = async (tags: string[], limit = 10): Promise<MemoryEntry[]> => {
     const requestId = crypto.randomUUID();
 
     const promise = new Promise<MemoryEntry[]>((resolve, reject) => {
@@ -63,7 +68,7 @@ export function createMemoryOps(comms: AgentComms, agentId: string): MemoryOps {
     });
 
     await comms.sendToOrchestrator({
-      type: 'memory-recall',
+      type: "memory-recall",
       agentId,
       requestId,
       tags,

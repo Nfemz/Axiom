@@ -9,11 +9,11 @@
 
 import { createLogger } from "@axiom/shared";
 import { eq } from "drizzle-orm";
-import { findAgentById } from "../db/queries.js";
-import { getSecret, listSecrets } from "./vault.js";
-import { isDomainAllowed } from "./domain-filter.js";
 import type { Database } from "../db/drizzle.js";
+import { findAgentById } from "../db/queries.js";
 import { secrets } from "../db/schema.js";
+import { isDomainAllowed } from "./domain-filter.js";
+import { getSecret } from "./vault.js";
 
 const log = createLogger("secret-proxy");
 
@@ -24,7 +24,7 @@ export async function handleSecretRequest(
   encryptionKey: string,
   agentId: string,
   secretName: string,
-  targetDomain?: string,
+  targetDomain?: string
 ): Promise<string> {
   const agent = await findAgentById(db, agentId);
   if (!agent) {
@@ -43,11 +43,16 @@ export async function handleSecretRequest(
       secretName,
       allowedAgents: secretRow.allowedAgents,
     });
-    throw new Error(`Agent ${agentId} is not allowed to access secret "${secretName}"`);
+    throw new Error(
+      `Agent ${agentId} is not allowed to access secret "${secretName}"`
+    );
   }
 
   if (targetDomain) {
-    const domainAllowed = isDomainAllowed(targetDomain, secretRow.allowedDomains ?? []);
+    const domainAllowed = isDomainAllowed(
+      targetDomain,
+      secretRow.allowedDomains ?? []
+    );
     if (!domainAllowed) {
       log.warn("Secret access denied: domain not allowed", {
         agentId,
@@ -56,7 +61,7 @@ export async function handleSecretRequest(
         allowedDomains: secretRow.allowedDomains,
       });
       throw new Error(
-        `Domain "${targetDomain}" is not allowed for secret "${secretName}"`,
+        `Domain "${targetDomain}" is not allowed for secret "${secretName}"`
       );
     }
   }
@@ -84,8 +89,10 @@ async function findSecretByName(db: Database, name: string) {
 
 function isAgentAllowed(
   agentId: string,
-  allowedAgents: string[] | null,
+  allowedAgents: string[] | null
 ): boolean {
-  if (!allowedAgents || allowedAgents.length === 0) return true;
+  if (!allowedAgents || allowedAgents.length === 0) {
+    return true;
+  }
   return allowedAgents.includes(agentId);
 }

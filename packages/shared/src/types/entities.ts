@@ -1,264 +1,264 @@
 import type {
   AgentStatus,
-  MemoryType,
-  SkillStatus,
   AlertSeverity,
-  IdentityType,
-  SecretType,
-  PipelineStatus,
-  TransactionType,
   AuditOutcome,
-  SessionStatus,
-  KnowledgeEntryType,
   IdentityStatus,
+  IdentityType,
+  KnowledgeEntryType,
+  MemoryType,
+  PipelineStatus,
+  SecretType,
+  SessionStatus,
+  SkillStatus,
+  TransactionType,
 } from "./enums.js";
 
 export interface Agent {
-  id: string;
-  parentId: string | null;
-  definitionId: string;
-  name: string;
-  status: AgentStatus;
-  sandboxId: string | null;
-  modelProvider: string;
-  modelId: string;
-  currentTask: string | null;
-  budgetTotal: number;
-  budgetSpent: number;
   budgetCurrency: string;
-  permissions: Record<string, unknown>;
+  budgetSpent: number;
+  budgetTotal: number;
   configChecksum: string | null;
-  heartbeatAt: Date | null;
-  spawnContext: Record<string, unknown> | null;
   createdAt: Date;
+  currentTask: string | null;
+  definitionId: string;
+  heartbeatAt: Date | null;
+  id: string;
+  modelId: string;
+  modelProvider: string;
+  name: string;
+  parentId: string | null;
+  permissions: Record<string, unknown>;
+  sandboxId: string | null;
+  spawnContext: Record<string, unknown> | null;
+  status: AgentStatus;
   updatedAt: Date;
 }
 
 export interface AgentDefinition {
-  id: string;
-  name: string;
-  mission: string;
-  modelProvider: string;
-  modelId: string;
-  defaultBudget: number;
-  capabilities: Record<string, unknown>;
-  tools: Record<string, unknown>;
   approvalPolicies: Record<string, unknown>;
-  retryPolicy: RetryPolicy;
-  heartbeatConfig: HeartbeatConfig;
+  capabilities: Record<string, unknown>;
   createdAt: Date;
+  defaultBudget: number;
+  heartbeatConfig: HeartbeatConfig;
+  id: string;
+  mission: string;
+  modelId: string;
+  modelProvider: string;
+  name: string;
+  retryPolicy: RetryPolicy;
+  tools: Record<string, unknown>;
   updatedAt: Date;
 }
 
 export interface RetryPolicy {
-  maxRetries: number;
-  backoffType: "exponential" | "linear";
   backoffDelay: number;
+  backoffType: "exponential" | "linear";
+  maxRetries: number;
 }
 
 export interface HeartbeatConfig {
-  timeoutMs: number;
-  resourceThresholds: Record<string, number>;
   llmCheckInterval: number;
+  resourceThresholds: Record<string, number>;
+  timeoutMs: number;
 }
 
 export interface AgentMemory {
-  id: string;
+  accessedAt: Date;
   agentId: string;
+  consolidatedInto: string | null;
   content: string;
+  createdAt: Date;
   embedding: number[] | null;
+  id: string;
   importanceScore: number;
   memoryType: MemoryType;
-  tags: string[];
   sourceSessionId: string | null;
-  createdAt: Date;
-  accessedAt: Date;
-  consolidatedInto: string | null;
+  tags: string[];
 }
 
 export interface AgentSession {
-  id: string;
   agentId: string;
-  startedAt: Date;
   endedAt: Date | null;
+  id: string;
+  startedAt: Date;
   status: SessionStatus;
   summary: string | null;
 }
 
 export interface Checkpoint {
-  id: string;
   agentId: string;
-  sessionId: string | null;
-  currentGoal: string;
-  progressState: Record<string, unknown>;
-  decisionLog: Record<string, unknown>;
-  pendingActions: Record<string, unknown>;
-  workingArtifacts: Record<string, unknown>;
-  handoffPrompt: string | null;
   createdAt: Date;
+  currentGoal: string;
+  decisionLog: Record<string, unknown>;
+  handoffPrompt: string | null;
+  id: string;
+  pendingActions: Record<string, unknown>;
+  progressState: Record<string, unknown>;
+  sessionId: string | null;
+  workingArtifacts: Record<string, unknown>;
 }
 
 export interface SharedKnowledgeEntry {
-  id: string;
+  accessCount: number;
+  category: string;
   content: string;
+  contributingAgentId: string | null;
+  createdAt: Date;
   embedding: number[] | null;
   entryType: KnowledgeEntryType;
-  tags: string[];
-  category: string;
-  contributingAgentId: string | null;
+  id: string;
   importanceScore: number;
-  accessCount: number;
-  createdAt: Date;
+  tags: string[];
   updatedAt: Date;
 }
 
 export interface Skill {
-  id: string;
-  name: string;
-  version: number;
-  triggerCondition: string;
-  inputs: Record<string, unknown>;
-  outputs: Record<string, unknown>;
-  steps: Record<string, unknown>[];
-  successCriteria: string;
-  failureCriteria: string;
-  status: SkillStatus;
   authoringAgentId: string | null;
   consecutiveFailures: number;
-  invocationCount: number;
-  successCount: number;
-  knowledgeEntryId: string | null;
   createdAt: Date;
+  failureCriteria: string;
+  id: string;
+  inputs: Record<string, unknown>;
+  invocationCount: number;
+  knowledgeEntryId: string | null;
+  name: string;
+  outputs: Record<string, unknown>;
+  status: SkillStatus;
+  steps: Record<string, unknown>[];
+  successCount: number;
+  successCriteria: string;
+  triggerCondition: string;
   updatedAt: Date;
+  version: number;
 }
 
 export interface AuditLogEntry {
-  id: string;
-  agentId: string;
   actionType: string;
-  outcome: AuditOutcome;
+  agentId: string;
   details: Record<string, unknown>;
+  id: string;
+  outcome: AuditOutcome;
   securityEvent: boolean;
   timestamp: Date;
 }
 
 export interface FinancialTransaction {
-  id: string;
   agentId: string | null;
-  ventureId: string | null;
-  type: TransactionType;
   amount: number;
-  currency: string;
   category: string;
+  createdAt: Date;
+  currency: string;
   description: string | null;
   externalRef: string | null;
+  id: string;
   preAuthVerified: boolean;
-  createdAt: Date;
+  type: TransactionType;
+  ventureId: string | null;
 }
 
 export interface LLMUsageLog {
-  id: string;
   agentId: string;
-  sessionId: string | null;
-  modelProvider: string;
-  modelId: string;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
   cacheCreateTokens: number;
+  cacheReadTokens: number;
   computedCostUsd: number;
   createdAt: Date;
+  id: string;
+  inputTokens: number;
+  modelId: string;
+  modelProvider: string;
+  outputTokens: number;
+  sessionId: string | null;
 }
 
 export interface Identity {
-  id: string;
   agentId: string;
+  createdAt: Date;
+  credentialsSecretId: string | null;
+  id: string;
+  identifier: string;
   identityType: IdentityType;
   provider: string;
-  identifier: string;
-  credentialsSecretId: string | null;
-  status: IdentityStatus;
-  createdAt: Date;
   revokedAt: Date | null;
+  status: IdentityStatus;
 }
 
 export interface Secret {
-  id: string;
-  name: string;
-  secretType: SecretType;
-  encryptedValue: Buffer;
   allowedAgents: string[];
   allowedDomains: string[];
   createdAt: Date;
+  encryptedValue: Buffer;
+  id: string;
+  name: string;
+  secretType: SecretType;
   updatedAt: Date;
 }
 
 export interface Pipeline {
-  id: string;
-  name: string;
-  goal: string;
-  stages: PipelineStage[];
-  currentStage: number;
-  status: PipelineStatus;
-  budgetTotal: number;
   budgetSpent: number;
-  leadAgentId: string | null;
+  budgetTotal: number;
   createdAt: Date;
+  currentStage: number;
+  goal: string;
+  id: string;
+  leadAgentId: string | null;
+  name: string;
+  stages: PipelineStage[];
+  status: PipelineStatus;
   updatedAt: Date;
 }
 
 export interface PipelineStage {
-  name: string;
   completionCriteria: string;
+  name: string;
   status: "pending" | "active" | "completed" | "failed";
 }
 
 export interface AlertRule {
+  condition: Record<string, unknown>;
+  createdAt: Date;
+  enabled: boolean;
   id: string;
   name: string;
-  condition: Record<string, unknown>;
-  severity: AlertSeverity;
-  enabled: boolean;
   notifyDiscord: boolean;
-  createdAt: Date;
+  severity: AlertSeverity;
 }
 
 export interface AlertEvent {
-  id: string;
-  ruleId: string;
-  agentId: string | null;
-  severity: AlertSeverity;
-  message: string;
   acknowledged: boolean;
   acknowledgedAt: Date | null;
+  agentId: string | null;
   createdAt: Date;
+  id: string;
+  message: string;
+  ruleId: string;
+  severity: AlertSeverity;
 }
 
 export interface OperatorCredential {
-  id: string;
-  credentialId: Buffer;
-  publicKey: Buffer;
   counter: number;
-  transports: string | null;
   createdAt: Date;
+  credentialId: Buffer;
+  id: string;
+  publicKey: Buffer;
+  transports: string | null;
 }
 
 export interface SystemConfig {
-  id: number;
-  setupComplete: boolean;
-  heartbeatIntervalMs: number;
   activeHours: { start: string; end: string; timezone: string };
+  backupRetentionDays: number;
+  createdAt: Date;
+  discordBotToken: string | null;
+  discordWebhookUrl: string | null;
+  heartbeatIntervalMs: number;
+  id: number;
   revenueSplitOperator: number;
   revenueSplitReinvest: number;
-  backupRetentionDays: number;
-  discordWebhookUrl: string | null;
-  discordBotToken: string | null;
-  createdAt: Date;
+  setupComplete: boolean;
   updatedAt: Date;
 }
 
 export interface ResourceMetrics {
   cpuPercent: number;
-  memoryMb: number;
   llmSpendRate: number;
+  memoryMb: number;
 }

@@ -5,22 +5,22 @@
 // upgrades from the orchestrator when gaps are found.
 // ---------------------------------------------------------------------------
 
-import type { ToolRegistry } from "../tools/registry.js";
 import type { AgentComms } from "../comms/redis-client.js";
+import type { ToolRegistry } from "../tools/registry.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface CapabilityAssessment {
-  sufficient: boolean;
-  missingCapabilities: string[];
   justification: string;
+  missingCapabilities: string[];
+  sufficient: boolean;
 }
 
 // ── Assessment ──────────────────────────────────────────────────────────────
 
 export function assessCapabilities(
   registry: ToolRegistry,
-  requiredCapabilities: string[],
+  requiredCapabilities: string[]
 ): CapabilityAssessment {
   const registeredNames = new Set(registry.list().map((t) => t.name));
   const missing: string[] = [];
@@ -46,7 +46,7 @@ export async function requestCapabilityUpgrade(
   comms: AgentComms,
   agentId: string,
   missing: string[],
-  justification: string,
+  justification: string
 ): Promise<void> {
   await comms.sendToOrchestrator({
     type: "capability-upgrade",

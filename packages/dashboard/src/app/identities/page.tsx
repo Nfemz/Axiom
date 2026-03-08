@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface Identity {
-  id: string;
   agentId: string;
+  createdAt: string;
+  id: string;
+  identifier: string;
   identityType: string;
   provider: string;
-  identifier: string;
-  status: string;
-  createdAt: string;
   revokedAt: string | null;
+  status: string;
 }
 
 type TypeFilter = "all" | "email" | "phone" | "voice" | "service_account";
@@ -48,7 +48,9 @@ export default function IdentitiesPage() {
   const fetchIdentities = useCallback(async () => {
     try {
       const res = await fetch("/api/identities");
-      if (!res.ok) return;
+      if (!res.ok) {
+        return;
+      }
       const json = await res.json();
       setIdentities(json.identities ?? []);
     } finally {
@@ -65,7 +67,9 @@ export default function IdentitiesPage() {
       const res = await fetch(`/api/identities/${identityId}`, {
         method: "DELETE",
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        return;
+      }
       await fetchIdentities();
     } catch {
       // TODO: toast notification
@@ -77,7 +81,7 @@ export default function IdentitiesPage() {
     const label = TYPE_LABELS[type] ?? type;
     return (
       <span
-        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${cls}`}
+        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
       >
         {label}
       </span>
@@ -88,7 +92,7 @@ export default function IdentitiesPage() {
     const cls = STATUS_BADGE_CLASSES[status] ?? "bg-gray-100 text-gray-800";
     return (
       <span
-        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${cls}`}
+        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
       >
         {status}
       </span>
@@ -96,10 +100,12 @@ export default function IdentitiesPage() {
   }
 
   const filtered = identities.filter((identity) => {
-    if (typeFilter !== "all" && identity.identityType !== typeFilter)
+    if (typeFilter !== "all" && identity.identityType !== typeFilter) {
       return false;
-    if (statusFilter !== "all" && identity.status !== statusFilter)
+    }
+    if (statusFilter !== "all" && identity.status !== statusFilter) {
       return false;
+    }
     return true;
   });
 
@@ -110,20 +116,24 @@ export default function IdentitiesPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">
+        <h1 className="mb-6 font-bold text-2xl text-gray-900">
           Identity Registry
         </h1>
 
         {/* Filters */}
         <div className="mb-6 flex gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              className="block font-medium text-gray-700 text-sm"
+              htmlFor="identity-type-filter"
+            >
               Type
             </label>
             <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
               className="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+              id="identity-type-filter"
+              onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+              value={typeFilter}
             >
               <option value="all">All Types</option>
               <option value="email">Email</option>
@@ -133,13 +143,17 @@ export default function IdentitiesPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              className="block font-medium text-gray-700 text-sm"
+              htmlFor="identity-status-filter"
+            >
               Status
             </label>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
               className="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+              id="identity-status-filter"
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              value={statusFilter}
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -153,55 +167,56 @@ export default function IdentitiesPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Provider
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Identifier
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Agent
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {filtered.map((identity) => (
-                <tr key={identity.id} className="hover:bg-gray-50">
+                <tr className="hover:bg-gray-50" key={identity.id}>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {typeBadge(identity.identityType)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
                     {identity.provider}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
                     {identity.identifier}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 font-mono text-gray-500 text-sm">
                     {identity.agentId.slice(0, 8)}...
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {statusBadge(identity.status)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                     {new Date(identity.createdAt).toLocaleString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {identity.status === "active" && (
                       <button
+                        className="rounded bg-red-600 px-3 py-1 font-medium text-white text-xs hover:bg-red-700"
                         onClick={() => handleRevoke(identity.id)}
-                        className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                        type="button"
                       >
                         Revoke
                       </button>
@@ -212,8 +227,8 @@ export default function IdentitiesPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td
+                    className="px-6 py-12 text-center text-gray-500 text-sm"
                     colSpan={7}
-                    className="px-6 py-12 text-center text-sm text-gray-500"
                   >
                     No identities found.
                   </td>

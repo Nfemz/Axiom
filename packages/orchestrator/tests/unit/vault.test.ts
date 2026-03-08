@@ -1,14 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  isDomainAllowed,
   extractDomain,
+  isDomainAllowed,
 } from "../../src/secrets/domain-filter.js";
 
 describe("Domain Filter", () => {
   describe("isDomainAllowed", () => {
     it("returns true for an exact match", () => {
       expect(isDomainAllowed("api.example.com", ["api.example.com"])).toBe(
-        true,
+        true
       );
     });
 
@@ -36,7 +36,7 @@ describe("Domain Filter", () => {
 
     it("extracts domain from an http URL with path", () => {
       expect(extractDomain("http://cdn.example.com/assets/logo.png")).toBe(
-        "cdn.example.com",
+        "cdn.example.com"
       );
     });
   });

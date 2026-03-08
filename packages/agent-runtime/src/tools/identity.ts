@@ -48,7 +48,7 @@ export function createIdentityTool(): ToolDefinition {
           identityType,
           provider,
           identifier,
-        }),
+        })
       );
 
       return {

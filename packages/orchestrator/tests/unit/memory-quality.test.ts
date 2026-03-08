@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+  applyMMR,
   filterNoise,
   scoreImportance,
   scoreRetrieval,
-  applyMMR,
 } from "../../src/memory/quality-pipeline.js";
 
 describe("Memory Quality Pipeline", () => {
@@ -20,7 +20,7 @@ describe("Memory Quality Pipeline", () => {
       const shortScore = scoreImportance("short note", "fact");
       const longScore = scoreImportance(
         "This is a much longer memory entry that contains significantly more content and detail about what happened during the task execution phase and all the context around it.",
-        "fact",
+        "fact"
       );
       expect(longScore).toBeGreaterThan(shortScore);
     });
@@ -28,11 +28,11 @@ describe("Memory Quality Pipeline", () => {
     it("gives bonus for keyword-rich content", () => {
       const plain = scoreImportance(
         "The cat sat on the mat for a while today.",
-        "fact",
+        "fact"
       );
       const withKeywords = scoreImportance(
         "This is a critical decision that is important for our strategy.",
-        "fact",
+        "fact"
       );
       expect(withKeywords).toBeGreaterThan(plain);
     });
@@ -40,7 +40,7 @@ describe("Memory Quality Pipeline", () => {
     it("caps at 1 even with very long keyword-rich content", () => {
       const longContent =
         "decision important critical error learned strategy breakthrough resolved success failure ".repeat(
-          50,
+          50
         );
       const score = scoreImportance(longContent, "decision");
       expect(score).toBeLessThanOrEqual(1);

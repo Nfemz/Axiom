@@ -1,14 +1,16 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { agentDefinitions, agents } from "@axiom/orchestrator/db/schema";
+import { eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { agents, agentDefinitions } from "@axiom/orchestrator/db/schema";
-import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const db = getDb();
   const result = await db.select().from(agents);
@@ -21,7 +23,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const body = await request.json();
   const { definitionId, parentId, goal, budget, modelOverride } = body;
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
   if (!definitionId) {
     return NextResponse.json(
       { error: "definitionId is required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
   if (!definition) {
     return NextResponse.json(
       { error: "Agent definition not found" },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

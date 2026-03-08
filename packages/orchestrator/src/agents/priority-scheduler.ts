@@ -23,7 +23,7 @@ export function rankAgents(agents: AgentPriority[]): AgentPriority[] {
 
 export function identifySuspendCandidates(
   agents: AgentPriority[],
-  maxResources: number,
+  maxResources: number
 ): string[] {
   const sorted = rankAgents(agents);
   const candidates: string[] = [];
@@ -43,7 +43,7 @@ export function identifySuspendCandidates(
 
 export function shouldSuspendForHigherPriority(
   current: AgentPriority,
-  incoming: AgentPriority,
+  incoming: AgentPriority
 ): boolean {
   return incoming.priority > current.priority;
 }

@@ -1,3 +1,5 @@
+import { createLogger } from "@axiom/shared";
+import type { ChatInputCommandInteraction } from "discord.js";
 import {
   Client,
   Collection,
@@ -5,9 +7,7 @@ import {
   REST,
   Routes,
 } from "discord.js";
-import type { ChatInputCommandInteraction } from "discord.js";
 import Redis from "ioredis";
-import { createLogger } from "@axiom/shared";
 import { getCommands } from "./commands/index.js";
 import { startMessageRouter } from "./handlers/message-router.js";
 
@@ -17,7 +17,7 @@ export interface BotCommand {
   data: { name: string; toJSON(): unknown };
   execute: (
     interaction: ChatInputCommandInteraction,
-    redis: Redis,
+    redis: Redis
   ) => Promise<void>;
 }
 
@@ -48,9 +48,13 @@ async function main(): Promise<void> {
   await registerSlashCommands(token, commands);
 
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
     const cmd = commandMap.get(interaction.commandName);
-    if (!cmd) return;
+    if (!cmd) {
+      return;
+    }
     try {
       await cmd.execute(interaction, redis);
     } catch (err) {
@@ -86,7 +90,7 @@ async function main(): Promise<void> {
 
 async function registerSlashCommands(
   token: string,
-  commands: BotCommand[],
+  commands: BotCommand[]
 ): Promise<void> {
   const clientId = process.env.DISCORD_CLIENT_ID;
   if (!clientId) {

@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { IdentityStatus } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createIdentity,
-  listIdentities,
   findIdentityById,
-  revokeIdentity,
   getAgentIdentities,
+  listIdentities,
+  revokeIdentity,
 } from "../../src/agents/identity-service.js";
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -21,7 +21,17 @@ function makeMockDb() {
   const update = vi.fn(() => ({ set }));
   const select = vi.fn(() => ({ from }));
 
-  return { insert, update, select, returning, values, set, where, from, orderBy };
+  return {
+    insert,
+    update,
+    select,
+    returning,
+    values,
+    set,
+    where,
+    from,
+    orderBy,
+  };
 }
 
 describe("Identity Service", () => {
@@ -51,7 +61,7 @@ describe("Identity Service", () => {
 
     expect(result).toEqual(fakeIdentity);
     expect(db.values).toHaveBeenCalledWith(
-      expect.objectContaining({ status: IdentityStatus.Active }),
+      expect.objectContaining({ status: IdentityStatus.Active })
     );
   });
 
@@ -84,20 +94,28 @@ describe("Identity Service", () => {
   });
 
   it("revokeIdentity sets status to revoked and returns identity", async () => {
-    const revoked = { id: "id-1", agentId: "a-1", status: IdentityStatus.Revoked };
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([revoked]) }));
+    const revoked = {
+      id: "id-1",
+      agentId: "a-1",
+      status: IdentityStatus.Revoked,
+    };
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([revoked]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await revokeIdentity(db as any, "id-1");
 
     expect(result).toEqual(revoked);
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: IdentityStatus.Revoked }),
+      expect.objectContaining({ status: IdentityStatus.Revoked })
     );
   });
 
   it("revokeIdentity returns null when identity not found", async () => {
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([]) }));
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await revokeIdentity(db as any, "missing");

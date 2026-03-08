@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryType } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   consolidateMemories,
-  pruneOutdatedMemories,
   generateReflection,
+  pruneOutdatedMemories,
 } from "../../src/memory/consolidation.js";
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -15,10 +15,21 @@ function makeMockDb() {
   const from = vi.fn(() => ({ where }));
   const insert = vi.fn(() => ({ values }));
   const update = vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) }));
-  const deleteFn = vi.fn(() => ({ where: vi.fn(() => ({ returning: vi.fn(() => []) })) }));
+  const deleteFn = vi.fn(() => ({
+    where: vi.fn(() => ({ returning: vi.fn(() => []) })),
+  }));
   const select = vi.fn(() => ({ from }));
 
-  return { insert, update, delete: deleteFn, select, returning, values, where, from };
+  return {
+    insert,
+    update,
+    delete: deleteFn,
+    select,
+    returning,
+    values,
+    where,
+    from,
+  };
 }
 
 describe("Memory Consolidation", () => {
@@ -30,8 +41,18 @@ describe("Memory Consolidation", () => {
 
   it("generateReflection creates a consolidation memory with summary", async () => {
     const memories = [
-      { id: "m-1", content: "learned X", memoryType: "observation", importanceScore: 0.5 },
-      { id: "m-2", content: "learned Y", memoryType: "observation", importanceScore: 0.7 },
+      {
+        id: "m-1",
+        content: "learned X",
+        memoryType: "observation",
+        importanceScore: 0.5,
+      },
+      {
+        id: "m-2",
+        content: "learned Y",
+        memoryType: "observation",
+        importanceScore: 0.7,
+      },
     ];
     db.returning.mockResolvedValueOnce([{ id: "ref-1" }]);
 
@@ -43,14 +64,24 @@ describe("Memory Consolidation", () => {
         agentId: "a-1",
         memoryType: MemoryType.Consolidation,
         tags: ["consolidation", "auto-generated"],
-      }),
+      })
     );
   });
 
   it("generateReflection computes average importance capped at 1.0", async () => {
     const memories = [
-      { id: "m-1", content: "a", memoryType: "observation", importanceScore: 0.95 },
-      { id: "m-2", content: "b", memoryType: "observation", importanceScore: 0.99 },
+      {
+        id: "m-1",
+        content: "a",
+        memoryType: "observation",
+        importanceScore: 0.95,
+      },
+      {
+        id: "m-2",
+        content: "b",
+        memoryType: "observation",
+        importanceScore: 0.99,
+      },
     ];
     db.returning.mockResolvedValueOnce([{ id: "ref-1" }]);
 
@@ -70,7 +101,12 @@ describe("Memory Consolidation", () => {
 
   it("consolidateMemories creates reflection and marks originals", async () => {
     const oldMemories = [
-      { id: "m-1", content: "old thought", memoryType: "observation", importanceScore: 0.5 },
+      {
+        id: "m-1",
+        content: "old thought",
+        memoryType: "observation",
+        importanceScore: 0.5,
+      },
     ];
     db.where.mockReturnValueOnce(oldMemories);
     db.returning.mockResolvedValueOnce([{ id: "ref-1" }]);

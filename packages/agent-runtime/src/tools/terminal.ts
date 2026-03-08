@@ -3,14 +3,18 @@ import type { ToolDefinition, ToolResult } from "./registry.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
-function log(level: string, msg: string, extra?: Record<string, unknown>): void {
+function log(
+  level: string,
+  msg: string,
+  extra?: Record<string, unknown>
+): void {
   console.log(JSON.stringify({ level, msg, tool: "terminal", ...extra }));
 }
 
 async function executeCommand(
   command: string,
   cwd?: string,
-  timeoutMs?: number,
+  timeoutMs?: number
 ): Promise<ToolResult> {
   const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
@@ -42,7 +46,7 @@ async function executeCommand(
           output: stdout,
           error: stderr || undefined,
         });
-      },
+      }
     );
 
     child.on("error", (err) => {
@@ -72,7 +76,8 @@ export function createTerminalTool(): ToolDefinition {
         },
         cwd: {
           type: "string",
-          description: "Working directory for the command. Defaults to the sandbox root.",
+          description:
+            "Working directory for the command. Defaults to the sandbox root.",
         },
         timeout: {
           type: "number",
@@ -87,7 +92,11 @@ export function createTerminalTool(): ToolDefinition {
       const timeout = input.timeout as number | undefined;
 
       if (!command || typeof command !== "string") {
-        return { success: false, output: null, error: "command is required and must be a string" };
+        return {
+          success: false,
+          output: null,
+          error: "command is required and must be a string",
+        };
       }
 
       log("info", "Executing command", { command, cwd, timeout });

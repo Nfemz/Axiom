@@ -11,15 +11,15 @@
 export type DegradationState = "normal" | "degraded" | "recovery";
 
 export interface QueuedOp {
-  op: string;
   args: unknown[];
+  op: string;
 }
 
 export interface DegradationContext {
-  state: DegradationState;
+  degradedAt: Date | null;
   failedServices: string[];
   queuedOps: QueuedOp[];
-  degradedAt: Date | null;
+  state: DegradationState;
 }
 
 // ── Sensitive operations that require all services ──────────────────────────
@@ -46,7 +46,7 @@ export function createDegradationContext(): DegradationContext {
 
 export function enterDegradedMode(
   ctx: DegradationContext,
-  failedService: string,
+  failedService: string
 ): DegradationContext {
   if (ctx.failedServices.includes(failedService)) {
     return ctx;
@@ -67,7 +67,7 @@ export function isSensitiveOperation(op: string): boolean {
 export function queueSensitiveOp(
   ctx: DegradationContext,
   op: string,
-  args: unknown[],
+  args: unknown[]
 ): DegradationContext {
   return {
     ...ctx,
@@ -77,7 +77,7 @@ export function queueSensitiveOp(
 
 export function recover(
   ctx: DegradationContext,
-  restoredService: string,
+  restoredService: string
 ): DegradationContext {
   const remaining = ctx.failedServices.filter((s) => s !== restoredService);
 

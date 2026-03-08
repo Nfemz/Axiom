@@ -5,9 +5,9 @@
 // service accounts). Each identity is tied to an agent and can be revoked.
 // ---------------------------------------------------------------------------
 
-import { eq, and, desc } from "drizzle-orm";
-import { createLogger, IdentityStatus } from "@axiom/shared";
 import type { IdentityType } from "@axiom/shared";
+import { createLogger, IdentityStatus } from "@axiom/shared";
+import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { identities } from "../db/schema.js";
 
@@ -17,10 +17,10 @@ const log = createLogger("identity-service");
 
 interface CreateIdentityParams {
   agentId: string;
+  credentialsSecretId?: string;
+  identifier: string;
   identityType: IdentityType;
   provider: string;
-  identifier: string;
-  credentialsSecretId?: string;
 }
 
 interface ListIdentityFilters {
@@ -31,7 +31,10 @@ interface ListIdentityFilters {
 
 // ─── Create ───────────────────────────────────────────────────────
 
-export async function createIdentity(db: Database, params: CreateIdentityParams) {
+export async function createIdentity(
+  db: Database,
+  params: CreateIdentityParams
+) {
   const data: typeof identities.$inferInsert = {
     agentId: params.agentId,
     identityType: params.identityType,
@@ -56,8 +59,11 @@ export async function createIdentity(db: Database, params: CreateIdentityParams)
 
 // ─── List with Filters ───────────────────────────────────────────
 
-export async function listIdentities(db: Database, filters?: ListIdentityFilters) {
-  const conditions = [];
+export async function listIdentities(
+  db: Database,
+  filters?: ListIdentityFilters
+) {
+  const conditions: ReturnType<typeof eq>[] = [];
 
   if (filters?.agentId) {
     conditions.push(eq(identities.agentId, filters.agentId));

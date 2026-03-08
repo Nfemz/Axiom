@@ -1,5 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import type Redis from "ioredis";
 import type { BotCommand } from "../index.js";
 
@@ -15,17 +15,20 @@ const status: BotCommand = {
 
     for (const key of agentKeys) {
       const val = await redis.get(key);
-      if (val === "running") counts.running++;
-      else if (val === "paused") counts.paused++;
+      if (val === "running") {
+        counts.running++;
+      } else if (val === "paused") {
+        counts.paused++;
+      }
     }
 
     const embed = new EmbedBuilder()
       .setTitle("Axiom System Status")
-      .setColor(0x00ae86)
+      .setColor(0x00_ae_86)
       .addFields(
         { name: "Total Agents", value: String(counts.total), inline: true },
         { name: "Running", value: String(counts.running), inline: true },
-        { name: "Paused", value: String(counts.paused), inline: true },
+        { name: "Paused", value: String(counts.paused), inline: true }
       )
       .setTimestamp();
 
@@ -38,7 +41,7 @@ const agent: BotCommand = {
     .setName("agent")
     .setDescription("Show agent details or manage agent")
     .addStringOption((opt) =>
-      opt.setName("id").setDescription("Agent ID").setRequired(true),
+      opt.setName("id").setDescription("Agent ID").setRequired(true)
     )
     .addStringOption((opt) =>
       opt
@@ -49,8 +52,8 @@ const agent: BotCommand = {
           { name: "status", value: "status" },
           { name: "pause", value: "pause" },
           { name: "resume", value: "resume" },
-          { name: "terminate", value: "terminate" },
-        ),
+          { name: "terminate", value: "terminate" }
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction, redis: Redis) {
@@ -67,9 +70,11 @@ const agent: BotCommand = {
         "agentId",
         agentId,
         "source",
-        "discord",
+        "discord"
       );
-      await interaction.followUp(`Sent \`${action}\` command for agent \`${agentId}\`.`);
+      await interaction.followUp(
+        `Sent \`${action}\` command for agent \`${agentId}\`.`
+      );
       return;
     }
 
@@ -81,11 +86,11 @@ const agent: BotCommand = {
 
     const embed = new EmbedBuilder()
       .setTitle(`Agent: ${data.name ?? agentId}`)
-      .setColor(0x5865f2)
+      .setColor(0x58_65_f2)
       .addFields(
         { name: "ID", value: agentId, inline: true },
         { name: "Status", value: data.status ?? "unknown", inline: true },
-        { name: "Goal", value: data.goal ?? "N/A" },
+        { name: "Goal", value: data.goal ?? "N/A" }
       )
       .setTimestamp();
 
@@ -98,7 +103,10 @@ const budget: BotCommand = {
     .setName("budget")
     .setDescription("Show budget summary")
     .addStringOption((opt) =>
-      opt.setName("agent-id").setDescription("Agent ID (optional)").setRequired(false),
+      opt
+        .setName("agent-id")
+        .setDescription("Agent ID (optional)")
+        .setRequired(false)
     ),
 
   async execute(interaction: ChatInputCommandInteraction, redis: Redis) {
@@ -114,11 +122,15 @@ const budget: BotCommand = {
 
     const embed = new EmbedBuilder()
       .setTitle(agentId ? `Budget: Agent ${agentId}` : "Global Budget")
-      .setColor(0xfee75c)
+      .setColor(0xfe_e7_5c)
       .addFields(
         { name: "Spent", value: `$${data.spent ?? "0"}`, inline: true },
         { name: "Limit", value: `$${data.limit ?? "N/A"}`, inline: true },
-        { name: "Remaining", value: `$${data.remaining ?? "N/A"}`, inline: true },
+        {
+          name: "Remaining",
+          value: `$${data.remaining ?? "N/A"}`,
+          inline: true,
+        }
       )
       .setTimestamp();
 
@@ -131,7 +143,10 @@ const approve: BotCommand = {
     .setName("approve")
     .setDescription("Approve a pending decision")
     .addStringOption((opt) =>
-      opt.setName("request-id").setDescription("Approval request ID").setRequired(true),
+      opt
+        .setName("request-id")
+        .setDescription("Approval request ID")
+        .setRequired(true)
     ),
 
   async execute(interaction: ChatInputCommandInteraction, redis: Redis) {
@@ -148,7 +163,7 @@ const approve: BotCommand = {
       "decision",
       "approved",
       "operator",
-      interaction.user.tag,
+      interaction.user.tag
     );
 
     await interaction.followUp({
@@ -163,16 +178,23 @@ const deny: BotCommand = {
     .setName("deny")
     .setDescription("Deny a pending decision")
     .addStringOption((opt) =>
-      opt.setName("request-id").setDescription("Approval request ID").setRequired(true),
+      opt
+        .setName("request-id")
+        .setDescription("Approval request ID")
+        .setRequired(true)
     )
     .addStringOption((opt) =>
-      opt.setName("reason").setDescription("Reason for denial").setRequired(false),
+      opt
+        .setName("reason")
+        .setDescription("Reason for denial")
+        .setRequired(false)
     ),
 
   async execute(interaction: ChatInputCommandInteraction, redis: Redis) {
     await interaction.deferReply({ ephemeral: true });
     const requestId = interaction.options.getString("request-id", true);
-    const reason = interaction.options.getString("reason") ?? "No reason provided";
+    const reason =
+      interaction.options.getString("reason") ?? "No reason provided";
 
     await redis.xadd(
       "orchestrator:inbox",
@@ -186,7 +208,7 @@ const deny: BotCommand = {
       "reason",
       reason,
       "operator",
-      interaction.user.tag,
+      interaction.user.tag
     );
 
     await interaction.followUp({
@@ -201,10 +223,16 @@ const spawn: BotCommand = {
     .setName("spawn")
     .setDescription("Spawn a new agent")
     .addStringOption((opt) =>
-      opt.setName("definition-id").setDescription("Agent definition ID").setRequired(true),
+      opt
+        .setName("definition-id")
+        .setDescription("Agent definition ID")
+        .setRequired(true)
     )
     .addStringOption((opt) =>
-      opt.setName("goal").setDescription("Agent goal override").setRequired(false),
+      opt
+        .setName("goal")
+        .setDescription("Agent goal override")
+        .setRequired(false)
     ),
 
   async execute(interaction: ChatInputCommandInteraction, redis: Redis) {
@@ -230,10 +258,10 @@ const spawn: BotCommand = {
 
     const embed = new EmbedBuilder()
       .setTitle("Agent Spawn Requested")
-      .setColor(0x57f287)
+      .setColor(0x57_f2_87)
       .addFields(
         { name: "Definition", value: definitionId, inline: true },
-        { name: "Goal", value: goal ?? "Default", inline: true },
+        { name: "Goal", value: goal ?? "Default", inline: true }
       )
       .setTimestamp();
 

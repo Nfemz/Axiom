@@ -1,24 +1,27 @@
-import { eq } from "drizzle-orm";
+import type { PipelineStage } from "@axiom/shared";
 import { createLogger, PipelineStatus } from "@axiom/shared";
+import { eq } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { pipelines } from "../db/schema.js";
-import type { PipelineStage } from "@axiom/shared";
 
 const log = createLogger("pipeline-service");
 
 // ─── Types ────────────────────────────────────────────────────────
 
 interface CreatePipelineParams {
-  name: string;
-  goal: string;
-  stages: { name: string; completionCriteria: string }[];
   budgetTotal: string;
+  goal: string;
   leadAgentId?: string;
+  name: string;
+  stages: { name: string; completionCriteria: string }[];
 }
 
 // ─── Create ───────────────────────────────────────────────────────
 
-export async function createPipeline(db: Database, params: CreatePipelineParams) {
+export async function createPipeline(
+  db: Database,
+  params: CreatePipelineParams
+) {
   const stages: PipelineStage[] = params.stages.map((s) => ({
     name: s.name,
     completionCriteria: s.completionCriteria,
@@ -113,7 +116,11 @@ export async function completePipeline(db: Database, pipelineId: string) {
   return result[0] ?? null;
 }
 
-export async function failPipeline(db: Database, pipelineId: string, reason: string) {
+export async function failPipeline(
+  db: Database,
+  pipelineId: string,
+  reason: string
+) {
   const result = await db
     .update(pipelines)
     .set({ status: PipelineStatus.Failed, updatedAt: new Date() })

@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import { createLogger, SkillStatus } from "@axiom/shared";
-import { eq, and, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { skills } from "../db/schema.js";
 
@@ -15,26 +15,26 @@ const log = createLogger("skill-registry");
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface CreateSkillParams {
-  name: string;
-  triggerCondition: string;
+  authoringAgentId?: string;
+  failureCriteria: string;
   inputs: Record<string, unknown>;
+  name: string;
   outputs: Record<string, unknown>;
   steps: unknown[];
   successCriteria: string;
-  failureCriteria: string;
-  authoringAgentId?: string;
+  triggerCondition: string;
 }
 
 export interface SkillFilters {
-  status?: string;
   authoringAgentId?: string;
+  status?: string;
 }
 
 // ── Create ──────────────────────────────────────────────────────────────────
 
 export async function createSkill(
   db: Database,
-  params: CreateSkillParams,
+  params: CreateSkillParams
 ): Promise<string> {
   const [row] = await db
     .insert(skills)
@@ -60,16 +60,26 @@ export async function createSkill(
 
 export async function validateSkill(
   db: Database,
-  skillId: string,
+  skillId: string
 ): Promise<void> {
   const skill = await getSkill(db, skillId);
-  if (!skill) throw new Error(`Skill not found: ${skillId}`);
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillId}`);
+  }
 
   const missing: string[] = [];
-  if (!skill.name) missing.push("name");
-  if (!skill.triggerCondition) missing.push("triggerCondition");
-  if (!skill.successCriteria) missing.push("successCriteria");
-  if (!skill.failureCriteria) missing.push("failureCriteria");
+  if (!skill.name) {
+    missing.push("name");
+  }
+  if (!skill.triggerCondition) {
+    missing.push("triggerCondition");
+  }
+  if (!skill.successCriteria) {
+    missing.push("successCriteria");
+  }
+  if (!skill.failureCriteria) {
+    missing.push("failureCriteria");
+  }
 
   if (missing.length > 0) {
     throw new Error(`Skill missing required fields: ${missing.join(", ")}`);
@@ -87,7 +97,7 @@ export async function validateSkill(
 
 export async function activateSkill(
   db: Database,
-  skillId: string,
+  skillId: string
 ): Promise<void> {
   await db
     .update(skills)
@@ -101,7 +111,7 @@ export async function activateSkill(
 
 export async function deprecateSkill(
   db: Database,
-  skillId: string,
+  skillId: string
 ): Promise<void> {
   await db
     .update(skills)
@@ -126,7 +136,7 @@ export async function getSkill(db: Database, skillId: string) {
 // ── List ────────────────────────────────────────────────────────────────────
 
 export async function listSkills(db: Database, filters?: SkillFilters) {
-  const conditions = [];
+  const conditions: ReturnType<typeof eq>[] = [];
 
   if (filters?.status) {
     conditions.push(eq(skills.status, filters.status));
@@ -146,10 +156,12 @@ export async function listSkills(db: Database, filters?: SkillFilters) {
 export async function publishNewVersion(
   db: Database,
   skillId: string,
-  updates: Partial<CreateSkillParams>,
+  updates: Partial<CreateSkillParams>
 ): Promise<void> {
   const skill = await getSkill(db, skillId);
-  if (!skill) throw new Error(`Skill not found: ${skillId}`);
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillId}`);
+  }
 
   const newVersion = skill.version + 1;
 

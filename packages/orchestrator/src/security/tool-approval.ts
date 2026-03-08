@@ -26,11 +26,7 @@ export const TRUSTED_SOURCES: string[] = [
   "hub.docker.com",
 ];
 
-const BLOCKED_PATTERNS = [
-  "malware",
-  "exploit",
-  "hack",
-];
+const BLOCKED_PATTERNS = ["malware", "exploit", "hack"];
 
 // ── Assess Tool Trust ───────────────────────────────────────────────────────
 
@@ -64,6 +60,10 @@ export function requiresApproval(trustLevel: TrustLevel): boolean {
       return true;
     case "blocked":
       return true; // blocked tools are denied, but they still require review
+    default: {
+      const _exhaustive: never = trustLevel;
+      throw new Error(`Unknown trust level: ${_exhaustive}`);
+    }
   }
 }
 
@@ -74,7 +74,7 @@ export async function recordApproval(
   toolName: string,
   source: string,
   approved: boolean,
-  approvedBy: string,
+  approvedBy: string
 ): Promise<void> {
   await db.insert(auditLog).values({
     agentId: approvedBy,

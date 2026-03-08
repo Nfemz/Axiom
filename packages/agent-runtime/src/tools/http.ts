@@ -4,7 +4,11 @@ type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
-function log(level: string, msg: string, extra?: Record<string, unknown>): void {
+function log(
+  level: string,
+  msg: string,
+  extra?: Record<string, unknown>
+): void {
   console.log(JSON.stringify({ level, msg, tool: "http", ...extra }));
 }
 
@@ -12,7 +16,7 @@ async function makeRequest(
   method: HttpMethod,
   url: string,
   headers?: Record<string, string>,
-  body?: unknown,
+  body?: unknown
 ): Promise<ToolResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -27,7 +31,7 @@ async function makeRequest(
     if (body !== undefined && method !== "GET") {
       requestInit.body = typeof body === "string" ? body : JSON.stringify(body);
 
-      if (!headers?.["Content-Type"] && !headers?.["content-type"]) {
+      if (!(headers?.["Content-Type"] || headers?.["content-type"])) {
         requestInit.headers = {
           "Content-Type": "application/json",
           ...requestInit.headers,
@@ -65,7 +69,9 @@ async function makeRequest(
         headers: responseHeaders,
         body: responseBody,
       },
-      error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`,
+      error: response.ok
+        ? undefined
+        : `HTTP ${response.status}: ${response.statusText}`,
     };
   } finally {
     clearTimeout(timeoutId);
@@ -108,11 +114,21 @@ export function createHttpTool(): ToolDefinition {
       const headers = input.headers as Record<string, string> | undefined;
       const body = input.body;
 
-      if (!method || !url) {
-        return { success: false, output: null, error: "method and url are required" };
+      if (!(method && url)) {
+        return {
+          success: false,
+          output: null,
+          error: "method and url are required",
+        };
       }
 
-      const validMethods: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+      const validMethods: HttpMethod[] = [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+      ];
       if (!validMethods.includes(method)) {
         return {
           success: false,
@@ -127,14 +143,17 @@ export function createHttpTool(): ToolDefinition {
         return await makeRequest(method, url, headers, body);
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
-        const isTimeout = err instanceof DOMException && err.name === "AbortError";
+        const isTimeout =
+          err instanceof DOMException && err.name === "AbortError";
 
         log("error", "HTTP request failed", { method, url, error });
 
         return {
           success: false,
           output: null,
-          error: isTimeout ? `Request timed out after ${DEFAULT_TIMEOUT_MS}ms` : error,
+          error: isTimeout
+            ? `Request timed out after ${DEFAULT_TIMEOUT_MS}ms`
+            : error,
         };
       }
     },

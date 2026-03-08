@@ -1,14 +1,16 @@
+import { agentMemories, sharedKnowledge } from "@axiom/orchestrator/db/schema";
+import { avg, count, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { agentMemories, sharedKnowledge } from "@axiom/orchestrator/db/schema";
-import { count, avg, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   try {
     const db = getDb();
@@ -43,7 +45,7 @@ export async function GET() {
     return NextResponse.json({
       totalMemories: memoryStats?.totalMemories ?? 0,
       avgImportanceScore: memoryStats?.avgImportance
-        ? parseFloat(String(memoryStats.avgImportance))
+        ? Number.parseFloat(String(memoryStats.avgImportance))
         : 0,
       writeRateLastHour: recentWrites?.n ?? 0,
       knowledgeBaseEntries: knowledgeStats?.totalEntries ?? 0,
@@ -52,7 +54,7 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to fetch memory health metrics", details: String(err) },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

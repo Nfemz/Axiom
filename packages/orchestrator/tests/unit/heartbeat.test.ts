@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/heartbeat/checks.js", () => ({
   runHeartbeatChecks: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { runHeartbeatChecks } from "../../src/heartbeat/checks.js";
 import {
   startHeartbeatScheduler,
   stopHeartbeatScheduler,
 } from "../../src/heartbeat/scheduler.js";
-import { runHeartbeatChecks } from "../../src/heartbeat/checks.js";
 
 describe("Heartbeat Scheduler", () => {
   afterEach(() => {
@@ -44,7 +44,11 @@ describe("Heartbeat Scheduler", () => {
     const mockChecks = vi.mocked(runHeartbeatChecks);
     mockChecks.mockResolvedValue(undefined);
 
-    startHeartbeatScheduler(1000, { start: "00:00", end: "23:59", timezone: "UTC" });
+    startHeartbeatScheduler(1000, {
+      start: "00:00",
+      end: "23:59",
+      timezone: "UTC",
+    });
 
     await vi.advanceTimersByTimeAsync(1100);
 
@@ -58,7 +62,11 @@ describe("Heartbeat Scheduler", () => {
     mockChecks.mockClear();
 
     // Active hours window impossible to match
-    startHeartbeatScheduler(1000, { start: "25:00", end: "25:01", timezone: "UTC" });
+    startHeartbeatScheduler(1000, {
+      start: "25:00",
+      end: "25:01",
+      timezone: "UTC",
+    });
 
     await vi.advanceTimersByTimeAsync(1100);
 

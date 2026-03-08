@@ -1,14 +1,15 @@
 // ---------------------------------------------------------------------------
 // T027d – Database Integration Tests (Testcontainers)
 // ---------------------------------------------------------------------------
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import { sql } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema.js";
 import {
-  setupPgContainer,
-  insertTestDefinition,
   insertTestAgent,
+  insertTestDefinition,
   type PgTestContext,
+  setupPgContainer,
 } from "./helpers/pg-container.js";
 
 describe("Database Integration", () => {
@@ -60,7 +61,7 @@ describe("Database Integration", () => {
 
   it("supports pgvector extension", async () => {
     const result = await ctx.db.execute(
-      sql`SELECT extname FROM pg_extension WHERE extname = 'vector'`,
+      sql`SELECT extname FROM pg_extension WHERE extname = 'vector'`
     );
     expect(result.length).toBeGreaterThanOrEqual(1);
   });

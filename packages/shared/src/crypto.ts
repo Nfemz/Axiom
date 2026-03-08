@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  pbkdf2Sync,
+  randomBytes,
+} from "node:crypto";
 
 const SALT = "axiom-encryption-salt";
 const ITERATIONS = 100_000;
@@ -15,7 +20,10 @@ export function encrypt(plaintext: string, key: Buffer): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
 
-  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
   const authTag = cipher.getAuthTag();
 
   const result = Buffer.concat([iv, authTag, encrypted]);
@@ -32,6 +40,9 @@ export function decrypt(encrypted: string, key: Buffer): string {
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(authTag);
 
-  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  const decrypted = Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final(),
+  ]);
   return decrypted.toString("utf8");
 }

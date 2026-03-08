@@ -1,5 +1,8 @@
-import { createLogger } from "@axiom/shared";
-import { DEFAULT_HEARTBEAT_INTERVAL_MS, DEFAULT_ACTIVE_HOURS } from "@axiom/shared";
+import {
+  createLogger,
+  DEFAULT_ACTIVE_HOURS,
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
+} from "@axiom/shared";
 import { runHeartbeatChecks } from "./checks.js";
 
 const log = createLogger("heartbeat");
@@ -7,7 +10,11 @@ const log = createLogger("heartbeat");
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 
 function isWithinActiveHours(
-  activeHours: { start: string; end: string; timezone: string } = DEFAULT_ACTIVE_HOURS,
+  activeHours: {
+    start: string;
+    end: string;
+    timezone: string;
+  } = DEFAULT_ACTIVE_HOURS
 ): boolean {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-US", {
@@ -22,7 +29,7 @@ function isWithinActiveHours(
 
 export function startHeartbeatScheduler(
   intervalMs: number = DEFAULT_HEARTBEAT_INTERVAL_MS,
-  activeHours?: { start: string; end: string; timezone: string },
+  activeHours?: { start: string; end: string; timezone: string }
 ): void {
   if (intervalHandle) {
     log.warn("Heartbeat scheduler already running");

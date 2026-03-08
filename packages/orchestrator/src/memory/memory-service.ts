@@ -1,17 +1,17 @@
-import { createLogger } from '@axiom/shared';
-import type { Database } from '../db/drizzle.js';
-import { agentMemories } from '../db/schema.js';
-import { eq, desc, sql, and, inArray } from 'drizzle-orm';
+import { createLogger } from "@axiom/shared";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import type { Database } from "../db/drizzle.js";
+import { agentMemories } from "../db/schema.js";
 
-const logger = createLogger('memory-service');
+const logger = createLogger("memory-service");
 
 export interface MemoryResult {
-  id: string;
   content: string;
+  createdAt: Date;
+  id: string;
+  importanceScore: number;
   memoryType: string;
   tags: string[];
-  importanceScore: number;
-  createdAt: Date;
 }
 
 export async function storeMemory(
@@ -21,14 +21,14 @@ export async function storeMemory(
   memoryType: string,
   tags: string[],
   importanceScore: number,
-  embedding?: number[],
+  embedding?: number[]
 ): Promise<string> {
   const [row] = await db
     .insert(agentMemories)
     .values({ agentId, content, memoryType, tags, importanceScore, embedding })
     .returning({ id: agentMemories.id });
 
-  logger.info('Memory stored', { agentId, memoryType, id: row.id });
+  logger.info("Memory stored", { agentId, memoryType, id: row.id });
   return row.id;
 }
 
@@ -36,14 +36,19 @@ export async function searchMemories(
   db: Database,
   agentId: string,
   query: string,
-  limit: number = 10,
+  limit = 10
 ): Promise<MemoryResult[]> {
   const pattern = `%${query}%`;
 
   const rows = await db
     .select()
     .from(agentMemories)
-    .where(and(eq(agentMemories.agentId, agentId), sql`${agentMemories.content} ILIKE ${pattern}`))
+    .where(
+      and(
+        eq(agentMemories.agentId, agentId),
+        sql`${agentMemories.content} ILIKE ${pattern}`
+      )
+    )
     .orderBy(desc(agentMemories.importanceScore))
     .limit(limit);
 
@@ -59,12 +64,20 @@ export async function searchByTags(
   db: Database,
   agentId: string,
   tags: string[],
-  limit: number = 10,
+  limit = 10
 ): Promise<MemoryResult[]> {
   const rows = await db
     .select()
     .from(agentMemories)
-    .where(and(eq(agentMemories.agentId, agentId), sql`${agentMemories.tags} && ${sql`ARRAY[${sql.join(tags.map(t => sql`${t}`), sql`, `)}]::text[]`}`))
+    .where(
+      and(
+        eq(agentMemories.agentId, agentId),
+        sql`${agentMemories.tags} && ${sql`ARRAY[${sql.join(
+          tags.map((t) => sql`${t}`),
+          sql`, `
+        )}]::text[]`}`
+      )
+    )
     .orderBy(desc(agentMemories.importanceScore))
     .limit(limit);
 
@@ -75,9 +88,9 @@ export async function searchByVector(
   db: Database,
   agentId: string,
   embedding: number[],
-  limit: number = 10,
+  limit = 10
 ): Promise<MemoryResult[]> {
-  const vectorStr = `[${embedding.join(',')}]`;
+  const vectorStr = `[${embedding.join(",")}]`;
 
   const rows = await db
     .select()

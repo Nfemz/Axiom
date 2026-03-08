@@ -5,28 +5,32 @@
 // Redis channels for bidirectional communication.
 // ---------------------------------------------------------------------------
 
+import { AgentStatus, createLogger } from "@axiom/shared";
 import type Redis from "ioredis";
-import { createLogger, AgentStatus } from "@axiom/shared";
-import { insertAgent, findDefinitionById, updateAgent, findAgentById } from "../db/queries.js";
-import { createSandbox } from "./sandbox.js";
 import {
-  publishToStream,
-  STREAM_KEYS,
-  ensureConsumerGroup,
   CONSUMER_GROUPS,
+  ensureConsumerGroup,
+  STREAM_KEYS,
 } from "../comms/streams.js";
 import type { Database } from "../db/drizzle.js";
+import {
+  findAgentById,
+  findDefinitionById,
+  insertAgent,
+  updateAgent,
+} from "../db/queries.js";
+import { createSandbox } from "./sandbox.js";
 
 const log = createLogger("agent-spawn");
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface SpawnAgentParams {
-  definitionId: string;
-  parentId?: string;
-  goal: string;
   budget?: number;
+  definitionId: string;
+  goal: string;
   modelOverride?: { provider: string; modelId: string };
+  parentId?: string;
 }
 
 // ── Spawn ───────────────────────────────────────────────────────────────────
@@ -34,9 +38,9 @@ export interface SpawnAgentParams {
 export async function spawnAgent(
   db: Database,
   redis: Redis,
-  params: SpawnAgentParams,
+  params: SpawnAgentParams
 ) {
-  const { definitionId, parentId, goal, budget, modelOverride } = params;
+  const { definitionId, goal } = params;
 
   const definition = await lookupDefinition(db, definitionId);
   const agent = await createAgentRecord(db, definition, params);
@@ -71,7 +75,7 @@ async function lookupDefinition(db: Database, definitionId: string) {
 async function createAgentRecord(
   db: Database,
   definition: NonNullable<Awaited<ReturnType<typeof findDefinitionById>>>,
-  params: SpawnAgentParams,
+  params: SpawnAgentParams
 ) {
   const { parentId, goal, budget, modelOverride } = params;
   const provider = modelOverride?.provider ?? definition.modelProvider;
@@ -79,14 +83,16 @@ async function createAgentRecord(
   const agentBudget = budget ?? Number(definition.defaultBudget);
 
   // Enforce budget cascade and permission inheritance from parent
-  let permissions: Record<string, unknown> = definition.capabilities as Record<string, unknown> ?? {};
+  let permissions: Record<string, unknown> =
+    (definition.capabilities as Record<string, unknown>) ?? {};
   if (params.parentId) {
     const parent = await findAgentById(db, params.parentId);
     if (parent) {
-      const parentRemaining = Number(parent.budgetTotal) - Number(parent.budgetSpent);
+      const parentRemaining =
+        Number(parent.budgetTotal) - Number(parent.budgetSpent);
       if (agentBudget > parentRemaining) {
         throw new Error(
-          `Child budget ($${agentBudget}) exceeds parent remaining budget ($${parentRemaining})`,
+          `Child budget ($${agentBudget}) exceeds parent remaining budget ($${parentRemaining})`
         );
       }
 
@@ -122,10 +128,10 @@ async function createAgentRecord(
 }
 
 async function spawnSandbox(
-  redis: Redis,
+  _redis: Redis,
   agentId: string,
-  definition: NonNullable<Awaited<ReturnType<typeof findDefinitionById>>>,
-  goal: string,
+  _definition: NonNullable<Awaited<ReturnType<typeof findDefinitionById>>>,
+  _goal: string
 ) {
   log.info("Creating E2B sandbox", { agentId });
 
@@ -143,11 +149,7 @@ async function spawnSandbox(
   return sandboxInfo;
 }
 
-async function attachSandbox(
-  db: Database,
-  agentId: string,
-  sandboxId: string,
-) {
+async function attachSandbox(db: Database, agentId: string, sandboxId: string) {
   log.info("Attaching sandbox to agent", { agentId, sandboxId });
   await updateAgent(db, agentId, { sandboxId });
 }
@@ -180,12 +182,14 @@ async function markRunning(db: Database, agentId: string) {
  */
 function intersectPermissions(
   childRequested: Record<string, unknown>,
-  parentAllowed: Record<string, unknown>,
+  parentAllowed: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const key of Object.keys(childRequested)) {
-    if (!(key in parentAllowed)) continue;
+    if (!(key in parentAllowed)) {
+      continue;
+    }
 
     const childVal = childRequested[key];
     const parentVal = parentAllowed[key];
@@ -198,7 +202,7 @@ function intersectPermissions(
     } else if (isPlainObject(childVal) && isPlainObject(parentVal)) {
       result[key] = intersectPermissions(
         childVal as Record<string, unknown>,
-        parentVal as Record<string, unknown>,
+        parentVal as Record<string, unknown>
       );
     } else {
       // Scalar or mismatched types — defer to parent's value
@@ -215,13 +219,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 // ── Error Handling ─────────────────────────────────────────────────────────
 
-async function handleSpawnError(
-  db: Database,
-  agentId: string,
-  error: unknown,
-) {
+async function handleSpawnError(db: Database, agentId: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  log.error("Agent spawn failed, marking as error", { agentId, error: message });
+  log.error("Agent spawn failed, marking as error", {
+    agentId,
+    error: message,
+  });
 
   await updateAgent(db, agentId, { status: AgentStatus.Error }).catch(
     (dbErr) => {
@@ -229,6 +232,6 @@ async function handleSpawnError(
         agentId,
         error: dbErr instanceof Error ? dbErr.message : String(dbErr),
       });
-    },
+    }
   );
 }

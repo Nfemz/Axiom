@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HEARTBEAT_TIMEOUT_MS } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/db/drizzle.js", () => ({
   getDb: vi.fn(),
@@ -10,9 +10,9 @@ vi.mock("../../src/db/queries.js", () => ({
   updateAgent: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { runHeartbeatChecks } from "../../src/heartbeat/checks.js";
 import { getDb } from "../../src/db/drizzle.js";
 import { findAgentsByStatus, updateAgent } from "../../src/db/queries.js";
+import { runHeartbeatChecks } from "../../src/heartbeat/checks.js";
 
 describe("Heartbeat Checks", () => {
   const mockDb = {};
@@ -49,7 +49,7 @@ describe("Heartbeat Checks", () => {
     expect(updateAgent).toHaveBeenCalledWith(
       mockDb,
       "a-1",
-      expect.objectContaining({ status: "error" }),
+      expect.objectContaining({ status: "error" })
     );
   });
 

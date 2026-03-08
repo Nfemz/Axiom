@@ -1,17 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
-import { getDb } from "@/lib/db";
 import { skills } from "@axiom/orchestrator/db/schema";
 import { eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const db = getDb();

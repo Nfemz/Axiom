@@ -1,9 +1,10 @@
 // ---------------------------------------------------------------------------
 // T027e – Redis Integration Tests (Testcontainers)
 // ---------------------------------------------------------------------------
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { GenericContainer, type StartedTestContainer } from "testcontainers";
+
 import Redis from "ioredis";
+import { GenericContainer, type StartedTestContainer } from "testcontainers";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("Redis Integration", () => {
   let container: StartedTestContainer;
@@ -42,7 +43,7 @@ describe("Redis Integration", () => {
       "type",
       "test",
       "data",
-      '{"msg":"hello"}',
+      '{"msg":"hello"}'
     );
     const result = await redis.xrange("test:stream", "-", "+");
     expect(result.length).toBeGreaterThanOrEqual(1);
@@ -54,7 +55,7 @@ describe("Redis Integration", () => {
     await redis.lpush("test:queue", JSON.stringify({ job: "test" }));
     const item = await redis.rpop("test:queue");
     expect(item).toBeDefined();
-    const parsed = JSON.parse(item!);
+    const parsed = JSON.parse(item as string);
     expect(parsed.job).toBe("test");
   });
 

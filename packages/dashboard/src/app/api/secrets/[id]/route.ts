@@ -1,18 +1,20 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { secrets } from "@axiom/orchestrator/db/schema";
+import { deriveKey, encrypt } from "@axiom/shared/crypto";
+import { eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { secrets } from "@axiom/orchestrator/db/schema";
-import { encrypt, deriveKey } from "@axiom/shared/crypto";
-import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const body = await request.json();
@@ -25,10 +27,18 @@ export async function PATCH(
   };
 
   const updates: Record<string, unknown> = {};
-  if (name !== undefined) updates.name = name;
-  if (secretType !== undefined) updates.secretType = secretType;
-  if (allowedAgents !== undefined) updates.allowedAgents = allowedAgents;
-  if (allowedDomains !== undefined) updates.allowedDomains = allowedDomains;
+  if (name !== undefined) {
+    updates.name = name;
+  }
+  if (secretType !== undefined) {
+    updates.secretType = secretType;
+  }
+  if (allowedAgents !== undefined) {
+    updates.allowedAgents = allowedAgents;
+  }
+  if (allowedDomains !== undefined) {
+    updates.allowedDomains = allowedDomains;
+  }
 
   if (value !== undefined) {
     const key = deriveKey(process.env.ENCRYPTION_KEY ?? "axiom-dev-key");
@@ -62,10 +72,12 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
 

@@ -4,9 +4,9 @@ import { requireAuth } from "./auth-middleware";
 export const dynamic = "force-dynamic";
 
 export interface SSEEvent {
-  type: string;
   payload: Record<string, unknown>;
   timestamp: string;
+  type: string;
 }
 
 /**
@@ -15,13 +15,15 @@ export interface SSEEvent {
  * Return a cleanup function from emitter if needed.
  */
 export async function createSSEResponse(
-  emitter: (send: (event: SSEEvent) => void) => (() => void) | void,
+  emitter: (send: (event: SSEEvent) => void) => (() => void) | undefined
 ): Promise<Response> {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const encoder = new TextEncoder();
-  let cleanup: (() => void) | void;
+  let cleanup: (() => void) | undefined;
 
   const stream = new ReadableStream({
     start(controller) {

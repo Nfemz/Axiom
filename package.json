@@ -10,23 +10,23 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
-    "lint": "turbo lint",
+    "lint": "ultracite check",
     "db:migrate": "pnpm --filter orchestrator db:migrate",
     "db:studio": "pnpm --filter orchestrator db:studio",
     "test:e2e": "pnpm --filter dashboard test:e2e",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "ultracite fix",
+    "format:check": "ultracite check",
+    "check": "ultracite check",
+    "fix": "ultracite fix"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "2.4.5",
     "@types/node": "^25.3.5",
     "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^10.0.3",
-    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "turbo": "^2.8.14",
     "typescript": "^5",
-    "typescript-eslint": "^8.56.1",
+    "ultracite": "7.2.5",
     "vitest": "^4.0.18"
   }
 }

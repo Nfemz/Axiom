@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies before importing handler
 vi.mock("../../src/db/drizzle.js", () => ({
@@ -17,11 +17,11 @@ vi.mock("../../src/health/uptime-tracker.js", () => ({
   getUptimeSeconds: vi.fn(() => 42),
 }));
 
-import { handleHealthCheck } from "../../src/health/handler.js";
-import { getDb } from "../../src/db/drizzle.js";
-import { getRedis } from "../../src/comms/redis.js";
-import { findAgentsByStatus } from "../../src/db/queries.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { getRedis } from "../../src/comms/redis.js";
+import { getDb } from "../../src/db/drizzle.js";
+import { findAgentsByStatus } from "../../src/db/queries.js";
+import { handleHealthCheck } from "../../src/health/handler.js";
 
 function createMockReq(): IncomingMessage {
   return {} as unknown as IncomingMessage;
@@ -119,11 +119,17 @@ describe("Health Handler", () => {
   it("includes correct agent counts", async () => {
     vi.mocked(findAgentsByStatus).mockImplementation(
       async (_db: unknown, status: string) => {
-        if (status === "running") return [{ id: "a1" }, { id: "a2" }] as never;
-        if (status === "paused") return [{ id: "a3" }] as never;
-        if (status === "error") return [] as never;
+        if (status === "running") {
+          return [{ id: "a1" }, { id: "a2" }] as never;
+        }
+        if (status === "paused") {
+          return [{ id: "a3" }] as never;
+        }
+        if (status === "error") {
+          return [] as never;
+        }
         return [] as never;
-      },
+      }
     );
 
     const req = createMockReq();

@@ -1,16 +1,16 @@
 export interface ToolResult {
-  success: boolean;
-  output: unknown;
-  error?: string;
   duration?: number;
+  error?: string;
+  output: unknown;
+  success: boolean;
 }
 
 export interface ToolDefinition {
-  name: string;
   description: string;
-  tier: "api" | "headless" | "pixel";
-  inputSchema: Record<string, unknown>;
   execute: (input: Record<string, unknown>) => Promise<ToolResult>;
+  inputSchema: Record<string, unknown>;
+  name: string;
+  tier: "api" | "headless" | "pixel";
 }
 
 export class ToolRegistry {
@@ -23,7 +23,7 @@ export class ToolRegistry {
           level: "warn",
           msg: "Overwriting existing tool registration",
           tool: tool.name,
-        }),
+        })
       );
     }
 
@@ -35,7 +35,7 @@ export class ToolRegistry {
         msg: "Tool registered",
         tool: tool.name,
         tier: tool.tier,
-      }),
+      })
     );
   }
 
@@ -53,7 +53,7 @@ export class ToolRegistry {
 
   async execute(
     name: string,
-    input: Record<string, unknown>,
+    input: Record<string, unknown>
   ): Promise<ToolResult> {
     const tool = this.tools.get(name);
 
@@ -63,7 +63,7 @@ export class ToolRegistry {
           level: "error",
           msg: "Tool not found",
           tool: name,
-        }),
+        })
       );
 
       return {
@@ -86,7 +86,7 @@ export class ToolRegistry {
           tool: name,
           success: result.success,
           duration,
-        }),
+        })
       );
 
       return { ...result, duration };
@@ -101,7 +101,7 @@ export class ToolRegistry {
           tool: name,
           error,
           duration,
-        }),
+        })
       );
 
       return { success: false, output: null, error, duration };

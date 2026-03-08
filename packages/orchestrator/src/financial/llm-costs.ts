@@ -1,5 +1,5 @@
-import { eq, sql, desc } from "drizzle-orm";
 import { createLogger } from "@axiom/shared";
+import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { llmUsageLogs } from "../db/schema.js";
 
@@ -8,10 +8,10 @@ const log = createLogger("financial:llm-costs");
 // ─── Model Pricing (per 1M tokens) ───────────────────────────────
 
 interface ModelPricing {
+  cacheCreate?: number;
+  cacheRead?: number;
   input: number;
   output: number;
-  cacheRead?: number;
-  cacheCreate?: number;
 }
 
 const MODEL_COSTS: Record<string, ModelPricing> = {
@@ -27,8 +27,8 @@ export function computeCost(
   modelId: string,
   inputTokens: number,
   outputTokens: number,
-  cacheReadTokens: number = 0,
-  cacheCreateTokens: number = 0,
+  cacheReadTokens = 0,
+  cacheCreateTokens = 0
 ): number {
   const pricing = MODEL_COSTS[modelId];
   if (!pricing) {
@@ -56,13 +56,13 @@ export function computeCost(
 
 interface RecordUsageParams {
   agentId: string;
-  sessionId?: string;
-  modelProvider: string;
-  modelId: string;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens?: number;
   cacheCreateTokens?: number;
+  cacheReadTokens?: number;
+  inputTokens: number;
+  modelId: string;
+  modelProvider: string;
+  outputTokens: number;
+  sessionId?: string;
 }
 
 export async function recordUsage(db: Database, params: RecordUsageParams) {
@@ -71,7 +71,7 @@ export async function recordUsage(db: Database, params: RecordUsageParams) {
     params.inputTokens,
     params.outputTokens,
     params.cacheReadTokens ?? 0,
-    params.cacheCreateTokens ?? 0,
+    params.cacheCreateTokens ?? 0
   );
 
   const data: typeof llmUsageLogs.$inferInsert = {
@@ -103,7 +103,10 @@ export async function recordUsage(db: Database, params: RecordUsageParams) {
 
 // ─── Cost Queries ─────────────────────────────────────────────────
 
-export async function getAgentCosts(db: Database, agentId: string): Promise<number> {
+export async function getAgentCosts(
+  db: Database,
+  agentId: string
+): Promise<number> {
   const result = await db
     .select({
       totalCost: sql<string>`COALESCE(SUM(${llmUsageLogs.computedCostUsd}), 0)`,
@@ -111,7 +114,7 @@ export async function getAgentCosts(db: Database, agentId: string): Promise<numb
     .from(llmUsageLogs)
     .where(eq(llmUsageLogs.agentId, agentId));
 
-  return parseFloat(result[0]?.totalCost ?? "0");
+  return Number.parseFloat(result[0]?.totalCost ?? "0");
 }
 
 export async function getModelCosts(db: Database) {

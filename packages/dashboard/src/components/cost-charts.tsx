@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface AgentCost {
   agentId: string;
   agentName: string;
-  totalCost: number;
   inputTokens: number;
   outputTokens: number;
   requestCount: number;
+  totalCost: number;
 }
 
 interface ModelCost {
+  avgCostPerRequest: number;
   modelId: string;
   provider: string;
-  totalCost: number;
   requestCount: number;
-  avgCostPerRequest: number;
+  totalCost: number;
 }
 
 interface CostsResponse {
@@ -32,17 +32,17 @@ interface CostsResponse {
     computedCostUsd: string;
     createdAt: string;
   }>;
-  totalTokens: { input: number; output: number };
-  totalCost: number;
   currency: string;
+  totalCost: number;
+  totalTokens: { input: number; output: number };
 }
 
 interface SummaryResponse {
-  totalRevenue: number;
-  totalExpenses: number;
-  netBalance: number;
-  llmCosts: number;
   currency: string;
+  llmCosts: number;
+  netBalance: number;
+  totalExpenses: number;
+  totalRevenue: number;
 }
 
 type TimeRange = "7d" | "30d";
@@ -54,8 +54,12 @@ function formatCurrency(amount: number): string {
 }
 
 function formatTokens(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}k`;
+  }
   return count.toString();
 }
 
@@ -70,7 +74,7 @@ function aggregateByAgent(costs: CostsResponse["costs"]): AgentCost[] {
     const key = row.agentId;
     const existing = byAgent.get(key);
     if (existing) {
-      existing.totalCost += parseFloat(row.computedCostUsd);
+      existing.totalCost += Number.parseFloat(row.computedCostUsd);
       existing.inputTokens += row.inputTokens;
       existing.outputTokens += row.outputTokens;
       existing.requestCount += 1;
@@ -78,7 +82,7 @@ function aggregateByAgent(costs: CostsResponse["costs"]): AgentCost[] {
       byAgent.set(key, {
         agentId: key,
         agentName: key,
-        totalCost: parseFloat(row.computedCostUsd),
+        totalCost: Number.parseFloat(row.computedCostUsd),
         inputTokens: row.inputTokens,
         outputTokens: row.outputTokens,
         requestCount: 1,
@@ -93,7 +97,7 @@ function aggregateByModel(costs: CostsResponse["costs"]): ModelCost[] {
   for (const row of costs) {
     const key = row.modelId;
     const existing = byModel.get(key);
-    const cost = parseFloat(row.computedCostUsd);
+    const cost = Number.parseFloat(row.computedCostUsd);
     if (existing) {
       existing.totalCost += cost;
       existing.requestCount += 1;
@@ -131,7 +135,7 @@ export default function CostCharts() {
         fetch("/api/financial?view=summary"),
       ]);
 
-      if (!costsRes.ok || !summaryRes.ok) {
+      if (!(costsRes.ok && summaryRes.ok)) {
         throw new Error("Failed to fetch financial data");
       }
 
@@ -158,7 +162,7 @@ export default function CostCharts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading cost data...</p>
+        <p className="text-gray-500 text-sm">Loading cost data...</p>
       </div>
     );
   }
@@ -166,10 +170,11 @@ export default function CostCharts() {
   if (error) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-        <p className="text-sm text-red-700">Error loading cost data: {error}</p>
+        <p className="text-red-700 text-sm">Error loading cost data: {error}</p>
         <button
+          className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-800"
           onClick={() => void fetchData()}
-          className="mt-2 text-sm font-medium text-red-600 underline hover:text-red-800"
+          type="button"
         >
           Retry
         </button>
@@ -181,25 +186,27 @@ export default function CostCharts() {
     <div className="space-y-8">
       {/* Header with Range Toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Token Economics</h2>
+        <h2 className="font-semibold text-gray-900 text-lg">Token Economics</h2>
         <div className="flex rounded-md border border-gray-300 bg-white shadow-sm">
           <button
-            onClick={() => setRange("7d")}
-            className={`px-4 py-1.5 text-sm font-medium ${
+            className={`px-4 py-1.5 font-medium text-sm ${
               range === "7d"
                 ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-50"
             } rounded-l-md`}
+            onClick={() => setRange("7d")}
+            type="button"
           >
             7d
           </button>
           <button
-            onClick={() => setRange("30d")}
-            className={`px-4 py-1.5 text-sm font-medium ${
+            className={`px-4 py-1.5 font-medium text-sm ${
               range === "30d"
                 ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-50"
             } rounded-r-md`}
+            onClick={() => setRange("30d")}
+            type="button"
           >
             30d
           </button>
@@ -209,23 +216,30 @@ export default function CostCharts() {
       {/* Summary Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">
-            Total LLM Spend
+          <p className="font-medium text-gray-500 text-sm">Total LLM Spend</p>
+          <p className="mt-1 font-bold text-2xl text-gray-900">
+            {formatCurrency(totalCost)}
           </p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Projected Monthly</p>
-          <p className="mt-1 text-2xl font-bold text-orange-600">{formatCurrency(projectedMonthly)}</p>
+          <p className="font-medium text-gray-500 text-sm">Projected Monthly</p>
+          <p className="mt-1 font-bold text-2xl text-orange-600">
+            {formatCurrency(projectedMonthly)}
+          </p>
         </div>
         {summary && (
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Net Balance (ROI)</p>
-            <p className={`mt-1 text-2xl font-bold ${summary.netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <p className="font-medium text-gray-500 text-sm">
+              Net Balance (ROI)
+            </p>
+            <p
+              className={`mt-1 font-bold text-2xl ${summary.netBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+            >
               {formatCurrency(summary.netBalance)}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
-              Rev {formatCurrency(summary.totalRevenue)} / Exp {formatCurrency(summary.totalExpenses)}
+            <p className="mt-1 text-gray-400 text-xs">
+              Rev {formatCurrency(summary.totalRevenue)} / Exp{" "}
+              {formatCurrency(summary.totalExpenses)}
             </p>
           </div>
         )}
@@ -233,31 +247,56 @@ export default function CostCharts() {
 
       {/* Per-Agent Cost Breakdown */}
       <div>
-        <h3 className="mb-4 text-base font-semibold text-gray-900">Per-Agent Cost Breakdown</h3>
+        <h3 className="mb-4 font-semibold text-base text-gray-900">
+          Per-Agent Cost Breakdown
+        </h3>
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Agent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Total Cost</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Input Tokens</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Output Tokens</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Requests</th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Agent
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Total Cost
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Input Tokens
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Output Tokens
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Requests
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {agentCosts.map((agent) => (
-                <tr key={agent.agentId} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{agent.agentName}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatCurrency(agent.totalCost)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatTokens(agent.inputTokens)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatTokens(agent.outputTokens)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{agent.requestCount}</td>
+                <tr className="hover:bg-gray-50" key={agent.agentId}>
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
+                    {agent.agentName}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {formatCurrency(agent.totalCost)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {formatTokens(agent.inputTokens)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {formatTokens(agent.outputTokens)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {agent.requestCount}
+                  </td>
                 </tr>
               ))}
               {agentCosts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td
+                    className="px-6 py-12 text-center text-gray-500 text-sm"
+                    colSpan={5}
+                  >
                     No cost data available.
                   </td>
                 </tr>
@@ -269,31 +308,56 @@ export default function CostCharts() {
 
       {/* Per-Model Cost Breakdown */}
       <div>
-        <h3 className="mb-4 text-base font-semibold text-gray-900">Per-Model Cost Breakdown</h3>
+        <h3 className="mb-4 font-semibold text-base text-gray-900">
+          Per-Model Cost Breakdown
+        </h3>
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Model</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Provider</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Total Cost</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Requests</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Avg / Request</th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Model
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Provider
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Total Cost
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Requests
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Avg / Request
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {modelCosts.map((model) => (
-                <tr key={model.modelId} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{model.modelId}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{model.provider}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatCurrency(model.totalCost)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{model.requestCount}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatCurrency(model.avgCostPerRequest)}</td>
+                <tr className="hover:bg-gray-50" key={model.modelId}>
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
+                    {model.modelId}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {model.provider}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {formatCurrency(model.totalCost)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {model.requestCount}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {formatCurrency(model.avgCostPerRequest)}
+                  </td>
                 </tr>
               ))}
               {modelCosts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td
+                    className="px-6 py-12 text-center text-gray-500 text-sm"
+                    colSpan={5}
+                  >
                     No model cost data available.
                   </td>
                 </tr>

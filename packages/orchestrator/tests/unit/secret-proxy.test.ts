@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { isDomainAllowed } from "../../src/secrets/domain-filter.js";
 
 describe("Secret Proxy – Domain Filtering", () => {
@@ -10,9 +10,9 @@ describe("Secret Proxy – Domain Filtering", () => {
   });
 
   it("matches deeply nested subdomains", () => {
-    expect(
-      isDomainAllowed("deep.sub.example.com", ["*.example.com"]),
-    ).toBe(true);
+    expect(isDomainAllowed("deep.sub.example.com", ["*.example.com"])).toBe(
+      true
+    );
   });
 
   it("performs case-insensitive matching", () => {

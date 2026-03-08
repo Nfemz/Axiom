@@ -17,7 +17,9 @@ const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(32).optional(),
   ORCHESTRATOR_PORT: z.coerce.number().default(3001),
   DASHBOARD_PORT: z.coerce.number().default(3000),
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   REDIS_TLS: z.coerce.boolean().default(false),
   DATABASE_SSL: z.coerce.boolean().default(false),
@@ -28,7 +30,9 @@ export type EnvConfig = z.infer<typeof EnvSchema>;
 let _config: EnvConfig | null = null;
 
 export function loadConfig(): EnvConfig {
-  if (_config) return _config;
+  if (_config) {
+    return _config;
+  }
   const result = EnvSchema.safeParse(process.env);
   if (!result.success) {
     const errors = result.error.issues
@@ -41,6 +45,8 @@ export function loadConfig(): EnvConfig {
 }
 
 export function getConfig(): EnvConfig {
-  if (!_config) throw new Error("Config not loaded. Call loadConfig() first.");
+  if (!_config) {
+    throw new Error("Config not loaded. Call loadConfig() first.");
+  }
   return _config;
 }

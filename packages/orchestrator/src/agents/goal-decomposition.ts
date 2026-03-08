@@ -5,10 +5,10 @@
 // with dependency ordering, agent type suggestions, and budget estimates.
 // ---------------------------------------------------------------------------
 
-import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { z } from "zod";
 import { createLogger } from "@axiom/shared";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 const log = createLogger("goal-decomposition");
 
@@ -16,15 +16,16 @@ const log = createLogger("goal-decomposition");
 
 export interface GoalContext {
   availableDefinitions: string[];
-  parentBudget: number;
   existingAgents: Array<{
     name: string;
     status: string;
     currentTask?: string;
   }>;
+  parentBudget: number;
 }
 
 export interface DecomposedGoal {
+  executionStrategy: "parallel" | "sequential" | "mixed";
   subGoals: Array<{
     goal: string;
     agentType: string;
@@ -33,26 +34,27 @@ export interface DecomposedGoal {
     estimatedBudget: number;
   }>;
   totalEstimatedBudget: number;
-  executionStrategy: "parallel" | "sequential" | "mixed";
 }
 
 // ── Decomposition ───────────────────────────────────────────────────────────
 
 const subGoalSchema = z.object({
-  subGoals: z.array(z.object({
-    goal: z.string(),
-    agentType: z.string(),
-    priority: z.number(),
-    dependencies: z.array(z.number()),
-    estimatedBudget: z.number(),
-  })),
+  subGoals: z.array(
+    z.object({
+      goal: z.string(),
+      agentType: z.string(),
+      priority: z.number(),
+      dependencies: z.array(z.number()),
+      estimatedBudget: z.number(),
+    })
+  ),
   totalEstimatedBudget: z.number(),
   executionStrategy: z.enum(["parallel", "sequential", "mixed"]),
 });
 
 export async function decomposeGoal(
   goal: string,
-  context: GoalContext,
+  context: GoalContext
 ): Promise<DecomposedGoal> {
   log.info("Decomposing goal via LLM", {
     goal,
@@ -98,13 +100,15 @@ Rules:
 
     const agentType = context.availableDefinitions[0] ?? "general";
     return {
-      subGoals: [{
-        goal,
-        agentType,
-        priority: 1,
-        dependencies: [],
-        estimatedBudget: context.parentBudget,
-      }],
+      subGoals: [
+        {
+          goal,
+          agentType,
+          priority: 1,
+          dependencies: [],
+          estimatedBudget: context.parentBudget,
+        },
+      ],
       totalEstimatedBudget: context.parentBudget,
       executionStrategy: "sequential",
     };

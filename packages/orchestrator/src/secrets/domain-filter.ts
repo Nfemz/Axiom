@@ -13,9 +13,11 @@ const log = createLogger("domain-filter");
 
 export function isDomainAllowed(
   domain: string,
-  allowedDomains: string[],
+  allowedDomains: string[]
 ): boolean {
-  if (allowedDomains.length === 0) return false;
+  if (allowedDomains.length === 0) {
+    return false;
+  }
 
   const normalised = domain.toLowerCase();
 
@@ -43,7 +45,9 @@ export function extractDomain(url: string): string {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function matchesDomain(domain: string, pattern: string): boolean {
-  if (domain === pattern) return true;
+  if (domain === pattern) {
+    return true;
+  }
 
   if (pattern.startsWith("*.")) {
     const suffix = pattern.slice(2);

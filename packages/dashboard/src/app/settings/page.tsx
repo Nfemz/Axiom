@@ -5,19 +5,19 @@ import { useState } from "react";
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface SystemSettings {
-  heartbeatIntervalMs: number;
-  activeHoursStart: string;
   activeHoursEnd: string;
+  activeHoursStart: string;
   activeHoursTimezone: string;
+  backupRetentionDays: number;
+  discordBotToken: string;
+  discordWebhookUrl: string;
+  heartbeatIntervalMs: number;
   revenueSplitOperator: number;
   revenueSplitReinvest: number;
-  backupRetentionDays: number;
-  discordWebhookUrl: string;
-  discordBotToken: string;
 }
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  heartbeatIntervalMs: 1800000,
+  heartbeatIntervalMs: 1_800_000,
   activeHoursStart: "06:00",
   activeHoursEnd: "22:00",
   activeHoursTimezone: "UTC",
@@ -35,7 +35,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  function update<K extends keyof SystemSettings>(key: K, value: SystemSettings[K]) {
+  function update<K extends keyof SystemSettings>(
+    key: K,
+    value: SystemSettings[K]
+  ) {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   }
@@ -49,7 +52,9 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      if (res.ok) setSaved(true);
+      if (res.ok) {
+        setSaved(true);
+      }
     } finally {
       setSaving(false);
     }
@@ -58,23 +63,33 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-3xl">
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">System Settings</h1>
+        <h1 className="mb-8 font-bold text-2xl text-gray-900">
+          System Settings
+        </h1>
 
-        <form onSubmit={handleSave} className="space-y-8">
+        <form className="space-y-8" onSubmit={handleSave}>
           {/* Heartbeat */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Heartbeat</h2>
+            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
+              Heartbeat
+            </h2>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                className="block font-medium text-gray-700 text-sm"
+                htmlFor="settings-heartbeat"
+              >
                 Heartbeat Interval (ms)
               </label>
               <input
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                id="settings-heartbeat"
+                onChange={(e) =>
+                  update("heartbeatIntervalMs", Number(e.target.value))
+                }
                 type="number"
                 value={settings.heartbeatIntervalMs}
-                onChange={(e) => update("heartbeatIntervalMs", Number(e.target.value))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-gray-500 text-xs">
                 Default: 1800000 (30 minutes)
               </p>
             </div>
@@ -82,34 +97,56 @@ export default function SettingsPage() {
 
           {/* Active Hours */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Active Hours</h2>
+            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
+              Active Hours
+            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Start</label>
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-hours-start"
+                >
+                  Start
+                </label>
                 <input
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-hours-start"
+                  onChange={(e) => update("activeHoursStart", e.target.value)}
                   type="time"
                   value={settings.activeHoursStart}
-                  onChange={(e) => update("activeHoursStart", e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">End</label>
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-hours-end"
+                >
+                  End
+                </label>
                 <input
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-hours-end"
+                  onChange={(e) => update("activeHoursEnd", e.target.value)}
                   type="time"
                   value={settings.activeHoursEnd}
-                  onChange={(e) => update("activeHoursEnd", e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Timezone</label>
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-timezone"
+                >
+                  Timezone
+                </label>
                 <input
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-timezone"
+                  onChange={(e) =>
+                    update("activeHoursTimezone", e.target.value)
+                  }
+                  placeholder="UTC"
                   type="text"
                   value={settings.activeHoursTimezone}
-                  onChange={(e) => update("activeHoursTimezone", e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                  placeholder="UTC"
                 />
               </div>
             </div>
@@ -117,32 +154,46 @@ export default function SettingsPage() {
 
           {/* Revenue Split */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Revenue Split</h2>
+            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
+              Revenue Split
+            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-split-operator"
+                >
                   Operator (%)
                 </label>
                 <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={settings.revenueSplitOperator}
-                  onChange={(e) => update("revenueSplitOperator", Number(e.target.value))}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-split-operator"
+                  max={100}
+                  min={0}
+                  onChange={(e) =>
+                    update("revenueSplitOperator", Number(e.target.value))
+                  }
+                  type="number"
+                  value={settings.revenueSplitOperator}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-split-reinvest"
+                >
                   Reinvest (%)
                 </label>
                 <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={settings.revenueSplitReinvest}
-                  onChange={(e) => update("revenueSplitReinvest", Number(e.target.value))}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-split-reinvest"
+                  max={100}
+                  min={0}
+                  onChange={(e) =>
+                    update("revenueSplitReinvest", Number(e.target.value))
+                  }
+                  type="number"
+                  value={settings.revenueSplitReinvest}
                 />
               </div>
             </div>
@@ -150,47 +201,63 @@ export default function SettingsPage() {
 
           {/* Backup */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Backup</h2>
+            <h2 className="mb-4 font-semibold text-gray-900 text-lg">Backup</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                className="block font-medium text-gray-700 text-sm"
+                htmlFor="settings-retention"
+              >
                 Retention Days
               </label>
               <input
-                type="number"
-                min={1}
-                value={settings.backupRetentionDays}
-                onChange={(e) => update("backupRetentionDays", Number(e.target.value))}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                id="settings-retention"
+                min={1}
+                onChange={(e) =>
+                  update("backupRetentionDays", Number(e.target.value))
+                }
+                type="number"
+                value={settings.backupRetentionDays}
               />
             </div>
           </div>
 
           {/* Discord */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Discord</h2>
+            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
+              Discord
+            </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-webhook-url"
+                >
                   Webhook URL
                 </label>
                 <input
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-webhook-url"
+                  onChange={(e) => update("discordWebhookUrl", e.target.value)}
+                  placeholder="https://discord.com/api/webhooks/..."
                   type="url"
                   value={settings.discordWebhookUrl}
-                  onChange={(e) => update("discordWebhookUrl", e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                  placeholder="https://discord.com/api/webhooks/..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className="block font-medium text-gray-700 text-sm"
+                  htmlFor="settings-bot-token"
+                >
                   Bot Token
                 </label>
                 <input
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                  id="settings-bot-token"
+                  onChange={(e) => update("discordBotToken", e.target.value)}
+                  placeholder="Bot token"
                   type="password"
                   value={settings.discordBotToken}
-                  onChange={(e) => update("discordBotToken", e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                  placeholder="Bot token"
                 />
               </div>
             </div>
@@ -199,14 +266,16 @@ export default function SettingsPage() {
           {/* Save Button */}
           <div className="flex items-center gap-4">
             <button
-              type="submit"
+              className="rounded-md bg-blue-600 px-6 py-2 font-medium text-sm text-white hover:bg-blue-700 disabled:opacity-50"
               disabled={saving}
-              className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              type="submit"
             >
               {saving ? "Saving..." : "Save Settings"}
             </button>
             {saved && (
-              <span className="text-sm text-green-600">Settings saved successfully.</span>
+              <span className="text-green-600 text-sm">
+                Settings saved successfully.
+              </span>
             )}
           </div>
         </form>

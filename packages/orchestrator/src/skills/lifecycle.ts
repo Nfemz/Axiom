@@ -5,7 +5,11 @@
 // and auto-deprecates skills that exceed the consecutive failure threshold.
 // ---------------------------------------------------------------------------
 
-import { createLogger, SKILL_AUTO_DEPRECATE_FAILURES, SkillStatus } from "@axiom/shared";
+import {
+  createLogger,
+  SKILL_AUTO_DEPRECATE_FAILURES,
+  SkillStatus,
+} from "@axiom/shared";
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { skills } from "../db/schema.js";
@@ -25,15 +29,23 @@ export async function invokeSkill(db: Database, skillId: string) {
     .returning();
 
   const skill = rows[0];
-  if (!skill) throw new Error(`Skill not found: ${skillId}`);
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillId}`);
+  }
 
-  log.info("Skill invoked", { skillId, invocationCount: skill.invocationCount });
+  log.info("Skill invoked", {
+    skillId,
+    invocationCount: skill.invocationCount,
+  });
   return skill;
 }
 
 // ── Record Success ──────────────────────────────────────────────────────────
 
-export async function recordSuccess(db: Database, skillId: string): Promise<void> {
+export async function recordSuccess(
+  db: Database,
+  skillId: string
+): Promise<void> {
   await db
     .update(skills)
     .set({
@@ -48,7 +60,10 @@ export async function recordSuccess(db: Database, skillId: string): Promise<void
 
 // ── Record Failure ──────────────────────────────────────────────────────────
 
-export async function recordFailure(db: Database, skillId: string): Promise<void> {
+export async function recordFailure(
+  db: Database,
+  skillId: string
+): Promise<void> {
   const rows = await db
     .update(skills)
     .set({
@@ -56,10 +71,15 @@ export async function recordFailure(db: Database, skillId: string): Promise<void
       updatedAt: new Date(),
     })
     .where(eq(skills.id, skillId))
-    .returning({ consecutiveFailures: skills.consecutiveFailures, status: skills.status });
+    .returning({
+      consecutiveFailures: skills.consecutiveFailures,
+      status: skills.status,
+    });
 
   const skill = rows[0];
-  if (!skill) throw new Error(`Skill not found: ${skillId}`);
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillId}`);
+  }
 
   if (
     skill.consecutiveFailures >= SKILL_AUTO_DEPRECATE_FAILURES &&
@@ -86,14 +106,14 @@ export async function recordFailure(db: Database, skillId: string): Promise<void
 // ── Metrics ─────────────────────────────────────────────────────────────────
 
 export interface SkillMetrics {
+  failureRate: number;
   invocationCount: number;
   successCount: number;
-  failureRate: number;
 }
 
 export async function getSkillMetrics(
   db: Database,
-  skillId: string,
+  skillId: string
 ): Promise<SkillMetrics> {
   const rows = await db
     .select({
@@ -105,7 +125,9 @@ export async function getSkillMetrics(
     .limit(1);
 
   const skill = rows[0];
-  if (!skill) throw new Error(`Skill not found: ${skillId}`);
+  if (!skill) {
+    throw new Error(`Skill not found: ${skillId}`);
+  }
 
   const failures = skill.invocationCount - skill.successCount;
   const failureRate =

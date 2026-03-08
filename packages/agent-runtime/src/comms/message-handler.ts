@@ -1,9 +1,9 @@
-import type { AgentComms } from './redis-client.js';
+import type { AgentComms } from "./redis-client.js";
 
 export interface AgentState {
+  currentDirective: string | null;
   paused: boolean;
   terminated: boolean;
-  currentDirective: string | null;
 }
 
 export function createInitialState(): AgentState {
@@ -17,7 +17,7 @@ export function createInitialState(): AgentState {
 function log(message: string, data?: Record<string, unknown>): void {
   const entry = {
     timestamp: new Date().toISOString(),
-    component: 'message-handler',
+    component: "message-handler",
     message,
     ...data,
   };
@@ -25,8 +25,8 @@ function log(message: string, data?: Record<string, unknown>): void {
 }
 
 interface MessagePayload {
-  type?: string;
   directive?: string;
+  type?: string;
   [key: string]: unknown;
 }
 
@@ -42,39 +42,39 @@ function handleMessage(payload: MessagePayload, state: AgentState): void {
   const type = payload.type;
 
   switch (type) {
-    case 'pause':
+    case "pause":
       state.paused = true;
-      log('Agent paused');
+      log("Agent paused");
       break;
 
-    case 'resume':
+    case "resume":
       state.paused = false;
-      log('Agent resumed');
+      log("Agent resumed");
       break;
 
-    case 'terminate':
+    case "terminate":
       state.terminated = true;
-      log('Agent terminated');
+      log("Agent terminated");
       break;
 
-    case 'resteer':
+    case "resteer":
       state.currentDirective = payload.directive ?? null;
-      log('Agent resteered', { directive: state.currentDirective });
+      log("Agent resteered", { directive: state.currentDirective });
       break;
 
-    case 'integrity-check':
-      log('Integrity check received (placeholder)');
+    case "integrity-check":
+      log("Integrity check received (placeholder)");
       break;
 
     default:
-      log('Unknown message type', { type });
+      log("Unknown message type", { type });
       break;
   }
 }
 
 export function startMessageHandler(
   comms: AgentComms,
-  state: AgentState,
+  state: AgentState
 ): { poll: () => Promise<void>; stop: () => void } {
   let running = true;
 
@@ -84,12 +84,12 @@ export function startMessageHandler(
         const messages = await comms.readMessages(10);
 
         for (const message of messages) {
-          const payload = parsePayload(message.data.payload ?? '{}');
+          const payload = parsePayload(message.data.payload ?? "{}");
           handleMessage(payload, state);
           await comms.acknowledge(message.id);
         }
       } catch (err) {
-        log('Error polling messages', { error: String(err) });
+        log("Error polling messages", { error: String(err) });
       }
     }
   };

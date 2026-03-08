@@ -23,8 +23,8 @@ export const EMBEDDING_DIMENSIONS = 1536;
 // ---------------------------------------------------------------------------
 // Revenue & budget
 // ---------------------------------------------------------------------------
-export const DEFAULT_REVENUE_SPLIT_OPERATOR = 0.20;
-export const DEFAULT_REVENUE_SPLIT_REINVEST = 0.80;
+export const DEFAULT_REVENUE_SPLIT_OPERATOR = 0.2;
+export const DEFAULT_REVENUE_SPLIT_REINVEST = 0.8;
 export const DEFAULT_BUDGET_CURRENCY = "USD";
 
 // ---------------------------------------------------------------------------
@@ -52,17 +52,8 @@ export const VALID_STATUS_TRANSITIONS: Record<AgentStatus, AgentStatus[]> = {
     AgentStatus.Error,
     AgentStatus.Terminated,
   ],
-  [AgentStatus.Paused]: [
-    AgentStatus.Running,
-    AgentStatus.Terminated,
-  ],
-  [AgentStatus.Suspended]: [
-    AgentStatus.Running,
-    AgentStatus.Terminated,
-  ],
-  [AgentStatus.Error]: [
-    AgentStatus.Running,
-    AgentStatus.Terminated,
-  ],
+  [AgentStatus.Paused]: [AgentStatus.Running, AgentStatus.Terminated],
+  [AgentStatus.Suspended]: [AgentStatus.Running, AgentStatus.Terminated],
+  [AgentStatus.Error]: [AgentStatus.Running, AgentStatus.Terminated],
   [AgentStatus.Terminated]: [],
 };

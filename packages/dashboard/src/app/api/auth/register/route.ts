@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getIronSession } from "iron-session";
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import { sessionOptions, type SessionData } from "@/lib/session";
-import { storeCredential, getCredentialsForUser } from "@/lib/webauthn-store";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { type SessionData, sessionOptions } from "@/lib/session";
+import { getCredentialsForUser, storeCredential } from "@/lib/webauthn-store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,10 @@ const USER_NAME = "operator@axiom.local";
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(
+    cookieStore,
+    sessionOptions
+  );
 
   if (body.step === "options") {
     const existingCredentials = await getCredentialsForUser(USER_ID);
@@ -49,7 +52,10 @@ export async function POST(request: NextRequest) {
 
   if (body.step === "verify") {
     if (!session.challenge) {
-      return NextResponse.json({ error: "No challenge in session" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No challenge in session" },
+        { status: 400 }
+      );
     }
 
     const verification = await verifyRegistrationResponse({
@@ -59,8 +65,11 @@ export async function POST(request: NextRequest) {
       expectedRPID: rpID,
     });
 
-    if (!verification.verified || !verification.registrationInfo) {
-      return NextResponse.json({ error: "Verification failed" }, { status: 400 });
+    if (!(verification.verified && verification.registrationInfo)) {
+      return NextResponse.json(
+        { error: "Verification failed" },
+        { status: 400 }
+      );
     }
 
     await storeCredential(USER_ID, verification.registrationInfo.credential);

@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface SSEEvent {
-  type: string;
   payload: Record<string, unknown>;
   timestamp: string;
+  type: string;
 }
 
 interface UseSSEResult {
+  connected: boolean;
   data: SSEEvent | null;
   error: string | null;
-  connected: boolean;
 }
 
 /**
@@ -48,7 +48,7 @@ export function useSSE(url: string): UseSSEResult {
       setConnected(false);
 
       if (retryCount.current < maxRetries) {
-        const delay = Math.min(1000 * 2 ** retryCount.current, 30000);
+        const delay = Math.min(1000 * 2 ** retryCount.current, 30_000);
         retryCount.current++;
         setError(`Disconnected. Reconnecting in ${delay / 1000}s...`);
         setTimeout(connect, delay);

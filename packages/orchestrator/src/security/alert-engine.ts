@@ -1,7 +1,7 @@
-import { eq, and, desc, sql } from "drizzle-orm";
 import { createLogger } from "@axiom/shared";
+import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
-import { alertRules, alertEvents } from "../db/schema.js";
+import { alertEvents } from "../db/schema.js";
 
 const log = createLogger("alert-engine");
 
@@ -14,24 +14,27 @@ export interface AlertCondition {
 }
 
 interface AlertRuleRow {
+  condition: Record<string, unknown>;
+  enabled: boolean;
   id: string;
   name: string;
-  condition: Record<string, unknown>;
-  severity: string;
-  enabled: boolean;
   notifyDiscord: boolean;
+  severity: string;
 }
 
 interface AlertFilters {
-  severity?: string;
-  ruleId?: string;
   agentId?: string;
   limit?: number;
+  ruleId?: string;
+  severity?: string;
 }
 
 // ─── Condition Evaluation ───────────────────────────────────────────
 
-const OPERATORS: Record<AlertCondition["operator"], (a: number, b: number) => boolean> = {
+const OPERATORS: Record<
+  AlertCondition["operator"],
+  (a: number, b: number) => boolean
+> = {
   gt: (a, b) => a > b,
   lt: (a, b) => a < b,
   eq: (a, b) => a === b,
@@ -39,9 +42,14 @@ const OPERATORS: Record<AlertCondition["operator"], (a: number, b: number) => bo
   lte: (a, b) => a <= b,
 };
 
-export function evaluateCondition(condition: AlertCondition, value: number): boolean {
+export function evaluateCondition(
+  condition: AlertCondition,
+  value: number
+): boolean {
   const fn = OPERATORS[condition.operator];
-  if (!fn) return false;
+  if (!fn) {
+    return false;
+  }
   return fn(value, condition.threshold);
 }
 
@@ -52,7 +60,7 @@ export async function fireAlert(
   ruleId: string,
   agentId: string | null,
   severity: string,
-  message: string,
+  message: string
 ): Promise<string> {
   log.info("Firing alert", { ruleId, severity, message });
 
@@ -74,22 +82,29 @@ export async function fireAlert(
 export async function evaluateRules(
   db: Database,
   rules: AlertRuleRow[],
-  metrics: Record<string, number>,
+  metrics: Record<string, number>
 ): Promise<string[]> {
   const firedIds: string[] = [];
 
   for (const rule of rules) {
-    if (!rule.enabled) continue;
+    if (!rule.enabled) {
+      continue;
+    }
 
     const condition = rule.condition as unknown as AlertCondition;
     const value = metrics[condition.metric];
-    if (value === undefined) continue;
+    if (value === undefined) {
+      continue;
+    }
 
     if (evaluateCondition(condition, value)) {
       const msg = `${rule.name}: ${condition.metric} ${condition.operator} ${condition.threshold} (actual: ${value})`;
       const id = await fireAlert(db, rule.id, null, rule.severity, msg);
       firedIds.push(id);
-      log.warn("Alert rule triggered", { ruleId: rule.id, ruleName: rule.name });
+      log.warn("Alert rule triggered", {
+        ruleId: rule.id,
+        ruleName: rule.name,
+      });
     }
   }
 
@@ -98,7 +113,10 @@ export async function evaluateRules(
 
 // ─── Acknowledgement ────────────────────────────────────────────────
 
-export async function acknowledgeAlert(db: Database, alertId: string): Promise<void> {
+export async function acknowledgeAlert(
+  db: Database,
+  alertId: string
+): Promise<void> {
   log.info("Acknowledging alert", { alertId });
 
   await db
@@ -114,7 +132,7 @@ export async function acknowledgeAlert(db: Database, alertId: string): Promise<v
 
 export async function getActiveAlerts(
   db: Database,
-  filters?: AlertFilters,
+  filters?: AlertFilters
 ): Promise<(typeof alertEvents.$inferSelect)[]> {
   const conditions = [eq(alertEvents.acknowledged, false)];
 

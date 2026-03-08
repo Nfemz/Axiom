@@ -1,18 +1,18 @@
-import type { AgentComms } from '../comms/redis-client.js';
-import type { AgentState } from '../comms/message-handler.js';
-import type { MemoryOps } from '../memory/memory-ops.js';
+import type { AgentState } from "../comms/message-handler.js";
+import type { AgentComms } from "../comms/redis-client.js";
+import type { MemoryOps } from "../memory/memory-ops.js";
 import {
-  recordFailure,
+  type FailureRecord,
   findSimilarFailures,
   getSuccessfulResolutions,
-  type FailureRecord,
   type ResolutionRecord,
-} from '../memory/self-learning.js';
+  recordFailure,
+} from "../memory/self-learning.js";
 import {
   createDegradationContext,
-  enterDegradedMode,
   type DegradationContext,
-} from './degradation.js';
+  enterDegradedMode,
+} from "./degradation.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,28 +20,28 @@ import {
 
 export interface AgentLoopConfig {
   agentId: string;
-  goal: string;
-  modelProvider: string;
-  modelId: string;
-  budgetTotal: number;
   budgetSpent: number;
+  budgetTotal: number;
+  goal: string;
+  modelId: string;
+  modelProvider: string;
   systemPrompt: string;
 }
 
 export interface LoopContext {
   comms: AgentComms;
-  state: AgentState;
-  memory: MemoryOps;
   config: AgentLoopConfig;
-  failures?: FailureRecord[];
-  resolutions?: ResolutionRecord[];
   degradation?: DegradationContext;
+  failures?: FailureRecord[];
+  memory: MemoryOps;
+  resolutions?: ResolutionRecord[];
+  state: AgentState;
 }
 
 export interface TurnResult {
   completed: boolean;
-  tokensUsed: number;
   cost: number;
+  tokensUsed: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ function sleep(ms: number): Promise<void> {
 function log(message: string, data?: Record<string, unknown>): void {
   const entry = {
     timestamp: new Date().toISOString(),
-    component: 'agent-loop',
+    component: "agent-loop",
     message,
     ...data,
   };
@@ -70,7 +70,7 @@ export async function executeTurn(ctx: LoopContext): Promise<TurnResult> {
   const simulatedCost = 0.001;
   const simulatedTokens = 150;
 
-  log('Executing turn', {
+  log("Executing turn", {
     agentId: ctx.config.agentId,
     goal: ctx.config.goal,
     modelProvider: ctx.config.modelProvider,
@@ -84,7 +84,7 @@ export async function executeTurn(ctx: LoopContext): Promise<TurnResult> {
 
   ctx.config.budgetSpent += simulatedCost;
 
-  log('Turn complete', {
+  log("Turn complete", {
     agentId: ctx.config.agentId,
     tokensUsed: simulatedTokens,
     cost: simulatedCost,
@@ -101,8 +101,9 @@ export async function executeTurn(ctx: LoopContext): Promise<TurnResult> {
 
 const MAX_CONSECUTIVE_ERRORS = 3;
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex agent loop with pause/resteer/budget/error handling
 export async function runAgentLoop(ctx: LoopContext): Promise<void> {
-  log('Agent loop starting', {
+  log("Agent loop starting", {
     agentId: ctx.config.agentId,
     goal: ctx.config.goal,
   });
@@ -112,17 +113,20 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
   const resolutions: ResolutionRecord[] = ctx.resolutions ?? [];
   let degradation = ctx.degradation ?? createDegradationContext();
 
-  while (!ctx.state.terminated && ctx.config.budgetSpent < ctx.config.budgetTotal) {
+  while (
+    !ctx.state.terminated &&
+    ctx.config.budgetSpent < ctx.config.budgetTotal
+  ) {
     // 1. Pause check
     if (ctx.state.paused) {
-      log('Agent paused, waiting', { agentId: ctx.config.agentId });
+      log("Agent paused, waiting", { agentId: ctx.config.agentId });
       await sleep(1000);
       continue;
     }
 
     // Check degradation state
-    if (degradation.state === 'degraded') {
-      log('Operating in degraded mode', {
+    if (degradation.state === "degraded") {
+      log("Operating in degraded mode", {
         agentId: ctx.config.agentId,
         failedServices: degradation.failedServices,
         queuedOps: degradation.queuedOps.length,
@@ -131,7 +135,7 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
 
     // 2. Check for resteer directive
     if (ctx.state.currentDirective !== null) {
-      log('Resteer detected', {
+      log("Resteer detected", {
         agentId: ctx.config.agentId,
         oldGoal: ctx.config.goal,
         newGoal: ctx.state.currentDirective,
@@ -142,7 +146,7 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
 
     // 3. Send progress update
     await ctx.comms.sendToOrchestrator({
-      type: 'progress',
+      type: "progress",
       agentId: ctx.config.agentId,
       goal: ctx.config.goal,
       budgetSpent: ctx.config.budgetSpent,
@@ -156,10 +160,10 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
       consecutiveErrors = 0;
 
       if (result.completed) {
-        log('Agent goal completed', { agentId: ctx.config.agentId });
+        log("Agent goal completed", { agentId: ctx.config.agentId });
 
         await ctx.comms.sendToOrchestrator({
-          type: 'complete',
+          type: "complete",
           agentId: ctx.config.agentId,
           goal: ctx.config.goal,
           budgetSpent: ctx.config.budgetSpent,
@@ -179,26 +183,35 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
       });
 
       // Check if we've seen this before and have successful resolutions
-      const pastResolutions = getSuccessfulResolutions(resolutions, ctx.config.goal);
+      const pastResolutions = getSuccessfulResolutions(
+        resolutions,
+        ctx.config.goal
+      );
       if (pastResolutions.length > 0) {
-        log('Found past successful resolutions', {
+        log("Found past successful resolutions", {
           agentId: ctx.config.agentId,
           resolutions: pastResolutions,
         });
       }
 
-      log('Turn error', {
+      log("Turn error", {
         agentId: ctx.config.agentId,
         error: errorMessage,
         consecutiveErrors,
-        similarPastFailures: findSimilarFailures(failures, ctx.config.goal).length,
+        similarPastFailures: findSimilarFailures(failures, ctx.config.goal)
+          .length,
       });
 
       // Check if this is an infrastructure failure
-      if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('Redis') || errorMessage.includes('database')) {
-        const service = errorMessage.includes('Redis') ? 'redis' : 'database';
+      if (
+        errorMessage.includes("ECONNREFUSED") ||
+        errorMessage.includes("ETIMEDOUT") ||
+        errorMessage.includes("Redis") ||
+        errorMessage.includes("database")
+      ) {
+        const service = errorMessage.includes("Redis") ? "redis" : "database";
         degradation = enterDegradedMode(degradation, service);
-        log('Entered degraded mode', {
+        log("Entered degraded mode", {
           agentId: ctx.config.agentId,
           failedService: service,
           state: degradation.state,
@@ -206,13 +219,13 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
       }
 
       if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-        log('Unrecoverable error — max retries exceeded', {
+        log("Unrecoverable error — max retries exceeded", {
           agentId: ctx.config.agentId,
           consecutiveErrors,
         });
 
         await ctx.comms.sendToOrchestrator({
-          type: 'error',
+          type: "error",
           agentId: ctx.config.agentId,
           error: `Unrecoverable after ${MAX_CONSECUTIVE_ERRORS} consecutive errors: ${errorMessage}`,
           budgetSpent: ctx.config.budgetSpent,
@@ -229,16 +242,16 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
 
     // 5. Budget check
     if (ctx.config.budgetSpent >= ctx.config.budgetTotal) {
-      log('Budget exhausted', {
+      log("Budget exhausted", {
         agentId: ctx.config.agentId,
         budgetSpent: ctx.config.budgetSpent,
         budgetTotal: ctx.config.budgetTotal,
       });
 
       await ctx.comms.sendToOrchestrator({
-        type: 'error',
+        type: "error",
         agentId: ctx.config.agentId,
-        error: 'Budget exhausted',
+        error: "Budget exhausted",
         budgetSpent: ctx.config.budgetSpent,
         budgetTotal: ctx.config.budgetTotal,
         timestamp: new Date().toISOString(),
@@ -250,12 +263,12 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
 
   // Loop exited via termination signal
   if (ctx.state.terminated) {
-    log('Agent terminated by external signal', { agentId: ctx.config.agentId });
+    log("Agent terminated by external signal", { agentId: ctx.config.agentId });
 
     await ctx.comms.sendToOrchestrator({
-      type: 'complete',
+      type: "complete",
       agentId: ctx.config.agentId,
-      reason: 'terminated',
+      reason: "terminated",
       budgetSpent: ctx.config.budgetSpent,
       timestamp: new Date().toISOString(),
     });

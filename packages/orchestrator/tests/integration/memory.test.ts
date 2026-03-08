@@ -1,18 +1,18 @@
 // ---------------------------------------------------------------------------
 // T069e – Memory Service Integration Tests (Testcontainers + pgvector)
 // ---------------------------------------------------------------------------
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  storeMemory,
-  searchMemories,
   searchByTags,
   searchByVector,
+  searchMemories,
+  storeMemory,
 } from "../../src/memory/memory-service.js";
 import {
-  setupPgContainer,
-  insertTestDefinition,
   insertTestAgent,
+  insertTestDefinition,
   type PgTestContext,
+  setupPgContainer,
 } from "./helpers/pg-container.js";
 
 describe("Memory Service Integration", () => {
@@ -38,7 +38,7 @@ describe("Memory Service Integration", () => {
       "The API endpoint is /api/v1/users",
       "fact",
       ["api", "endpoint"],
-      0.8,
+      0.8
     );
 
     expect(id).toBeDefined();
@@ -53,7 +53,7 @@ describe("Memory Service Integration", () => {
       "Database connection uses port 5432",
       "fact",
       ["database"],
-      0.7,
+      0.7
     );
 
     const results = await searchMemories(ctx.db, agentId, "endpoint");
@@ -68,7 +68,7 @@ describe("Memory Service Integration", () => {
       "Low importance fact about testing",
       "fact",
       ["test"],
-      0.1,
+      0.1
     );
 
     await storeMemory(
@@ -77,14 +77,14 @@ describe("Memory Service Integration", () => {
       "High importance fact about testing",
       "fact",
       ["test"],
-      0.99,
+      0.99
     );
 
     const results = await searchMemories(ctx.db, agentId, "testing");
     expect(results.length).toBeGreaterThanOrEqual(2);
     // First result should have higher importance
     expect(results[0].importanceScore).toBeGreaterThanOrEqual(
-      results[1].importanceScore,
+      results[1].importanceScore
     );
   });
 
@@ -95,7 +95,7 @@ describe("Memory Service Integration", () => {
       "Redis is used for caching",
       "fact",
       ["redis", "caching"],
-      0.6,
+      0.6
     );
 
     const results = await searchByTags(ctx.db, agentId, ["redis"]);
@@ -117,7 +117,7 @@ describe("Memory Service Integration", () => {
       "observation",
       ["vector"],
       0.9,
-      embedding,
+      embedding
     );
 
     expect(id).toBeDefined();
@@ -126,7 +126,7 @@ describe("Memory Service Integration", () => {
     const results = await searchMemories(ctx.db, agentId, "embedding data");
     const found = results.find((r) => r.id === id);
     expect(found).toBeDefined();
-    expect(found!.content).toBe("Memory with embedding data");
+    expect(found?.content).toBe("Memory with embedding data");
   });
 
   it("searches by vector similarity", async () => {
@@ -136,12 +136,7 @@ describe("Memory Service Integration", () => {
     queryEmbedding[1] = 0.4;
     queryEmbedding[2] = 0.2;
 
-    const results = await searchByVector(
-      ctx.db,
-      agentId,
-      queryEmbedding,
-      5,
-    );
+    const results = await searchByVector(ctx.db, agentId, queryEmbedding, 5);
 
     // Should return results (at least the one with an embedding)
     expect(results.length).toBeGreaterThanOrEqual(1);
@@ -157,15 +152,11 @@ describe("Memory Service Integration", () => {
       "Agent 2 exclusive memory",
       "fact",
       ["exclusive"],
-      0.5,
+      0.5
     );
 
     const agent1Results = await searchMemories(ctx.db, agentId, "exclusive");
-    const agent2Results = await searchMemories(
-      ctx.db,
-      agent2.id,
-      "exclusive",
-    );
+    const agent2Results = await searchMemories(ctx.db, agent2.id, "exclusive");
 
     expect(agent1Results.length).toBe(0);
     expect(agent2Results.length).toBe(1);

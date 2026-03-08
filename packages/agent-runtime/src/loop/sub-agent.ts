@@ -10,9 +10,9 @@ import type { AgentComms } from "../comms/redis-client.js";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface SubAgentRequest {
-  goal: string;
-  definitionId?: string;
   budget?: number;
+  definitionId?: string;
+  goal: string;
   modelOverride?: { provider: string; modelId: string };
 }
 
@@ -21,7 +21,7 @@ export interface SubAgentRequest {
 export async function requestSubAgent(
   comms: AgentComms,
   parentAgentId: string,
-  request: SubAgentRequest,
+  request: SubAgentRequest
 ): Promise<void> {
   await comms.sendToOrchestrator({
     type: "spawn-sub-agent",

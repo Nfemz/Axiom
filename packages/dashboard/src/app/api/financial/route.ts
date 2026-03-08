@@ -1,14 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
+import {
+  financialTransactions,
+  llmUsageLogs,
+} from "@axiom/orchestrator/db/schema";
+import { desc, eq, sql } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { financialTransactions, llmUsageLogs } from "@axiom/orchestrator/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const db = getDb();
   const { searchParams } = new URL(request.url);
@@ -27,9 +32,9 @@ export async function GET(request: NextRequest) {
       .select({ total: sql<string>`COALESCE(SUM(computed_cost_usd), 0)` })
       .from(llmUsageLogs);
 
-    const totalRevenue = parseFloat(revenue.total);
-    const totalExpenses = parseFloat(expenses.total);
-    const totalLlmCosts = parseFloat(llmCosts.total);
+    const totalRevenue = Number.parseFloat(revenue.total);
+    const totalExpenses = Number.parseFloat(expenses.total);
+    const totalLlmCosts = Number.parseFloat(llmCosts.total);
 
     return NextResponse.json({
       totalRevenue,
@@ -57,17 +62,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       costs,
       totalTokens: {
-        input: parseInt(totals.inputTokens),
-        output: parseInt(totals.outputTokens),
+        input: Number.parseInt(totals.inputTokens, 10),
+        output: Number.parseInt(totals.outputTokens, 10),
       },
-      totalCost: parseFloat(totals.totalCost),
+      totalCost: Number.parseFloat(totals.totalCost),
       currency: "USD",
     });
   }
 
   // Default: transactions list
-  const page = parseInt(searchParams.get("page") ?? "1");
-  const pageSize = parseInt(searchParams.get("pageSize") ?? "50");
+  const page = Number.parseInt(searchParams.get("page") ?? "1", 10);
+  const pageSize = Number.parseInt(searchParams.get("pageSize") ?? "50", 10);
 
   const transactions = await db
     .select()
@@ -82,7 +87,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     transactions,
-    total: parseInt(countResult.count),
+    total: Number.parseInt(countResult.count, 10),
     page,
     pageSize,
   });

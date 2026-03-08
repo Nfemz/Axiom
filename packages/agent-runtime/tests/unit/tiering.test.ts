@@ -1,17 +1,16 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { ToolDefinition } from "../../src/tools/registry.js";
+import { ToolRegistry } from "../../src/tools/registry.js";
 import {
-  ToolTier,
-  TIER_PRIORITY,
+  getNextTier,
   selectBestTool,
   shouldEscalateTier,
-  getNextTier,
+  TIER_PRIORITY,
 } from "../../src/tools/tiering.js";
-import { ToolRegistry } from "../../src/tools/registry.js";
-import type { ToolDefinition } from "../../src/tools/registry.js";
 
 function mockTool(
   name: string,
-  tier: "api" | "headless" | "pixel" = "api",
+  tier: "api" | "headless" | "pixel" = "api"
 ): ToolDefinition {
   return {
     name,
@@ -38,8 +37,8 @@ describe("Tool Tiering", () => {
       const best = selectBestTool(registry, "click");
 
       expect(best).not.toBeNull();
-      expect(best!.tier).toBe("api");
-      expect(best!.name).toBe("click-api");
+      expect(best?.tier).toBe("api");
+      expect(best?.name).toBe("click-api");
     });
 
     it("falls back to headless when no api tool matches", () => {
@@ -50,8 +49,8 @@ describe("Tool Tiering", () => {
       const best = selectBestTool(registry, "click");
 
       expect(best).not.toBeNull();
-      expect(best!.tier).toBe("headless");
-      expect(best!.name).toBe("click-headless");
+      expect(best?.tier).toBe("headless");
+      expect(best?.name).toBe("click-headless");
     });
 
     it("returns null when no tools match the capability", () => {

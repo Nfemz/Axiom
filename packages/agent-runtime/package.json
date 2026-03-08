@@ -10,7 +10,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src/"
+    "lint": "biome check src/"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",

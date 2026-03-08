@@ -13,9 +13,13 @@ function createDb(connectionString: string) {
 }
 
 export function getDb() {
-  if (_db) return _db;
+  if (_db) {
+    return _db;
+  }
   const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL environment variable is required");
+  if (!url) {
+    throw new Error("DATABASE_URL environment variable is required");
+  }
   _db = createDb(url);
   return _db;
 }

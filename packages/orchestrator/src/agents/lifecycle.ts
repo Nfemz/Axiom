@@ -5,13 +5,13 @@
 // Each operation validates the state transition before acting.
 // ---------------------------------------------------------------------------
 
+import { AgentStatus, createLogger } from "@axiom/shared";
 import type Redis from "ioredis";
-import { createLogger, AgentStatus } from "@axiom/shared";
-import { assertTransition } from "./state-machine.js";
-import { updateAgent, findAgentById } from "../db/queries.js";
 import { publishToStream, STREAM_KEYS } from "../comms/streams.js";
-import { pauseSandbox, resumeSandbox, killSandbox } from "./sandbox.js";
 import type { Database } from "../db/drizzle.js";
+import { findAgentById, updateAgent } from "../db/queries.js";
+import { killSandbox, pauseSandbox, resumeSandbox } from "./sandbox.js";
+import { assertTransition } from "./state-machine.js";
 
 const log = createLogger("agent-lifecycle");
 
@@ -36,7 +36,7 @@ async function sendCommand(
   redis: Redis,
   agentId: string,
   command: string,
-  payload: Record<string, string> = {},
+  payload: Record<string, string> = {}
 ) {
   const streamKey = STREAM_KEYS.agentInbox(agentId);
   await publishToStream(redis, streamKey, { command, ...payload });
@@ -48,24 +48,26 @@ async function checkApprovalGate(
   db: Database,
   redis: Redis,
   agentId: string,
-  action: string,
+  action: string
 ): Promise<boolean> {
   const agent = await requireAgent(db, agentId);
   const { findDefinitionById } = await import("../db/queries.js");
   const definition = await findDefinitionById(db, agent.definitionId);
   const policies = definition?.approvalPolicies;
 
-  if (!policies || typeof policies !== "object") return true;
+  if (!policies || typeof policies !== "object") {
+    return true;
+  }
   const policyList = Array.isArray(policies) ? policies : [];
 
-  const requiresApproval = policyList.some(
-    (p: unknown) => {
-      const policy = p as { action?: string };
-      return policy.action === action || policy.action === "*";
-    },
-  );
+  const requiresApproval = policyList.some((p: unknown) => {
+    const policy = p as { action?: string };
+    return policy.action === action || policy.action === "*";
+  });
 
-  if (!requiresApproval) return true;
+  if (!requiresApproval) {
+    return true;
+  }
 
   await publishToStream(redis, STREAM_KEYS.ORCHESTRATOR_INBOX, {
     type: "approval_required",
@@ -84,7 +86,7 @@ export async function pauseAgent(
   db: Database,
   redis: Redis,
   agentId: string,
-  reason?: string,
+  reason?: string
 ) {
   const agent = await requireAgent(db, agentId);
   assertTransition(agent.status as AgentStatus, AgentStatus.Paused);
@@ -106,11 +108,7 @@ export async function pauseAgent(
 
 // ── Resume ──────────────────────────────────────────────────────────────────
 
-export async function resumeAgent(
-  db: Database,
-  redis: Redis,
-  agentId: string,
-) {
+export async function resumeAgent(db: Database, redis: Redis, agentId: string) {
   const agent = await requireAgent(db, agentId);
   assertTransition(agent.status as AgentStatus, AgentStatus.Running);
 
@@ -131,8 +129,8 @@ export async function resumeAgent(
 
 export async function suspendAgent(
   db: Database,
-  redis: Redis,
-  agentId: string,
+  _redis: Redis,
+  agentId: string
 ) {
   const agent = await requireAgent(db, agentId);
   assertTransition(agent.status as AgentStatus, AgentStatus.Suspended);
@@ -155,7 +153,7 @@ export async function terminateAgent(
   db: Database,
   redis: Redis,
   agentId: string,
-  reason?: string,
+  reason?: string
 ) {
   const agent = await requireAgent(db, agentId);
   assertTransition(agent.status as AgentStatus, AgentStatus.Terminated);
@@ -187,13 +185,13 @@ export async function resteerAgent(
   db: Database,
   redis: Redis,
   agentId: string,
-  directive: string,
+  directive: string
 ) {
   const agent = await requireAgent(db, agentId);
 
   if (agent.status !== AgentStatus.Running) {
     throw new Error(
-      `Cannot resteer agent in "${agent.status}" status; must be "running"`,
+      `Cannot resteer agent in "${agent.status}" status; must be "running"`
     );
   }
 

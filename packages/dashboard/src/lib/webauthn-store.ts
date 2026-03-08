@@ -1,7 +1,7 @@
-import type { WebAuthnCredential } from "@simplewebauthn/server";
-import { getDb } from "@/lib/db";
 import { operatorCredentials } from "@axiom/orchestrator/db/schema";
+import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { eq, sql } from "drizzle-orm";
+import { getDb } from "@/lib/db";
 
 /**
  * DB-backed credential store using the operator_credentials table.
@@ -37,21 +37,19 @@ function rowToCredential(row: {
 
 export async function storeCredential(
   _userId: string,
-  credential: WebAuthnCredential,
+  credential: WebAuthnCredential
 ): Promise<void> {
   const db = getDb();
   await db.insert(operatorCredentials).values({
     credentialId: credentialIdToBuffer(credential.id),
     publicKey: Buffer.from(credential.publicKey),
     counter: credential.counter,
-    transports: credential.transports
-      ? credential.transports.join(",")
-      : null,
+    transports: credential.transports ? credential.transports.join(",") : null,
   });
 }
 
 export async function getCredentialById(
-  credentialId: string,
+  credentialId: string
 ): Promise<WebAuthnCredential | undefined> {
   const db = getDb();
   const buf = credentialIdToBuffer(credentialId);
@@ -60,12 +58,14 @@ export async function getCredentialById(
     .from(operatorCredentials)
     .where(eq(operatorCredentials.credentialId, buf))
     .limit(1);
-  if (rows.length === 0) return undefined;
+  if (rows.length === 0) {
+    return undefined;
+  }
   return rowToCredential(rows[0]);
 }
 
 export async function getCredentialsForUser(
-  _userId: string,
+  _userId: string
 ): Promise<WebAuthnCredential[]> {
   // Single-operator system: all credentials belong to the operator
   return getAllCredentials();
@@ -82,12 +82,12 @@ export async function hasAnyCredentials(): Promise<boolean> {
   const [result] = await db
     .select({ count: sql<string>`COUNT(*)` })
     .from(operatorCredentials);
-  return parseInt(result.count) > 0;
+  return Number.parseInt(result.count, 10) > 0;
 }
 
 export async function updateCredentialCounter(
   credentialId: string,
-  newCounter: number,
+  newCounter: number
 ): Promise<void> {
   const db = getDb();
   const buf = credentialIdToBuffer(credentialId);

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { startMessageRouter } from "../../src/handlers/message-router.js";
 
 /**
@@ -6,7 +6,9 @@ import { startMessageRouter } from "../../src/handlers/message-router.js";
  * pollNotifications loop from spinning and exhausting memory.
  */
 function hang(): Promise<never> {
-  return new Promise(() => {});
+  return new Promise(() => {
+    /* intentionally never resolves */
+  });
 }
 
 function createMocks() {
@@ -57,7 +59,10 @@ describe("Message Router Integration", () => {
 
     startMessageRouter(mockClient as never, mockRedis as never);
 
-    expect(mockClient.on).toHaveBeenCalledWith("messageCreate", expect.any(Function));
+    expect(mockClient.on).toHaveBeenCalledWith(
+      "messageCreate",
+      expect.any(Function)
+    );
   });
 
   it("creates consumer group on Redis stream during init", async () => {
@@ -71,7 +76,7 @@ describe("Message Router Integration", () => {
         "discord:notifications",
         "discord-bot",
         "0",
-        "MKSTREAM",
+        "MKSTREAM"
       );
     });
   });
@@ -79,7 +84,7 @@ describe("Message Router Integration", () => {
   it("tolerates BUSYGROUP error from consumer group creation", () => {
     const { mockClient, mockRedis } = createMocks();
     mockRedis.xgroup.mockRejectedValue(
-      new Error("BUSYGROUP Consumer Group name already exists"),
+      new Error("BUSYGROUP Consumer Group name already exists")
     );
 
     expect(() => {
@@ -94,12 +99,12 @@ describe("Message Router Integration", () => {
     mockClient.on.mockImplementation(
       (_event: string, handler: (message: unknown) => Promise<void>) => {
         messageHandler = handler;
-      },
+      }
     );
 
     startMessageRouter(mockClient as never, mockRedis as never);
 
-    await messageHandler!({
+    await messageHandler?.({
       author: { bot: true, tag: "TestBot#0001" },
       channel: { name: "agent-test", topic: "agent-123" },
       content: "bot message",
@@ -115,12 +120,12 @@ describe("Message Router Integration", () => {
     mockClient.on.mockImplementation(
       (_event: string, handler: (message: unknown) => Promise<void>) => {
         messageHandler = handler;
-      },
+      }
     );
 
     startMessageRouter(mockClient as never, mockRedis as never);
 
-    await messageHandler!({
+    await messageHandler?.({
       author: { bot: false, tag: "User#1234" },
       channel: { name: "general" },
       content: "hello",
@@ -136,12 +141,12 @@ describe("Message Router Integration", () => {
     mockClient.on.mockImplementation(
       (_event: string, handler: (message: unknown) => Promise<void>) => {
         messageHandler = handler;
-      },
+      }
     );
 
     startMessageRouter(mockClient as never, mockRedis as never);
 
-    await messageHandler!({
+    await messageHandler?.({
       author: { bot: false, tag: "Operator#1234" },
       channel: { name: "agent-researcher", topic: "abc-123" },
       content: "do the thing",
@@ -157,7 +162,7 @@ describe("Message Router Integration", () => {
       "author",
       "Operator#1234",
       "timestamp",
-      expect.any(String),
+      expect.any(String)
     );
   });
 
@@ -168,12 +173,12 @@ describe("Message Router Integration", () => {
     mockClient.on.mockImplementation(
       (_event: string, handler: (message: unknown) => Promise<void>) => {
         messageHandler = handler;
-      },
+      }
     );
 
     startMessageRouter(mockClient as never, mockRedis as never);
 
-    await messageHandler!({
+    await messageHandler?.({
       author: { bot: false, tag: "User#5678" },
       channel: { name: "agent-writer", topic: undefined },
       content: "write something",
@@ -189,7 +194,7 @@ describe("Message Router Integration", () => {
       "author",
       "User#5678",
       "timestamp",
-      expect.any(String),
+      expect.any(String)
     );
   });
 });

@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 
 export interface Agent {
-  id: string;
-  parentId: string | null;
-  name: string;
-  status: string;
-  currentTask?: string;
   children?: Agent[];
+  currentTask?: string;
+  id: string;
+  name: string;
+  parentId: string | null;
+  status: string;
 }
 
 interface AgentTreeProps {
@@ -35,9 +35,12 @@ function buildTree(agents: Agent[]): Agent[] {
   }
 
   for (const agent of agents) {
-    const node = map.get(agent.id)!;
+    const node = map.get(agent.id);
+    if (!node) {
+      continue;
+    }
     if (agent.parentId && map.has(agent.parentId)) {
-      map.get(agent.parentId)!.children!.push(node);
+      map.get(agent.parentId)?.children?.push(node);
     } else {
       roots.push(node);
     }
@@ -50,13 +53,17 @@ export function AgentTree({ agents, onSelect }: AgentTreeProps) {
   const tree = useMemo(() => buildTree(agents), [agents]);
 
   if (agents.length === 0) {
-    return <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>No agents to display.</p>;
+    return (
+      <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
+        No agents to display.
+      </p>
+    );
   }
 
   return (
     <div style={{ fontFamily: "inherit" }}>
       {tree.map((node) => (
-        <TreeNode key={node.id} agent={node} depth={0} onSelect={onSelect} />
+        <TreeNode agent={node} depth={0} key={node.id} onSelect={onSelect} />
       ))}
     </div>
   );
@@ -77,7 +84,8 @@ function TreeNode({
 
   return (
     <div>
-      <div
+      <button
+        onClick={() => onSelect?.(agent.id)}
         style={{
           display: "flex",
           alignItems: "center",
@@ -87,17 +95,19 @@ function TreeNode({
           paddingBottom: "0.375rem",
           cursor: "pointer",
           borderRadius: "4px",
+          background: "none",
+          border: "none",
+          width: "100%",
+          textAlign: "left",
+          font: "inherit",
+          color: "inherit",
         }}
-        onClick={() => onSelect?.(agent.id)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onSelect?.(agent.id);
-        }}
-        role="button"
-        tabIndex={0}
+        type="button"
       >
         {/* Expand/collapse toggle */}
         {hasChildren ? (
           <span
+            aria-hidden="true"
             onClick={(e) => {
               e.stopPropagation();
               setExpanded(!expanded);
@@ -130,7 +140,9 @@ function TreeNode({
         />
 
         {/* Agent name */}
-        <span style={{ fontWeight: 500, fontSize: "0.875rem", color: "#e5e7eb" }}>
+        <span
+          style={{ fontWeight: 500, fontSize: "0.875rem", color: "#e5e7eb" }}
+        >
           {agent.name}
         </span>
 
@@ -149,13 +161,18 @@ function TreeNode({
             - {agent.currentTask}
           </span>
         )}
-      </div>
+      </button>
 
       {/* Children */}
       {hasChildren && expanded && (
         <div>
-          {agent.children!.map((child) => (
-            <TreeNode key={child.id} agent={child} depth={depth + 1} onSelect={onSelect} />
+          {agent.children?.map((child) => (
+            <TreeNode
+              agent={child}
+              depth={depth + 1}
+              key={child.id}
+              onSelect={onSelect}
+            />
           ))}
         </div>
       )}

@@ -1,8 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   decomposeGoal,
   type GoalContext,
-  type DecomposedGoal,
 } from "../../src/agents/goal-decomposition.js";
 
 function makeContext(overrides: Partial<GoalContext> = {}): GoalContext {
@@ -33,7 +32,7 @@ describe("decomposeGoal", () => {
   it("totalEstimatedBudget is positive", async () => {
     const result = await decomposeGoal(
       "Write unit tests",
-      makeContext({ parentBudget: 5.0 }),
+      makeContext({ parentBudget: 5.0 })
     );
 
     expect(result.totalEstimatedBudget).toBeGreaterThan(0);
@@ -43,7 +42,7 @@ describe("decomposeGoal", () => {
     const result = await decomposeGoal("Refactor codebase", makeContext());
 
     expect(["parallel", "sequential", "mixed"]).toContain(
-      result.executionStrategy,
+      result.executionStrategy
     );
   });
 

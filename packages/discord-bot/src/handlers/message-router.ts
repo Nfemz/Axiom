@@ -1,6 +1,6 @@
+import { createLogger } from "@axiom/shared";
 import type { Client, TextChannel } from "discord.js";
 import type Redis from "ioredis";
-import { createLogger } from "@axiom/shared";
 import { postToChannel } from "./channel-manager.js";
 
 const log = createLogger("discord-bot:message-router");
@@ -22,7 +22,10 @@ export function startMessageRouter(client: Client, redis: Redis): void {
 async function initStreamConsumer(redis: Redis): Promise<void> {
   try {
     await redis.xgroup("CREATE", STREAM_KEY, CONSUMER_GROUP, "0", "MKSTREAM");
-    log.info("Created consumer group", { stream: STREAM_KEY, group: CONSUMER_GROUP });
+    log.info("Created consumer group", {
+      stream: STREAM_KEY,
+      group: CONSUMER_GROUP,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (!message.includes("BUSYGROUP")) {
@@ -45,10 +48,12 @@ function pollNotifications(client: Client, redis: Redis): void {
           5000,
           "STREAMS",
           STREAM_KEY,
-          ">",
+          ">"
         );
 
-        if (!results) continue;
+        if (!results) {
+          continue;
+        }
 
         for (const result of results) {
           const [, messages] = result as [string, [string, string[]][]];
@@ -69,11 +74,11 @@ function pollNotifications(client: Client, redis: Redis): void {
 }
 
 interface NotificationPayload {
-  type?: string;
-  channelId?: string;
   agentId?: string;
+  channelId?: string;
   content?: string;
   title?: string;
+  type?: string;
   [key: string]: string | undefined;
 }
 
@@ -89,11 +94,11 @@ async function handleNotification(
   client: Client,
   redis: Redis,
   messageId: string,
-  payload: NotificationPayload,
+  payload: NotificationPayload
 ): Promise<void> {
   const { type, channelId, content } = payload;
 
-  if (!channelId || !content) {
+  if (!(channelId && content)) {
     log.warn("Notification missing channelId or content", { messageId, type });
     await ackMessage(redis, messageId);
     return;
@@ -119,10 +124,14 @@ async function ackMessage(redis: Redis, messageId: string): Promise<void> {
 
 function listenForOperatorMessages(client: Client, redis: Redis): void {
   client.on("messageCreate", async (message) => {
-    if (message.author.bot) return;
+    if (message.author.bot) {
+      return;
+    }
 
     const channel = message.channel as TextChannel;
-    if (!channel.name?.startsWith("agent-")) return;
+    if (!channel.name?.startsWith("agent-")) {
+      return;
+    }
 
     const agentId = channel.topic ?? channel.name.replace("agent-", "");
 
@@ -137,7 +146,7 @@ function listenForOperatorMessages(client: Client, redis: Redis): void {
         "author",
         message.author.tag,
         "timestamp",
-        new Date().toISOString(),
+        new Date().toISOString()
       );
       log.info("Forwarded operator message to agent", {
         agentId,
@@ -156,20 +165,30 @@ function subscribeToOrchestratorAlerts(client: Client, redis: Redis): void {
   const subscriber = redis.duplicate();
 
   subscriber.subscribe("alert:new", "cost:alert").catch((err) => {
-    log.error("Failed to subscribe to orchestrator alerts", { error: String(err) });
+    log.error("Failed to subscribe to orchestrator alerts", {
+      error: String(err),
+    });
   });
 
   subscriber.on("message", async (channel: string, message: string) => {
     try {
       const data = JSON.parse(message);
       const alertChannel = findAlertChannel(client);
-      if (!alertChannel) return;
+      if (!alertChannel) {
+        return;
+      }
 
-      const prefix = channel === "cost:alert" ? "\u{1F4B0} **Budget Alert**" : "\u{1F6A8} **Alert**";
+      const prefix =
+        channel === "cost:alert"
+          ? "\u{1F4B0} **Budget Alert**"
+          : "\u{1F6A8} **Alert**";
       const content = `${prefix}: ${data.message ?? data.description ?? JSON.stringify(data)}`;
 
       await postToChannel(client, alertChannel.id, content);
-      log.info("Forwarded orchestrator alert to Discord", { channel, type: data.type });
+      log.info("Forwarded orchestrator alert to Discord", {
+        channel,
+        type: data.type,
+      });
     } catch (err) {
       log.error("Failed to forward orchestrator alert", { error: String(err) });
     }
@@ -178,7 +197,8 @@ function subscribeToOrchestratorAlerts(client: Client, redis: Redis): void {
 
 function findAlertChannel(client: Client): TextChannel | undefined {
   return client.channels.cache.find(
-    (ch) => ch.isTextBased() && "name" in ch && (ch as TextChannel).name === "alerts",
+    (ch) =>
+      ch.isTextBased() && "name" in ch && (ch as TextChannel).name === "alerts"
   ) as TextChannel | undefined;
 }
 

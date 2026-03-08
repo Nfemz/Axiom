@@ -5,6 +5,8 @@ export default defineConfig({
   out: "../../drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgresql://axiom:axiom_dev@localhost:5432/axiom",
+    url:
+      process.env.DATABASE_URL ??
+      "postgresql://axiom:axiom_dev@localhost:5432/axiom",
   },
 });

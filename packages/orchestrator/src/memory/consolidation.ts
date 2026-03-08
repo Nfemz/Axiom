@@ -5,8 +5,12 @@
 // generates a summary reflection, and marks originals as consolidated.
 // ---------------------------------------------------------------------------
 
-import { createLogger, MemoryType, MEMORY_CONSOLIDATION_INTERVAL_MS } from "@axiom/shared";
-import { eq, and, lt, isNull, sql } from "drizzle-orm";
+import {
+  createLogger,
+  MEMORY_CONSOLIDATION_INTERVAL_MS,
+  MemoryType,
+} from "@axiom/shared";
+import { and, eq, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { agentMemories } from "../db/schema.js";
 
@@ -17,7 +21,7 @@ const log = createLogger("memory-consolidation");
 export async function consolidateMemories(
   db: Database,
   agentId: string,
-  options?: { maxAge?: number },
+  options?: { maxAge?: number }
 ): Promise<string | null> {
   const maxAge = options?.maxAge ?? MEMORY_CONSOLIDATION_INTERVAL_MS;
   const cutoff = new Date(Date.now() - maxAge);
@@ -29,8 +33,8 @@ export async function consolidateMemories(
       and(
         eq(agentMemories.agentId, agentId),
         lt(agentMemories.createdAt, cutoff),
-        isNull(agentMemories.consolidatedInto),
-      ),
+        isNull(agentMemories.consolidatedInto)
+      )
     );
 
   if (oldMemories.length === 0) {
@@ -62,7 +66,7 @@ export async function consolidateMemories(
 export async function pruneOutdatedMemories(
   db: Database,
   agentId: string,
-  maxAgeDays: number,
+  maxAgeDays: number
 ): Promise<number> {
   const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000);
 
@@ -72,8 +76,8 @@ export async function pruneOutdatedMemories(
       and(
         eq(agentMemories.agentId, agentId),
         lt(agentMemories.createdAt, cutoff),
-        sql`${agentMemories.consolidatedInto} IS NOT NULL`,
-      ),
+        sql`${agentMemories.consolidatedInto} IS NOT NULL`
+      )
     )
     .returning({ id: agentMemories.id });
 
@@ -89,16 +93,16 @@ export async function pruneOutdatedMemories(
 // ── Generate Reflection ─────────────────────────────────────────────────────
 
 interface MemoryRow {
-  id: string;
   content: string;
-  memoryType: string;
+  id: string;
   importanceScore: number;
+  memoryType: string;
 }
 
 export async function generateReflection(
   db: Database,
   agentId: string,
-  memories: MemoryRow[],
+  memories: MemoryRow[]
 ): Promise<string> {
   // Placeholder summarization — in production this would call an LLM
   const summaryParts = memories

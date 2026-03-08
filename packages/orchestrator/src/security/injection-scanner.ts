@@ -13,19 +13,19 @@ const log = createLogger("injection-scanner");
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface ScanResult {
+  quarantined: boolean;
   safe: boolean;
   threats: Array<{
     pattern: string;
     location: number;
     severity: "low" | "medium" | "high";
   }>;
-  quarantined: boolean;
 }
 
 interface InjectionPattern {
+  description: string;
   pattern: RegExp;
   severity: "low" | "medium" | "high";
-  description: string;
 }
 
 // ── Injection Patterns ──────────────────────────────────────────────────────

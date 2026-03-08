@@ -7,6 +7,11 @@
 
 import { MemoryType } from "@axiom/shared";
 
+const WHITESPACE_ONLY_RE = /^\s*$/;
+const PUNCTUATION_ONLY_RE = /^[\s\p{P}]+$/u;
+const QUERY_SPLIT_RE = /\s+/;
+const CONTENT_SPLIT_RE = /\s+/;
+
 // ── Importance Scoring ──────────────────────────────────────────────────────
 
 const HIGH_IMPORTANCE_KEYWORDS = [
@@ -43,7 +48,7 @@ export function scoreImportance(content: string, memoryType: string): number {
   // Keyword score: presence of high-importance keywords
   const lowerContent = content.toLowerCase();
   const keywordHits = HIGH_IMPORTANCE_KEYWORDS.filter((kw) =>
-    lowerContent.includes(kw),
+    lowerContent.includes(kw)
   ).length;
   const keywordScore = Math.min(keywordHits / 3, 1.0) * 0.3;
 
@@ -64,11 +69,17 @@ const MIN_CONTENT_LENGTH = 10;
 export function filterNoise(content: string): boolean {
   const trimmed = content.trim();
 
-  if (trimmed.length < MIN_CONTENT_LENGTH) return false;
-  if (/^\s*$/.test(trimmed)) return false;
+  if (trimmed.length < MIN_CONTENT_LENGTH) {
+    return false;
+  }
+  if (WHITESPACE_ONLY_RE.test(trimmed)) {
+    return false;
+  }
 
   // Reject strings that are only punctuation or whitespace
-  if (/^[\s\p{P}]+$/u.test(trimmed)) return false;
+  if (PUNCTUATION_ONLY_RE.test(trimmed)) {
+    return false;
+  }
 
   return true;
 }
@@ -76,10 +87,10 @@ export function filterNoise(content: string): boolean {
 // ── Retrieval Scoring ───────────────────────────────────────────────────────
 
 interface ScoredMemory {
-  content: string;
-  importanceScore: number;
-  createdAt: Date;
   accessedAt: Date;
+  content: string;
+  createdAt: Date;
+  importanceScore: number;
 }
 
 /**
@@ -96,7 +107,7 @@ export function scoreRetrieval(query: string, memory: ScoredMemory): number {
   const importance = memory.importanceScore;
 
   // Relevance: simple keyword overlap
-  const queryTerms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const queryTerms = query.toLowerCase().split(QUERY_SPLIT_RE).filter(Boolean);
   const contentLower = memory.content.toLowerCase();
   const matchCount = queryTerms.filter((t) => contentLower.includes(t)).length;
   const relevance = queryTerms.length > 0 ? matchCount / queryTerms.length : 0;
@@ -108,9 +119,9 @@ export function scoreRetrieval(query: string, memory: ScoredMemory): number {
 // ── MMR (Maximal Marginal Relevance) ────────────────────────────────────────
 
 interface MMRCandidate {
+  content: string;
   id: string;
   score: number;
-  content: string;
 }
 
 interface MMRResult {
@@ -122,23 +133,22 @@ interface MMRResult {
  * Apply Maximal Marginal Relevance re-ranking for diversity.
  * Uses Jaccard similarity on word-level tokens as a lightweight proxy.
  */
-export function applyMMR(
-  results: MMRCandidate[],
-  lambda: number,
-): MMRResult[] {
-  if (results.length === 0) return [];
+export function applyMMR(results: MMRCandidate[], lambda: number): MMRResult[] {
+  if (results.length === 0) {
+    return [];
+  }
 
   const selected: MMRResult[] = [];
   const remaining = [...results];
 
   // Pick the top-scoring item first
   remaining.sort((a, b) => b.score - a.score);
-  const first = remaining.shift()!;
+  const first = remaining.shift() as MMRCandidate;
   selected.push({ id: first.id, score: first.score });
 
   while (remaining.length > 0) {
     let bestIdx = 0;
-    let bestMmrScore = -Infinity;
+    let bestMmrScore = Number.NEGATIVE_INFINITY;
 
     for (let i = 0; i < remaining.length; i++) {
       const candidate = remaining[i];
@@ -146,9 +156,9 @@ export function applyMMR(
       const maxSimilarity = computeMaxSimilarity(
         candidate.content,
         selected.map((s) => {
-          const orig = results.find((r) => r.id === s.id)!;
+          const orig = results.find((r) => r.id === s.id) as MMRCandidate;
           return orig.content;
-        }),
+        })
       );
 
       const mmrScore = lambda * relevance - (1 - lambda) * maxSimilarity;
@@ -170,20 +180,24 @@ export function applyMMR(
 
 function computeMaxSimilarity(
   content: string,
-  selectedContents: string[],
+  selectedContents: string[]
 ): number {
-  if (selectedContents.length === 0) return 0;
+  if (selectedContents.length === 0) {
+    return 0;
+  }
 
-  const contentTerms = new Set(content.toLowerCase().split(/\s+/));
+  const contentTerms = new Set(content.toLowerCase().split(CONTENT_SPLIT_RE));
 
   let maxSim = 0;
   for (const other of selectedContents) {
-    const otherTerms = new Set(other.toLowerCase().split(/\s+/));
+    const otherTerms = new Set(other.toLowerCase().split(CONTENT_SPLIT_RE));
     const intersection = [...contentTerms].filter((t) => otherTerms.has(t));
     const union = new Set([...contentTerms, ...otherTerms]);
     const jaccard = union.size > 0 ? intersection.length / union.size : 0;
 
-    if (jaccard > maxSim) maxSim = jaccard;
+    if (jaccard > maxSim) {
+      maxSim = jaccard;
+    }
   }
 
   return maxSim;

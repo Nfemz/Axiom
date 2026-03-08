@@ -1,18 +1,22 @@
-import { createSSEResponse } from "@/lib/sse";
-import { requireAuth } from "@/lib/auth-middleware";
 import Redis from "ioredis";
+import { requireAuth } from "@/lib/auth-middleware";
+import { createSSEResponse } from "@/lib/sse";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   return createSSEResponse((send) => {
     const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
     const subscriber = new Redis(redisUrl);
 
-    subscriber.subscribe("alert:new", "alert:resolved").catch(() => {});
+    subscriber.subscribe("alert:new", "alert:resolved").catch(() => {
+      /* ignore subscribe errors */
+    });
 
     subscriber.on("message", (_channel: string, message: string) => {
       try {
@@ -22,7 +26,9 @@ export async function GET() {
           payload: data,
           timestamp: new Date().toISOString(),
         });
-      } catch {}
+      } catch {
+        /* ignore parse errors */
+      }
     });
 
     const interval = setInterval(() => {
@@ -31,7 +37,7 @@ export async function GET() {
         payload: {},
         timestamp: new Date().toISOString(),
       });
-    }, 30000);
+    }, 30_000);
 
     return () => {
       clearInterval(interval);

@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { AgentPriority } from "../../src/agents/priority-scheduler.js";
 import {
-  rankAgents,
   identifySuspendCandidates,
+  rankAgents,
   shouldSuspendForHigherPriority,
 } from "../../src/agents/priority-scheduler.js";
-import type { AgentPriority } from "../../src/agents/priority-scheduler.js";
 
 describe("Priority Scheduler", () => {
   // ── rankAgents ──────────────────────────────────────────────────────────
@@ -86,20 +86,44 @@ describe("Priority Scheduler", () => {
 
   describe("shouldSuspendForHigherPriority", () => {
     it("returns true when incoming has higher priority", () => {
-      const current: AgentPriority = { agentId: "c", priority: 3, resourceUsage: 10 };
-      const incoming: AgentPriority = { agentId: "i", priority: 8, resourceUsage: 10 };
+      const current: AgentPriority = {
+        agentId: "c",
+        priority: 3,
+        resourceUsage: 10,
+      };
+      const incoming: AgentPriority = {
+        agentId: "i",
+        priority: 8,
+        resourceUsage: 10,
+      };
       expect(shouldSuspendForHigherPriority(current, incoming)).toBe(true);
     });
 
     it("returns false when incoming has lower priority", () => {
-      const current: AgentPriority = { agentId: "c", priority: 8, resourceUsage: 10 };
-      const incoming: AgentPriority = { agentId: "i", priority: 3, resourceUsage: 10 };
+      const current: AgentPriority = {
+        agentId: "c",
+        priority: 8,
+        resourceUsage: 10,
+      };
+      const incoming: AgentPriority = {
+        agentId: "i",
+        priority: 3,
+        resourceUsage: 10,
+      };
       expect(shouldSuspendForHigherPriority(current, incoming)).toBe(false);
     });
 
     it("returns false when priorities are equal", () => {
-      const current: AgentPriority = { agentId: "c", priority: 5, resourceUsage: 10 };
-      const incoming: AgentPriority = { agentId: "i", priority: 5, resourceUsage: 10 };
+      const current: AgentPriority = {
+        agentId: "c",
+        priority: 5,
+        resourceUsage: 10,
+      };
+      const incoming: AgentPriority = {
+        agentId: "i",
+        priority: 5,
+        resourceUsage: 10,
+      };
       expect(shouldSuspendForHigherPriority(current, incoming)).toBe(false);
     });
   });

@@ -1,5 +1,9 @@
+import {
+  createLogger,
+  DEFAULT_BUDGET_CURRENCY,
+  TransactionType,
+} from "@axiom/shared";
 import { eq } from "drizzle-orm";
-import { createLogger, TransactionType, DEFAULT_BUDGET_CURRENCY } from "@axiom/shared";
 import type { Database } from "../db/drizzle.js";
 import { agents, financialTransactions } from "../db/schema.js";
 
@@ -9,14 +13,14 @@ const log = createLogger("financial:budget");
 
 interface BudgetCheckResult {
   allowed: boolean;
-  remaining: number;
   reason?: string;
+  remaining: number;
 }
 
 interface BudgetSummary {
-  total: number;
-  spent: number;
   remaining: number;
+  spent: number;
+  total: number;
   utilizationPercent: number;
 }
 
@@ -25,7 +29,7 @@ interface BudgetSummary {
 export async function checkBudget(
   db: Database,
   agentId: string,
-  requestedAmount: number,
+  requestedAmount: number
 ): Promise<BudgetCheckResult> {
   const agent = await db
     .select()
@@ -37,8 +41,8 @@ export async function checkBudget(
     return { allowed: false, remaining: 0, reason: "Agent not found" };
   }
 
-  const total = parseFloat(agent[0].budgetTotal);
-  const spent = parseFloat(agent[0].budgetSpent);
+  const total = Number.parseFloat(agent[0].budgetTotal);
+  const spent = Number.parseFloat(agent[0].budgetSpent);
   const remaining = total - spent;
 
   if (requestedAmount > remaining) {
@@ -64,7 +68,7 @@ export async function preAuthorize(
   agentId: string,
   amount: number,
   category: string,
-  description?: string,
+  description?: string
 ) {
   const budgetCheck = await checkBudget(db, agentId, amount);
 
@@ -87,7 +91,10 @@ export async function preAuthorize(
     preAuthVerified: true,
   };
 
-  const result = await db.insert(financialTransactions).values(data).returning();
+  const result = await db
+    .insert(financialTransactions)
+    .values(data)
+    .returning();
   const tx = result[0];
 
   // Update agent's budgetSpent
@@ -98,7 +105,7 @@ export async function preAuthorize(
     .limit(1);
 
   if (agent[0]) {
-    const newSpent = parseFloat(agent[0].budgetSpent) + amount;
+    const newSpent = Number.parseFloat(agent[0].budgetSpent) + amount;
     await db
       .update(agents)
       .set({ budgetSpent: newSpent.toFixed(2), updatedAt: new Date() })
@@ -119,7 +126,7 @@ export async function preAuthorize(
 
 export async function getBudgetSummary(
   db: Database,
-  agentId: string,
+  agentId: string
 ): Promise<BudgetSummary | null> {
   const agent = await db
     .select()
@@ -131,8 +138,8 @@ export async function getBudgetSummary(
     return null;
   }
 
-  const total = parseFloat(agent[0].budgetTotal);
-  const spent = parseFloat(agent[0].budgetSpent);
+  const total = Number.parseFloat(agent[0].budgetTotal);
+  const spent = Number.parseFloat(agent[0].budgetSpent);
   const remaining = total - spent;
   const utilizationPercent = total > 0 ? (spent / total) * 100 : 0;
 

@@ -4,7 +4,11 @@ import type { ToolDefinition, ToolResult } from "./registry.js";
 
 type FsAction = "read" | "write" | "list" | "search";
 
-function log(level: string, msg: string, extra?: Record<string, unknown>): void {
+function log(
+  level: string,
+  msg: string,
+  extra?: Record<string, unknown>
+): void {
   console.log(JSON.stringify({ level, msg, tool: "filesystem", ...extra }));
 }
 
@@ -39,9 +43,11 @@ function searchFiles(
   dirPath: string,
   pattern: string,
   matches: string[] = [],
-  depth = 0,
+  depth = 0
 ): string[] {
-  if (depth > 10) return matches;
+  if (depth > 10) {
+    return matches;
+  }
 
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
@@ -49,7 +55,9 @@ function searchFiles(
     const fullPath = path.join(dirPath, entry.name);
 
     if (entry.isDirectory()) {
-      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.name === "node_modules" || entry.name === ".git") {
+        continue;
+      }
       searchFiles(fullPath, pattern, matches, depth + 1);
     } else if (entry.name.includes(pattern)) {
       matches.push(fullPath);
@@ -62,7 +70,8 @@ function searchFiles(
 export function createFilesystemTool(): ToolDefinition {
   return {
     name: "filesystem",
-    description: "Read, write, list, and search files in the sandbox file system.",
+    description:
+      "Read, write, list, and search files in the sandbox file system.",
     tier: "headless",
     inputSchema: {
       type: "object",
@@ -82,7 +91,8 @@ export function createFilesystemTool(): ToolDefinition {
         },
         pattern: {
           type: "string",
-          description: "Search pattern to match file names against (required for search action).",
+          description:
+            "Search pattern to match file names against (required for search action).",
         },
       },
       required: ["action", "path"],
@@ -93,8 +103,12 @@ export function createFilesystemTool(): ToolDefinition {
       const content = input.content as string | undefined;
       const pattern = input.pattern as string | undefined;
 
-      if (!action || !filePath) {
-        return { success: false, output: null, error: "action and path are required" };
+      if (!(action && filePath)) {
+        return {
+          success: false,
+          output: null,
+          error: "action and path are required",
+        };
       }
 
       log("info", "Executing filesystem operation", { action, path: filePath });
@@ -106,7 +120,11 @@ export function createFilesystemTool(): ToolDefinition {
 
           case "write": {
             if (content === undefined) {
-              return { success: false, output: null, error: "content is required for write action" };
+              return {
+                success: false,
+                output: null,
+                error: "content is required for write action",
+              };
             }
             return writeFile(filePath, content);
           }
@@ -116,7 +134,11 @@ export function createFilesystemTool(): ToolDefinition {
 
           case "search": {
             if (!pattern) {
-              return { success: false, output: null, error: "pattern is required for search action" };
+              return {
+                success: false,
+                output: null,
+                error: "pattern is required for search action",
+              };
             }
             const matches = searchFiles(filePath, pattern);
             log("info", "Search complete", { matches: matches.length });
@@ -132,7 +154,11 @@ export function createFilesystemTool(): ToolDefinition {
         }
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
-        log("error", "Filesystem operation failed", { action, path: filePath, error });
+        log("error", "Filesystem operation failed", {
+          action,
+          path: filePath,
+          error,
+        });
         return { success: false, output: null, error };
       }
     },

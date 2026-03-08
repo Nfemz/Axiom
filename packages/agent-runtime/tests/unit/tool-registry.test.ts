@@ -1,13 +1,9 @@
-import { describe, it, expect } from "vitest";
-import {
-  ToolRegistry,
-  type ToolDefinition,
-  type ToolResult,
-} from "../../src/tools/registry.js";
+import { describe, expect, it } from "vitest";
+import { type ToolDefinition, ToolRegistry } from "../../src/tools/registry.js";
 
 function mockTool(
   name: string,
-  tier: "api" | "headless" | "pixel" = "api",
+  tier: "api" | "headless" | "pixel" = "api"
 ): ToolDefinition {
   return {
     name,
@@ -27,8 +23,8 @@ describe("ToolRegistry", () => {
 
     const retrieved = registry.get("click");
     expect(retrieved).toBeDefined();
-    expect(retrieved!.name).toBe("click");
-    expect(retrieved!.tier).toBe("api");
+    expect(retrieved?.name).toBe("click");
+    expect(retrieved?.tier).toBe("api");
   });
 
   it("returns undefined for an unregistered tool", () => {

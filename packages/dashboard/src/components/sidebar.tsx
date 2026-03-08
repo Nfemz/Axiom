@@ -33,7 +33,11 @@ export function Sidebar() {
   return (
     <>
       <div className="mobile-header">
-        <button className="sidebar-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button
+          className="sidebar-toggle"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          type="button"
+        >
           {mobileOpen ? "\u2715" : "\u2630"}
         </button>
         <span style={{ fontWeight: 700 }}>Axiom</span>
@@ -41,18 +45,23 @@ export function Sidebar() {
       <aside className={sidebarClasses}>
         <div className="sidebar-header">
           {!collapsed && <h1>Axiom</h1>}
-          <button className="sidebar-toggle" onClick={() => setCollapsed(!collapsed)}>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            type="button"
+          >
             {collapsed ? "\u25B6" : "\u25C0"}
           </button>
         </div>
         <nav>
           {navItems.map(({ label, href }) => {
-            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const isActive =
+              href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link
-                key={href}
-                href={href}
                 className={isActive ? "active" : ""}
+                href={href}
+                key={href}
                 onClick={() => setMobileOpen(false)}
               >
                 {collapsed ? label[0] : label}

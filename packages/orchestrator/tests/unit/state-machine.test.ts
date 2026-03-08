@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { AgentStatus } from "@axiom/shared";
+import { describe, expect, it } from "vitest";
 import {
-  validateTransition,
   assertTransition,
   getAvailableTransitions,
+  validateTransition,
 } from "../../src/agents/state-machine.js";
-import { AgentStatus } from "@axiom/shared";
 
 describe("Agent State Machine", () => {
   describe("validateTransition", () => {
@@ -24,12 +24,9 @@ describe("Agent State Machine", () => {
       [AgentStatus.Error, AgentStatus.Terminated],
     ];
 
-    it.each(validTransitions)(
-      "allows transition from %s to %s",
-      (from, to) => {
-        expect(validateTransition(from, to)).toBe(true);
-      },
-    );
+    it.each(validTransitions)("allows transition from %s to %s", (from, to) => {
+      expect(validateTransition(from, to)).toBe(true);
+    });
 
     const invalidTransitions: [AgentStatus, AgentStatus][] = [
       [AgentStatus.Spawning, AgentStatus.Paused],
@@ -49,30 +46,29 @@ describe("Agent State Machine", () => {
       [AgentStatus.Error, AgentStatus.Spawning],
     ];
 
-    it.each(invalidTransitions)(
-      "rejects transition from %s to %s",
-      (from, to) => {
-        expect(validateTransition(from, to)).toBe(false);
-      },
-    );
+    it.each(
+      invalidTransitions
+    )("rejects transition from %s to %s", (from, to) => {
+      expect(validateTransition(from, to)).toBe(false);
+    });
   });
 
   describe("assertTransition", () => {
     it("does not throw for a valid transition", () => {
       expect(() =>
-        assertTransition(AgentStatus.Spawning, AgentStatus.Running),
+        assertTransition(AgentStatus.Spawning, AgentStatus.Running)
       ).not.toThrow();
     });
 
     it("throws for an invalid transition", () => {
       expect(() =>
-        assertTransition(AgentStatus.Spawning, AgentStatus.Paused),
+        assertTransition(AgentStatus.Spawning, AgentStatus.Paused)
       ).toThrow();
     });
 
     it("throws for any transition from terminated", () => {
       expect(() =>
-        assertTransition(AgentStatus.Terminated, AgentStatus.Running),
+        assertTransition(AgentStatus.Terminated, AgentStatus.Running)
       ).toThrow();
     });
   });

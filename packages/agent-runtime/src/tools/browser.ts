@@ -1,9 +1,13 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { type Browser, chromium, type Page } from "playwright";
 import type { ToolDefinition, ToolResult } from "./registry.js";
 
 type BrowserAction = "navigate" | "click" | "fill" | "extract" | "screenshot";
 
-function log(level: string, msg: string, extra?: Record<string, unknown>): void {
+function log(
+  level: string,
+  msg: string,
+  extra?: Record<string, unknown>
+): void {
   console.log(JSON.stringify({ level, msg, tool: "browser", ...extra }));
 }
 
@@ -11,7 +15,7 @@ let browserInstance: Browser | null = null;
 let pageInstance: Page | null = null;
 
 async function getBrowser(): Promise<Browser> {
-  if (!browserInstance || !browserInstance.isConnected()) {
+  if (!browserInstance?.isConnected()) {
     log("info", "Launching browser");
     browserInstance = await chromium.launch({ headless: true });
   }
@@ -57,7 +61,11 @@ async function extract(selector: string): Promise<ToolResult> {
   const element = await page.$(selector);
 
   if (!element) {
-    return { success: false, output: null, error: `Element not found: ${selector}` };
+    return {
+      success: false,
+      output: null,
+      error: `Element not found: ${selector}`,
+    };
   }
 
   const text = await element.textContent();
@@ -95,15 +103,18 @@ export function createBrowserTool(): ToolDefinition {
         },
         selector: {
           type: "string",
-          description: "CSS selector for the target element (required for click, fill, extract).",
+          description:
+            "CSS selector for the target element (required for click, fill, extract).",
         },
         value: {
           type: "string",
-          description: "Value to fill into the element (required for fill action).",
+          description:
+            "Value to fill into the element (required for fill action).",
         },
       },
       required: ["action"],
     },
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex tool dispatch logic
     async execute(input: Record<string, unknown>): Promise<ToolResult> {
       const action = input.action as BrowserAction;
       const url = input.url as string | undefined;
@@ -120,14 +131,22 @@ export function createBrowserTool(): ToolDefinition {
         switch (action) {
           case "navigate": {
             if (!url) {
-              return { success: false, output: null, error: "url is required for navigate action" };
+              return {
+                success: false,
+                output: null,
+                error: "url is required for navigate action",
+              };
             }
             return navigate(url);
           }
 
           case "click": {
             if (!selector) {
-              return { success: false, output: null, error: "selector is required for click action" };
+              return {
+                success: false,
+                output: null,
+                error: "selector is required for click action",
+              };
             }
             return click(selector);
           }
@@ -145,7 +164,11 @@ export function createBrowserTool(): ToolDefinition {
 
           case "extract": {
             if (!selector) {
-              return { success: false, output: null, error: "selector is required for extract action" };
+              return {
+                success: false,
+                output: null,
+                error: "selector is required for extract action",
+              };
             }
             return extract(selector);
           }

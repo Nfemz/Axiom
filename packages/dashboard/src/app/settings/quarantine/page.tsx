@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type Severity = "low" | "medium" | "high";
 
 interface QuarantinedItem {
-  id: string;
-  source: string;
-  detectedPatterns: string[];
-  severity: Severity;
   agentId: string;
-  timestamp: string;
   content: string;
+  detectedPatterns: string[];
+  id: string;
+  severity: Severity;
+  source: string;
+  timestamp: string;
 }
 
 // ── Placeholder Data ────────────────────────────────────────────────────────
@@ -26,7 +26,8 @@ const MOCK_ITEMS: QuarantinedItem[] = [
     severity: "high",
     agentId: "agent-a1b2c3d4",
     timestamp: "2026-03-07T14:22:00.000Z",
-    content: "Detected potential credential pattern in scraped output: AWS_ACCESS_KEY=AKIA...",
+    content:
+      "Detected potential credential pattern in scraped output: AWS_ACCESS_KEY=AKIA...",
   },
   {
     id: "q-002",
@@ -35,7 +36,8 @@ const MOCK_ITEMS: QuarantinedItem[] = [
     severity: "medium",
     agentId: "agent-e5f6g7h8",
     timestamp: "2026-03-07T13:10:00.000Z",
-    content: "Uploaded file contains executable shell script embedded in metadata.",
+    content:
+      "Uploaded file contains executable shell script embedded in metadata.",
   },
   {
     id: "q-003",
@@ -44,7 +46,8 @@ const MOCK_ITEMS: QuarantinedItem[] = [
     severity: "low",
     agentId: "agent-i9j0k1l2",
     timestamp: "2026-03-06T20:45:00.000Z",
-    content: "API response contained URL matching known phishing domain pattern.",
+    content:
+      "API response contained URL matching known phishing domain pattern.",
   },
 ];
 
@@ -122,9 +125,15 @@ export default function QuarantinePage() {
 
   const filtered = items
     .filter((item) => {
-      if (severityFilter && item.severity !== severityFilter) return false;
-      if (dateFrom && item.timestamp < dateFrom) return false;
-      if (dateTo && item.timestamp > dateTo + "T23:59:59.999Z") return false;
+      if (severityFilter && item.severity !== severityFilter) {
+        return false;
+      }
+      if (dateFrom && item.timestamp < dateFrom) {
+        return false;
+      }
+      if (dateTo && item.timestamp > `${dateTo}T23:59:59.999Z`) {
+        return false;
+      }
       return true;
     })
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -132,15 +141,22 @@ export default function QuarantinePage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  if (loading) return <div style={{ padding: "2rem" }}>Loading quarantine items...</div>;
-  if (fetchError)
+  if (loading) {
+    return <div style={{ padding: "2rem" }}>Loading quarantine items...</div>;
+  }
+  if (fetchError) {
     return (
-      <div style={{ padding: "2rem", color: "#ef4444" }}>Error: {fetchError}</div>
+      <div style={{ padding: "2rem", color: "#ef4444" }}>
+        Error: {fetchError}
+      </div>
     );
+  }
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>
+      <h1
+        style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}
+      >
         Quarantine Review
       </h1>
 
@@ -160,12 +176,12 @@ export default function QuarantinePage() {
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>Severity</span>
           <select
-            value={severityFilter}
             onChange={(e) => {
               setSeverityFilter(e.target.value as Severity | "");
               setPage(0);
             }}
             style={inputStyle}
+            value={severityFilter}
           >
             <option value="">All</option>
             <option value="low">Low</option>
@@ -177,26 +193,26 @@ export default function QuarantinePage() {
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>From</span>
           <input
-            type="date"
-            value={dateFrom}
             onChange={(e) => {
               setDateFrom(e.target.value);
               setPage(0);
             }}
             style={inputStyle}
+            type="date"
+            value={dateFrom}
           />
         </label>
 
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>To</span>
           <input
-            type="date"
-            value={dateTo}
             onChange={(e) => {
               setDateTo(e.target.value);
               setPage(0);
             }}
             style={inputStyle}
+            type="date"
+            value={dateTo}
           />
         </label>
       </div>
@@ -208,7 +224,9 @@ export default function QuarantinePage() {
         <>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid #374151", textAlign: "left" }}>
+              <tr
+                style={{ borderBottom: "1px solid #374151", textAlign: "left" }}
+              >
                 <th style={thStyle}>Source</th>
                 <th style={thStyle}>Detected Patterns</th>
                 <th style={thStyle}>Severity</th>
@@ -255,12 +273,14 @@ export default function QuarantinePage() {
                       <button
                         onClick={() => handleApprove(item.id)}
                         style={actionBtnStyle("#22c55e")}
+                        type="button"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleReject(item.id)}
                         style={actionBtnStyle("#ef4444")}
+                        type="button"
                       >
                         Reject
                       </button>
@@ -269,6 +289,7 @@ export default function QuarantinePage() {
                           setExpandedId(expandedId === item.id ? null : item.id)
                         }
                         style={actionBtnStyle("#60a5fa")}
+                        type="button"
                       >
                         {expandedId === item.id ? "Hide" : "Details"}
                       </button>
@@ -314,6 +335,7 @@ export default function QuarantinePage() {
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
                 style={paginationBtnStyle(page === 0)}
+                type="button"
               >
                 Previous
               </button>
@@ -321,6 +343,7 @@ export default function QuarantinePage() {
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
                 style={paginationBtnStyle(page >= totalPages - 1)}
+                type="button"
               >
                 Next
               </button>

@@ -1,14 +1,14 @@
-import { eq, sql } from "drizzle-orm";
 import {
   createLogger,
-  TransactionType,
   DEFAULT_BUDGET_CURRENCY,
   DEFAULT_REVENUE_SPLIT_OPERATOR,
   DEFAULT_REVENUE_SPLIT_REINVEST,
+  TransactionType,
 } from "@axiom/shared";
+import { eq, sql } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
-import { financialTransactions } from "../db/schema.js";
 import { getSystemConfig } from "../db/queries.js";
+import { financialTransactions } from "../db/schema.js";
 import { computeRevenueSplit, recordTransaction } from "./ledger.js";
 
 const log = createLogger("financial:revenue");
@@ -16,11 +16,11 @@ const log = createLogger("financial:revenue");
 // ─── Types ────────────────────────────────────────────────────────
 
 interface RecordRevenueParams {
-  ventureId: string;
   amount: string;
   currency?: string;
   description?: string;
   externalRef?: string;
+  ventureId: string;
 }
 
 interface SplitConfig {
@@ -29,9 +29,9 @@ interface SplitConfig {
 }
 
 interface RevenueSummary {
-  totalRevenue: number;
   totalOperatorSplit: number;
   totalReinvestSplit: number;
+  totalRevenue: number;
 }
 
 // ─── Record Revenue ───────────────────────────────────────────────
@@ -62,9 +62,13 @@ export async function applyRevenueSplit(
   db: Database,
   ventureId: string,
   amount: number,
-  config: SplitConfig,
+  config: SplitConfig
 ) {
-  const split = computeRevenueSplit(amount, config.operatorRate, config.reinvestRate);
+  const split = computeRevenueSplit(
+    amount,
+    config.operatorRate,
+    config.reinvestRate
+  );
 
   const operatorTx = await recordTransaction(db, {
     ventureId,
@@ -96,19 +100,26 @@ export async function applyRevenueSplit(
 
 export async function processRevenue(
   db: Database,
-  params: { ventureId: string; amount: string; currency?: string; description?: string },
+  params: {
+    ventureId: string;
+    amount: string;
+    currency?: string;
+    description?: string;
+  }
 ) {
   const revenueTx = await recordRevenue(db, params);
 
   const config = await getSystemConfig(db);
-  const operatorRate = config?.revenueSplitOperator ?? DEFAULT_REVENUE_SPLIT_OPERATOR;
-  const reinvestRate = config?.revenueSplitReinvest ?? DEFAULT_REVENUE_SPLIT_REINVEST;
+  const operatorRate =
+    config?.revenueSplitOperator ?? DEFAULT_REVENUE_SPLIT_OPERATOR;
+  const reinvestRate =
+    config?.revenueSplitReinvest ?? DEFAULT_REVENUE_SPLIT_REINVEST;
 
   const splitResult = await applyRevenueSplit(
     db,
     params.ventureId,
-    parseFloat(params.amount),
-    { operatorRate, reinvestRate },
+    Number.parseFloat(params.amount),
+    { operatorRate, reinvestRate }
   );
 
   return { revenueTx, ...splitResult };
@@ -118,9 +129,9 @@ export async function processRevenue(
 
 export async function getRevenueSummary(
   db: Database,
-  ventureId?: string,
+  ventureId?: string
 ): Promise<RevenueSummary> {
-  const conditions = ventureId
+  const _conditions = ventureId
     ? sql`WHERE ${financialTransactions.ventureId} = ${ventureId}`
     : sql``;
 
@@ -141,13 +152,13 @@ export async function getRevenueSummary(
     })
     .from(financialTransactions)
     .where(
-      ventureId ? eq(financialTransactions.ventureId, ventureId) : sql`TRUE`,
+      ventureId ? eq(financialTransactions.ventureId, ventureId) : sql`TRUE`
     );
 
   const row = result[0];
   return {
-    totalRevenue: parseFloat(row?.totalRevenue ?? "0"),
-    totalOperatorSplit: parseFloat(row?.totalOperatorSplit ?? "0"),
-    totalReinvestSplit: parseFloat(row?.totalReinvestSplit ?? "0"),
+    totalRevenue: Number.parseFloat(row?.totalRevenue ?? "0"),
+    totalOperatorSplit: Number.parseFloat(row?.totalOperatorSplit ?? "0"),
+    totalReinvestSplit: Number.parseFloat(row?.totalReinvestSplit ?? "0"),
   };
 }

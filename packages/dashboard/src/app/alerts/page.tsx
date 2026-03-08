@@ -1,28 +1,28 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface AlertRule {
+  condition: { metric: string; operator: string; threshold: number };
+  createdAt: string;
+  enabled: boolean;
   id: string;
   name: string;
-  condition: { metric: string; operator: string; threshold: number };
-  severity: string;
-  enabled: boolean;
   notifyDiscord: boolean;
-  createdAt: string;
+  severity: string;
 }
 
 interface AlertEvent {
-  id: string;
-  ruleId: string;
-  agentId: string | null;
-  severity: string;
-  message: string;
   acknowledged: boolean;
   acknowledgedAt: string | null;
+  agentId: string | null;
   createdAt: string;
+  id: string;
+  message: string;
+  ruleId: string;
+  severity: string;
 }
 
 type Tab = "rules" | "events";
@@ -55,7 +55,9 @@ export default function AlertsPage() {
   const fetchRules = useCallback(async () => {
     try {
       const res = await fetch("/api/alerts");
-      if (!res.ok) return;
+      if (!res.ok) {
+        return;
+      }
       const json = await res.json();
       setRules(json.rules ?? []);
     } finally {
@@ -66,7 +68,9 @@ export default function AlertsPage() {
   const fetchEvents = useCallback(async () => {
     try {
       const res = await fetch("/api/alerts?view=events");
-      if (!res.ok) return;
+      if (!res.ok) {
+        return;
+      }
       const json = await res.json();
       setEvents(json.events ?? []);
     } finally {
@@ -75,15 +79,18 @@ export default function AlertsPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === "rules") fetchRules();
-    else fetchEvents();
+    if (tab === "rules") {
+      fetchRules();
+    } else {
+      fetchEvents();
+    }
   }, [tab, fetchRules, fetchEvents]);
 
   async function handleCreateRule(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
 
-    if (!formName || !formMetric || !formThreshold) {
+    if (!(formName && formMetric && formThreshold)) {
       setFormError("All fields are required.");
       return;
     }
@@ -103,7 +110,9 @@ export default function AlertsPage() {
           notifyDiscord: formNotifyDiscord,
         }),
       });
-      if (!res.ok) throw new Error("Failed to create rule");
+      if (!res.ok) {
+        throw new Error("Failed to create rule");
+      }
       setFormName("");
       setFormMetric("");
       setFormThreshold("");
@@ -129,7 +138,9 @@ export default function AlertsPage() {
   function severityBadge(severity: string) {
     const cls = SEVERITY_CLASSES[severity] ?? "bg-gray-100 text-gray-800";
     return (
-      <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${cls}`}>
+      <span
+        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
+      >
         {severity}
       </span>
     );
@@ -142,27 +153,29 @@ export default function AlertsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Alerts</h1>
+        <h1 className="mb-6 font-bold text-2xl text-gray-900">Alerts</h1>
 
         {/* Tab Navigation */}
-        <div className="mb-6 flex gap-4 border-b border-gray-200">
+        <div className="mb-6 flex gap-4 border-gray-200 border-b">
           <button
-            onClick={() => setTab("rules")}
-            className={`pb-2 text-sm font-medium ${
+            className={`pb-2 font-medium text-sm ${
               tab === "rules"
-                ? "border-b-2 border-blue-500 text-blue-600"
+                ? "border-blue-500 border-b-2 text-blue-600"
                 : "text-gray-500 hover:text-gray-700"
             }`}
+            onClick={() => setTab("rules")}
+            type="button"
           >
             Rules
           </button>
           <button
-            onClick={() => setTab("events")}
-            className={`pb-2 text-sm font-medium ${
+            className={`pb-2 font-medium text-sm ${
               tab === "events"
-                ? "border-b-2 border-blue-500 text-blue-600"
+                ? "border-blue-500 border-b-2 text-blue-600"
                 : "text-gray-500 hover:text-gray-700"
             }`}
+            onClick={() => setTab("events")}
+            type="button"
           >
             Events
           </button>
@@ -173,59 +186,96 @@ export default function AlertsPage() {
           <>
             {/* Create Rule Form */}
             <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Create Alert Rule</h2>
+              <h2 className="mb-4 font-semibold text-gray-900 text-lg">
+                Create Alert Rule
+              </h2>
               {formError && (
-                <p className="mb-4 text-sm text-red-600">{formError}</p>
+                <p className="mb-4 text-red-600 text-sm">{formError}</p>
               )}
-              <form onSubmit={handleCreateRule} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <form
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                onSubmit={handleCreateRule}
+              >
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label
+                    className="block font-medium text-gray-700 text-sm"
+                    htmlFor="alert-name"
+                  >
+                    Name
+                  </label>
                   <input
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                    id="alert-name"
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="High spend alert"
                     type="text"
                     value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                    placeholder="High spend alert"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Metric</label>
+                  <label
+                    className="block font-medium text-gray-700 text-sm"
+                    htmlFor="alert-metric"
+                  >
+                    Metric
+                  </label>
                   <input
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                    id="alert-metric"
+                    onChange={(e) => setFormMetric(e.target.value)}
+                    placeholder="budget_spent_pct"
                     type="text"
                     value={formMetric}
-                    onChange={(e) => setFormMetric(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                    placeholder="budget_spent_pct"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Operator</label>
+                  <label
+                    className="block font-medium text-gray-700 text-sm"
+                    htmlFor="alert-operator"
+                  >
+                    Operator
+                  </label>
                   <select
-                    value={formOperator}
-                    onChange={(e) => setFormOperator(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                    id="alert-operator"
+                    onChange={(e) => setFormOperator(e.target.value)}
+                    value={formOperator}
                   >
                     {OPERATORS.map((op) => (
-                      <option key={op} value={op}>{op}</option>
+                      <option key={op} value={op}>
+                        {op}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Threshold</label>
+                  <label
+                    className="block font-medium text-gray-700 text-sm"
+                    htmlFor="alert-threshold"
+                  >
+                    Threshold
+                  </label>
                   <input
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                    id="alert-threshold"
+                    onChange={(e) => setFormThreshold(e.target.value)}
+                    placeholder="80"
                     type="number"
                     value={formThreshold}
-                    onChange={(e) => setFormThreshold(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-                    placeholder="80"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Severity</label>
+                  <label
+                    className="block font-medium text-gray-700 text-sm"
+                    htmlFor="alert-severity"
+                  >
+                    Severity
+                  </label>
                   <select
-                    value={formSeverity}
-                    onChange={(e) => setFormSeverity(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                    id="alert-severity"
+                    onChange={(e) => setFormSeverity(e.target.value)}
+                    value={formSeverity}
                   >
                     <option value="info">Info</option>
                     <option value="warning">Warning</option>
@@ -233,18 +283,18 @@ export default function AlertsPage() {
                   </select>
                 </div>
                 <div className="flex items-end gap-4">
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm">
                     <input
-                      type="checkbox"
                       checked={formNotifyDiscord}
-                      onChange={(e) => setFormNotifyDiscord(e.target.checked)}
                       className="rounded border-gray-300"
+                      onChange={(e) => setFormNotifyDiscord(e.target.checked)}
+                      type="checkbox"
                     />
                     Notify Discord
                   </label>
                   <button
+                    className="rounded-md bg-blue-600 px-4 py-2 font-medium text-sm text-white hover:bg-blue-700"
                     type="submit"
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                   >
                     Create Rule
                   </button>
@@ -257,38 +307,67 @@ export default function AlertsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Severity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Condition</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Enabled</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Discord</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Severity
+                    </th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Condition
+                    </th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Enabled
+                    </th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Discord
+                    </th>
+                    <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {rules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{rule.name}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">{severityBadge(rule.severity)}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {rule.condition.metric} {rule.condition.operator} {rule.condition.threshold}
+                    <tr className="hover:bg-gray-50" key={rule.id}>
+                      <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
+                        {rule.name}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        <span className={rule.enabled ? "text-green-600" : "text-gray-400"}>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                        {severityBadge(rule.severity)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                        {rule.condition.metric} {rule.condition.operator}{" "}
+                        {rule.condition.threshold}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                        <span
+                          className={
+                            rule.enabled ? "text-green-600" : "text-gray-400"
+                          }
+                        >
                           {rule.enabled ? "Yes" : "No"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                         {rule.notifyDiscord ? "Yes" : "No"}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm">
-                        <button className="text-red-600 hover:text-red-800">Delete</button>
+                        <button
+                          className="text-red-600 hover:text-red-800"
+                          type="button"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
                   {rules.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                      <td
+                        className="px-6 py-12 text-center text-gray-500 text-sm"
+                        colSpan={6}
+                      >
                         No alert rules configured.
                       </td>
                     </tr>
@@ -305,20 +384,38 @@ export default function AlertsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Severity</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Message</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Agent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Severity
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Message
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Agent
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">{severityBadge(event.severity)}</td>
-                    <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-900">{event.message}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{event.agentId ?? "-"}</td>
+                  <tr className="hover:bg-gray-50" key={event.id}>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm">
+                      {severityBadge(event.severity)}
+                    </td>
+                    <td className="max-w-xs truncate px-6 py-4 text-gray-900 text-sm">
+                      {event.message}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                      {event.agentId ?? "-"}
+                    </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       {event.acknowledged ? (
                         <span className="text-green-600">Acknowledged</span>
@@ -326,14 +423,15 @@ export default function AlertsPage() {
                         <span className="text-orange-600">Active</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
                       {new Date(event.createdAt).toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       {!event.acknowledged && (
                         <button
+                          className="rounded bg-green-600 px-3 py-1 font-medium text-white text-xs hover:bg-green-700"
                           onClick={() => handleAcknowledge(event.id)}
-                          className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                          type="button"
                         >
                           Acknowledge
                         </button>
@@ -343,7 +441,10 @@ export default function AlertsPage() {
                 ))}
                 {events.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                    <td
+                      className="px-6 py-12 text-center text-gray-500 text-sm"
+                      colSpan={6}
+                    >
                       No alert events recorded.
                     </td>
                   </tr>

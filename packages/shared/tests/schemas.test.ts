@@ -1,26 +1,26 @@
-import { describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
+import { describe, expect, it } from "vitest";
+import { VALID_STATUS_TRANSITIONS } from "../src/constants/defaults.js";
 import {
   AgentToOrchestratorSchema,
+  CreateDefinitionRequestSchema,
   OrchestratorToAgentSchema,
   SpawnAgentRequestSchema,
-  CreateDefinitionRequestSchema,
 } from "../src/schemas/index.js";
 import {
   AgentStatus,
-  MemoryType,
-  SkillStatus,
   AlertSeverity,
-  IdentityType,
-  SecretType,
-  PipelineStatus,
-  TransactionType,
   AuditOutcome,
-  SessionStatus,
-  KnowledgeEntryType,
   IdentityStatus,
+  IdentityType,
+  KnowledgeEntryType,
+  MemoryType,
+  PipelineStatus,
+  SecretType,
+  SessionStatus,
+  SkillStatus,
+  TransactionType,
 } from "../src/types/enums.js";
-import { VALID_STATUS_TRANSITIONS } from "../src/constants/defaults.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -134,7 +134,11 @@ describe("OrchestratorToAgentSchema", () => {
   });
 
   it("validates a terminate command", () => {
-    const msg = { type: "terminate", reason: "budget exceeded", graceful: true };
+    const msg = {
+      type: "terminate",
+      reason: "budget exceeded",
+      graceful: true,
+    };
     expect(OrchestratorToAgentSchema.parse(msg)).toMatchObject(msg);
   });
 
@@ -223,9 +227,9 @@ describe("CreateDefinitionRequestSchema", () => {
     expect(parsed.retryPolicy.backoffDelay).toBe(1000);
 
     // Heartbeat config defaults
-    expect(parsed.heartbeatConfig.timeoutMs).toBe(300000);
+    expect(parsed.heartbeatConfig.timeoutMs).toBe(300_000);
     expect(parsed.heartbeatConfig.resourceThresholds).toEqual({});
-    expect(parsed.heartbeatConfig.llmCheckInterval).toBe(600000);
+    expect(parsed.heartbeatConfig.llmCheckInterval).toBe(600_000);
   });
 
   it("allows overriding defaults", () => {
@@ -289,8 +293,13 @@ describe("Enum exhaustiveness", () => {
     const values = Object.values(AgentStatus);
     expect(values).toEqual(
       expect.arrayContaining([
-        "spawning", "running", "paused", "suspended", "error", "terminated",
-      ]),
+        "spawning",
+        "running",
+        "paused",
+        "suspended",
+        "error",
+        "terminated",
+      ])
     );
     expect(values).toHaveLength(6);
   });
@@ -299,8 +308,12 @@ describe("Enum exhaustiveness", () => {
     const values = Object.values(MemoryType);
     expect(values).toEqual(
       expect.arrayContaining([
-        "fact", "decision", "preference", "reflection", "consolidation",
-      ]),
+        "fact",
+        "decision",
+        "preference",
+        "reflection",
+        "consolidation",
+      ])
     );
     expect(values).toHaveLength(5);
   });
@@ -308,7 +321,7 @@ describe("Enum exhaustiveness", () => {
   it("SkillStatus has all expected values", () => {
     const values = Object.values(SkillStatus);
     expect(values).toEqual(
-      expect.arrayContaining(["draft", "validated", "active", "deprecated"]),
+      expect.arrayContaining(["draft", "validated", "active", "deprecated"])
     );
     expect(values).toHaveLength(4);
   });
@@ -316,7 +329,7 @@ describe("Enum exhaustiveness", () => {
   it("AlertSeverity has all expected values", () => {
     const values = Object.values(AlertSeverity);
     expect(values).toEqual(
-      expect.arrayContaining(["info", "warning", "critical"]),
+      expect.arrayContaining(["info", "warning", "critical"])
     );
     expect(values).toHaveLength(3);
   });
@@ -324,7 +337,7 @@ describe("Enum exhaustiveness", () => {
   it("IdentityType has all expected values", () => {
     const values = Object.values(IdentityType);
     expect(values).toEqual(
-      expect.arrayContaining(["email", "phone", "voice", "service_account"]),
+      expect.arrayContaining(["email", "phone", "voice", "service_account"])
     );
     expect(values).toHaveLength(4);
   });
@@ -332,7 +345,12 @@ describe("Enum exhaustiveness", () => {
   it("SecretType has all expected values", () => {
     const values = Object.values(SecretType);
     expect(values).toEqual(
-      expect.arrayContaining(["api_key", "credential", "payment_method", "oauth_token"]),
+      expect.arrayContaining([
+        "api_key",
+        "credential",
+        "payment_method",
+        "oauth_token",
+      ])
     );
     expect(values).toHaveLength(4);
   });
@@ -340,7 +358,13 @@ describe("Enum exhaustiveness", () => {
   it("PipelineStatus has all expected values", () => {
     const values = Object.values(PipelineStatus);
     expect(values).toEqual(
-      expect.arrayContaining(["planned", "active", "paused", "completed", "failed"]),
+      expect.arrayContaining([
+        "planned",
+        "active",
+        "paused",
+        "completed",
+        "failed",
+      ])
     );
     expect(values).toHaveLength(5);
   });
@@ -348,7 +372,12 @@ describe("Enum exhaustiveness", () => {
   it("TransactionType has all expected values", () => {
     const values = Object.values(TransactionType);
     expect(values).toEqual(
-      expect.arrayContaining(["expense", "revenue", "split_operator", "split_reinvestment"]),
+      expect.arrayContaining([
+        "expense",
+        "revenue",
+        "split_operator",
+        "split_reinvestment",
+      ])
     );
     expect(values).toHaveLength(4);
   });
@@ -356,7 +385,7 @@ describe("Enum exhaustiveness", () => {
   it("AuditOutcome has all expected values", () => {
     const values = Object.values(AuditOutcome);
     expect(values).toEqual(
-      expect.arrayContaining(["success", "failure", "blocked", "pending"]),
+      expect.arrayContaining(["success", "failure", "blocked", "pending"])
     );
     expect(values).toHaveLength(4);
   });
@@ -364,7 +393,7 @@ describe("Enum exhaustiveness", () => {
   it("SessionStatus has all expected values", () => {
     const values = Object.values(SessionStatus);
     expect(values).toEqual(
-      expect.arrayContaining(["active", "compacted", "ended"]),
+      expect.arrayContaining(["active", "compacted", "ended"])
     );
     expect(values).toHaveLength(3);
   });
@@ -373,17 +402,19 @@ describe("Enum exhaustiveness", () => {
     const values = Object.values(KnowledgeEntryType);
     expect(values).toEqual(
       expect.arrayContaining([
-        "resolution", "pattern", "strategy", "insight", "tool_integration",
-      ]),
+        "resolution",
+        "pattern",
+        "strategy",
+        "insight",
+        "tool_integration",
+      ])
     );
     expect(values).toHaveLength(5);
   });
 
   it("IdentityStatus has all expected values", () => {
     const values = Object.values(IdentityStatus);
-    expect(values).toEqual(
-      expect.arrayContaining(["active", "revoked"]),
-    );
+    expect(values).toEqual(expect.arrayContaining(["active", "revoked"]));
     expect(values).toHaveLength(2);
   });
 });

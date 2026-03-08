@@ -1,33 +1,33 @@
-import { createLogger } from '@axiom/shared';
-import type { Database } from '../db/drizzle.js';
-import { sharedKnowledge } from '../db/schema.js';
-import { eq, desc, sql } from 'drizzle-orm';
+import { createLogger } from "@axiom/shared";
+import { desc, eq, sql } from "drizzle-orm";
+import type { Database } from "../db/drizzle.js";
+import { sharedKnowledge } from "../db/schema.js";
 
-const logger = createLogger('knowledge-base');
+const logger = createLogger("knowledge-base");
 
 export interface KnowledgeResult {
-  id: string;
+  accessCount: number;
+  category: string;
   content: string;
   entryType: string;
-  tags: string[];
-  category: string;
+  id: string;
   importanceScore: number;
-  accessCount: number;
+  tags: string[];
 }
 
 interface KnowledgeEntry {
-  content: string;
-  entryType: string;
-  tags: string[];
   category: string;
+  content: string;
   contributingAgentId: string;
-  importanceScore: number;
   embedding?: number[];
+  entryType: string;
+  importanceScore: number;
+  tags: string[];
 }
 
 export async function publishKnowledge(
   db: Database,
-  entry: KnowledgeEntry,
+  entry: KnowledgeEntry
 ): Promise<string> {
   const [row] = await db
     .insert(sharedKnowledge)
@@ -42,14 +42,17 @@ export async function publishKnowledge(
     })
     .returning({ id: sharedKnowledge.id });
 
-  logger.info('Knowledge published', { id: row.id, entryType: entry.entryType });
+  logger.info("Knowledge published", {
+    id: row.id,
+    entryType: entry.entryType,
+  });
   return row.id;
 }
 
 export async function queryKnowledge(
   db: Database,
   query: string,
-  limit: number = 10,
+  limit = 10
 ): Promise<KnowledgeResult[]> {
   const pattern = `%${query}%`;
 
@@ -57,7 +60,10 @@ export async function queryKnowledge(
     .select()
     .from(sharedKnowledge)
     .where(sql`${sharedKnowledge.content} ILIKE ${pattern}`)
-    .orderBy(desc(sharedKnowledge.importanceScore), desc(sharedKnowledge.accessCount))
+    .orderBy(
+      desc(sharedKnowledge.importanceScore),
+      desc(sharedKnowledge.accessCount)
+    )
     .limit(limit);
 
   return rows.map(toKnowledgeResult);
@@ -66,7 +72,7 @@ export async function queryKnowledge(
 export async function queryKnowledgeByTags(
   db: Database,
   tags: string[],
-  limit: number = 10,
+  limit = 10
 ): Promise<KnowledgeResult[]> {
   const rows = await db
     .select()
@@ -80,7 +86,7 @@ export async function queryKnowledgeByTags(
 
 export async function incrementAccessCount(
   db: Database,
-  id: string,
+  id: string
 ): Promise<void> {
   await db
     .update(sharedKnowledge)
@@ -88,7 +94,9 @@ export async function incrementAccessCount(
     .where(eq(sharedKnowledge.id, id));
 }
 
-function toKnowledgeResult(row: typeof sharedKnowledge.$inferSelect): KnowledgeResult {
+function toKnowledgeResult(
+  row: typeof sharedKnowledge.$inferSelect
+): KnowledgeResult {
   return {
     id: row.id,
     content: row.content,

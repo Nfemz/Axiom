@@ -10,8 +10,8 @@
 
 export interface FailureRecord {
   action: string;
-  error: string;
   context: Record<string, unknown>;
+  error: string;
   timestamp: Date;
 }
 
@@ -27,7 +27,7 @@ export function recordFailure(
   failures: FailureRecord[],
   action: string,
   error: string,
-  context: Record<string, unknown> = {},
+  context: Record<string, unknown> = {}
 ): FailureRecord[] {
   const record: FailureRecord = {
     action,
@@ -41,7 +41,7 @@ export function recordFailure(
 
 export function findSimilarFailures(
   failures: FailureRecord[],
-  action: string,
+  action: string
 ): FailureRecord[] {
   return failures.filter((f) => f.action === action);
 }
@@ -50,7 +50,7 @@ export function recordResolution(
   resolutions: ResolutionRecord[],
   failure: FailureRecord,
   resolution: string,
-  successful: boolean,
+  successful: boolean
 ): ResolutionRecord[] {
   const record: ResolutionRecord = { failure, resolution, successful };
 
@@ -59,7 +59,7 @@ export function recordResolution(
 
 export function getSuccessfulResolutions(
   resolutions: ResolutionRecord[],
-  action: string,
+  action: string
 ): string[] {
   return resolutions
     .filter((r) => r.failure.action === action && r.successful)
@@ -69,12 +69,10 @@ export function getSuccessfulResolutions(
 export function shouldAvoidApproach(
   resolutions: ResolutionRecord[],
   action: string,
-  approach: string,
+  approach: string
 ): boolean {
   return resolutions.some(
     (r) =>
-      r.failure.action === action &&
-      r.resolution === approach &&
-      !r.successful,
+      r.failure.action === action && r.resolution === approach && !r.successful
   );
 }

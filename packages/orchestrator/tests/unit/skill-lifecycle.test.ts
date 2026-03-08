@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SKILL_AUTO_DEPRECATE_FAILURES, SkillStatus } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  invokeSkill,
-  recordSuccess,
-  recordFailure,
   getSkillMetrics,
+  invokeSkill,
+  recordFailure,
+  recordSuccess,
 } from "../../src/skills/lifecycle.js";
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -40,22 +40,26 @@ describe("Skill Lifecycle", () => {
   it("invokeSkill throws when skill not found", async () => {
     db.returning.mockResolvedValueOnce([]);
 
-    await expect(invokeSkill(db as any, "missing")).rejects.toThrow("Skill not found");
+    await expect(invokeSkill(db as any, "missing")).rejects.toThrow(
+      "Skill not found"
+    );
   });
 
   it("recordSuccess resets consecutiveFailures to 0", async () => {
     await recordSuccess(db as any, "sk-1");
 
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ consecutiveFailures: 0 }),
+      expect.objectContaining({ consecutiveFailures: 0 })
     );
   });
 
   it("recordFailure does not deprecate when below threshold", async () => {
-    db.returning.mockResolvedValueOnce([{
-      consecutiveFailures: 1,
-      status: SkillStatus.Active,
-    }]);
+    db.returning.mockResolvedValueOnce([
+      {
+        consecutiveFailures: 1,
+        status: SkillStatus.Active,
+      },
+    ]);
 
     await recordFailure(db as any, "sk-1");
 
@@ -64,10 +68,12 @@ describe("Skill Lifecycle", () => {
   });
 
   it("recordFailure auto-deprecates at threshold", async () => {
-    db.returning.mockResolvedValueOnce([{
-      consecutiveFailures: SKILL_AUTO_DEPRECATE_FAILURES,
-      status: SkillStatus.Active,
-    }]);
+    db.returning.mockResolvedValueOnce([
+      {
+        consecutiveFailures: SKILL_AUTO_DEPRECATE_FAILURES,
+        status: SkillStatus.Active,
+      },
+    ]);
 
     await recordFailure(db as any, "sk-1");
 
@@ -76,10 +82,12 @@ describe("Skill Lifecycle", () => {
   });
 
   it("recordFailure does not double-deprecate already deprecated skill", async () => {
-    db.returning.mockResolvedValueOnce([{
-      consecutiveFailures: SKILL_AUTO_DEPRECATE_FAILURES,
-      status: SkillStatus.Deprecated,
-    }]);
+    db.returning.mockResolvedValueOnce([
+      {
+        consecutiveFailures: SKILL_AUTO_DEPRECATE_FAILURES,
+        status: SkillStatus.Deprecated,
+      },
+    ]);
 
     await recordFailure(db as any, "sk-1");
 
@@ -117,6 +125,8 @@ describe("Skill Lifecycle", () => {
       returning: vi.fn(),
     });
 
-    await expect(getSkillMetrics(db as any, "missing")).rejects.toThrow("Skill not found");
+    await expect(getSkillMetrics(db as any, "missing")).rejects.toThrow(
+      "Skill not found"
+    );
   });
 });

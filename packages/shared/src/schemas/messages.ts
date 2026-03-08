@@ -49,7 +49,13 @@ export const KnowledgePublishSchema = z.object({
   agentId: z.string().uuid(),
   entry: z.object({
     content: z.string(),
-    entryType: z.enum(["resolution", "pattern", "strategy", "insight", "tool_integration"]),
+    entryType: z.enum([
+      "resolution",
+      "pattern",
+      "strategy",
+      "insight",
+      "tool_integration",
+    ]),
     tags: z.array(z.string()),
     category: z.string(),
     importanceScore: z.number().min(0).max(1),
@@ -180,9 +186,11 @@ export type OrchestratorToAgent = z.infer<typeof OrchestratorToAgentSchema>;
 // SSE event schema
 export const SSEEventSchema = z.object({
   type: z.string(),
-  payload: z.object({
-    id: z.string(),
-  }).passthrough(),
+  payload: z
+    .object({
+      id: z.string(),
+    })
+    .passthrough(),
   timestamp: z.string().datetime(),
 });
 

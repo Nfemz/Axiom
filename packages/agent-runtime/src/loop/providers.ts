@@ -1,14 +1,14 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { openai, createOpenAI } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
+import { createOpenAI, openai } from "@ai-sdk/openai";
 
 export interface ProviderConfig {
-  provider: string; // "anthropic" | "openai" | "google" | "openrouter"
-  modelId: string; // e.g. "claude-sonnet-4-20250514"
   apiKey?: string;
+  modelId: string; // e.g. "claude-sonnet-4-20250514"
+  provider: string; // "anthropic" | "openai" | "google" | "openrouter"
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Vercel AI SDK returns different model types per provider
 export function getModel(config: ProviderConfig): any {
   switch (config.provider) {
     case "anthropic":

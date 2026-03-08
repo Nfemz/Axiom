@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeRevenueSplit } from "../../src/financial/ledger.js";
 
 describe("Financial Ledger", () => {
@@ -30,7 +30,10 @@ describe("Financial Ledger", () => {
     it("operator + reinvest amounts approximate original", () => {
       const amount = 1000;
       const result = computeRevenueSplit(amount, 0.2, 0.8);
-      expect(result.operatorAmount + result.reinvestAmount).toBeCloseTo(amount, 1);
+      expect(result.operatorAmount + result.reinvestAmount).toBeCloseTo(
+        amount,
+        1
+      );
     });
 
     it("handles 100/0 split", () => {

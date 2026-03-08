@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import Redis from "ioredis";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,9 @@ const BACKUP_DIR = process.env.BACKUP_DIR ?? "/var/lib/axiom/backups";
 const BACKUP_QUEUE = "backup";
 
 interface BackupInfo {
+  createdAt: string;
   filename: string;
   path: string;
-  createdAt: string;
   sizeBytes: number;
 }
 
@@ -25,7 +25,7 @@ async function listBackups(outputDir: string): Promise<BackupInfo[]> {
   }
 
   const backupFiles = entries.filter(
-    (f) => f.startsWith("axiom-backup-") && f.endsWith(".sql"),
+    (f) => f.startsWith("axiom-backup-") && f.endsWith(".sql")
   );
 
   const infos: BackupInfo[] = [];
@@ -40,7 +40,9 @@ async function listBackups(outputDir: string): Promise<BackupInfo[]> {
     });
   }
 
-  infos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  infos.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   return infos;
 }
 
@@ -80,7 +82,9 @@ async function enqueueBackupJob(action: string): Promise<string> {
 
 export async function GET() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   try {
     const backups = await listBackups(BACKUP_DIR);
@@ -92,22 +96,24 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to list backups", details: String(err) },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const body = await request.json();
   const action = body.action as string | undefined;
 
-  if (!action || !["backup", "verify"].includes(action)) {
+  if (!(action && ["backup", "verify"].includes(action))) {
     return NextResponse.json(
       { error: "Invalid action. Must be one of: backup, verify" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -121,12 +127,12 @@ export async function POST(request: NextRequest) {
         jobId,
         timestamp: new Date().toISOString(),
       },
-      { status: 202 },
+      { status: 202 }
     );
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to enqueue backup job", details: String(err) },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -4,17 +4,17 @@
 // Validates agent status transitions against the shared transition map.
 // ---------------------------------------------------------------------------
 
-import { AgentStatus, VALID_STATUS_TRANSITIONS } from "@axiom/shared";
+import { type AgentStatus, VALID_STATUS_TRANSITIONS } from "@axiom/shared";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-export type StatusTransitionEvent = {
+export interface StatusTransitionEvent {
   agentId: string;
   fromStatus: AgentStatus;
-  toStatus: AgentStatus;
-  timestamp: Date;
   reason?: string;
-};
+  timestamp: Date;
+  toStatus: AgentStatus;
+}
 
 // ── Transition helpers ──────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export type StatusTransitionEvent = {
  */
 export function validateTransition(
   currentStatus: AgentStatus,
-  targetStatus: AgentStatus,
+  targetStatus: AgentStatus
 ): boolean {
   const allowed = VALID_STATUS_TRANSITIONS[currentStatus];
   return allowed.includes(targetStatus);
@@ -36,11 +36,11 @@ export function validateTransition(
  */
 export function assertTransition(
   currentStatus: AgentStatus,
-  targetStatus: AgentStatus,
+  targetStatus: AgentStatus
 ): void {
   if (!validateTransition(currentStatus, targetStatus)) {
     throw new Error(
-      `Invalid status transition: "${currentStatus}" -> "${targetStatus}"`,
+      `Invalid status transition: "${currentStatus}" -> "${targetStatus}"`
     );
   }
 }
@@ -49,7 +49,7 @@ export function assertTransition(
  * Returns the list of statuses reachable from `currentStatus`.
  */
 export function getAvailableTransitions(
-  currentStatus: AgentStatus,
+  currentStatus: AgentStatus
 ): AgentStatus[] {
   return VALID_STATUS_TRANSITIONS[currentStatus];
 }

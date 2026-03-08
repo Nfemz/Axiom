@@ -1,21 +1,27 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
-import { getDb } from "@/lib/db";
 import { pipelines } from "@axiom/orchestrator/db/schema";
 import { eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const db = getDb();
-  const [pipeline] = await db.select().from(pipelines).where(eq(pipelines.id, id)).limit(1);
+  const [pipeline] = await db
+    .select()
+    .from(pipelines)
+    .where(eq(pipelines.id, id))
+    .limit(1);
 
   if (!pipeline) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -26,10 +32,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const body = await request.json();

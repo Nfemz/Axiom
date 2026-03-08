@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface AuditEntry {
-  id: string;
-  timestamp: string;
-  agentId: string;
   actionType: string;
+  agentId: string;
+  details: string;
+  id: string;
   outcome: string;
   securityFlag: boolean;
-  details: string;
+  timestamp: string;
 }
 
 const ACTION_TYPES = [
@@ -67,11 +67,21 @@ export default function AuditPage() {
 
   const filtered = entries
     .filter((e) => {
-      if (agentIdFilter && !e.agentId.includes(agentIdFilter)) return false;
-      if (actionTypeFilter && e.actionType !== actionTypeFilter) return false;
-      if (securityOnly && !e.securityFlag) return false;
-      if (dateFrom && e.timestamp < dateFrom) return false;
-      if (dateTo && e.timestamp > dateTo + "T23:59:59.999Z") return false;
+      if (agentIdFilter && !e.agentId.includes(agentIdFilter)) {
+        return false;
+      }
+      if (actionTypeFilter && e.actionType !== actionTypeFilter) {
+        return false;
+      }
+      if (securityOnly && !e.securityFlag) {
+        return false;
+      }
+      if (dateFrom && e.timestamp < dateFrom) {
+        return false;
+      }
+      if (dateTo && e.timestamp > `${dateTo}T23:59:59.999Z`) {
+        return false;
+      }
       return true;
     })
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -79,17 +89,22 @@ export default function AuditPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  if (loading) return <div style={{ padding: "2rem" }}>Loading audit log...</div>;
-  if (fetchError)
+  if (loading) {
+    return <div style={{ padding: "2rem" }}>Loading audit log...</div>;
+  }
+  if (fetchError) {
     return (
       <div style={{ padding: "2rem", color: "#ef4444" }}>
         Error: {fetchError}
       </div>
     );
+  }
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>
+      <h1
+        style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}
+      >
         Audit Log
       </h1>
 
@@ -108,26 +123,26 @@ export default function AuditPage() {
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>Agent ID</span>
           <input
-            type="text"
-            placeholder="Filter by agent ID"
-            value={agentIdFilter}
             onChange={(e) => {
               setAgentIdFilter(e.target.value);
               setPage(0);
             }}
+            placeholder="Filter by agent ID"
             style={inputStyle}
+            type="text"
+            value={agentIdFilter}
           />
         </label>
 
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>Action Type</span>
           <select
-            value={actionTypeFilter}
             onChange={(e) => {
               setActionTypeFilter(e.target.value);
               setPage(0);
             }}
             style={inputStyle}
+            value={actionTypeFilter}
           >
             <option value="">All</option>
             {ACTION_TYPES.filter(Boolean).map((t) => (
@@ -141,37 +156,44 @@ export default function AuditPage() {
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>From</span>
           <input
-            type="date"
-            value={dateFrom}
             onChange={(e) => {
               setDateFrom(e.target.value);
               setPage(0);
             }}
             style={inputStyle}
+            type="date"
+            value={dateFrom}
           />
         </label>
 
         <label style={filterLabelStyle}>
           <span style={filterSpanStyle}>To</span>
           <input
-            type="date"
-            value={dateTo}
             onChange={(e) => {
               setDateTo(e.target.value);
               setPage(0);
             }}
             style={inputStyle}
+            type="date"
+            value={dateTo}
           />
         </label>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+          }}
+        >
           <input
-            type="checkbox"
             checked={securityOnly}
             onChange={(e) => {
               setSecurityOnly(e.target.checked);
               setPage(0);
             }}
+            type="checkbox"
           />
           <span style={{ fontSize: "0.875rem", color: "#d1d5db" }}>
             Security events only
@@ -185,7 +207,9 @@ export default function AuditPage() {
         <>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid #374151", textAlign: "left" }}>
+              <tr
+                style={{ borderBottom: "1px solid #374151", textAlign: "left" }}
+              >
                 <th style={thStyle}>Timestamp</th>
                 <th style={thStyle}>Agent ID</th>
                 <th style={thStyle}>Action Type</th>
@@ -196,18 +220,35 @@ export default function AuditPage() {
             </thead>
             <tbody>
               {paginated.map((entry) => (
-                <tr key={entry.id} style={{ borderBottom: "1px solid #1f2937" }}>
-                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                <tr
+                  key={entry.id}
+                  style={{ borderBottom: "1px solid #1f2937" }}
+                >
+                  <td
+                    style={{
+                      ...tdStyle,
+                      fontFamily: "monospace",
+                      fontSize: "0.8125rem",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {new Date(entry.timestamp).toLocaleString()}
                   </td>
-                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "0.8125rem" }}>
+                  <td
+                    style={{
+                      ...tdStyle,
+                      fontFamily: "monospace",
+                      fontSize: "0.8125rem",
+                    }}
+                  >
                     {entry.agentId.slice(0, 8)}...
                   </td>
                   <td style={tdStyle}>{entry.actionType}</td>
                   <td style={tdStyle}>
                     <span
                       style={{
-                        color: entry.outcome === "success" ? "#22c55e" : "#ef4444",
+                        color:
+                          entry.outcome === "success" ? "#22c55e" : "#ef4444",
                       }}
                     >
                       {entry.outcome}
@@ -215,7 +256,9 @@ export default function AuditPage() {
                   </td>
                   <td style={tdStyle}>
                     {entry.securityFlag ? (
-                      <span style={{ color: "#eab308", fontWeight: 600 }}>!</span>
+                      <span style={{ color: "#eab308", fontWeight: 600 }}>
+                        !
+                      </span>
                     ) : (
                       "-"
                     )}
@@ -234,6 +277,7 @@ export default function AuditPage() {
                         padding: "0.125rem 0.5rem",
                         fontSize: "0.8125rem",
                       }}
+                      type="button"
                     >
                       {expandedId === entry.id ? "Hide" : "Show"}
                     </button>
@@ -277,6 +321,7 @@ export default function AuditPage() {
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
                 style={paginationBtnStyle(page === 0)}
+                type="button"
               >
                 Previous
               </button>
@@ -284,6 +329,7 @@ export default function AuditPage() {
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
                 style={paginationBtnStyle(page >= totalPages - 1)}
+                type="button"
               >
                 Next
               </button>

@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
+import { useCallback, useState } from "react";
 
-const STEPS = ["passkey", "api-keys", "payment", "discord", "test-agent"] as const;
+const STEPS = [
+  "passkey",
+  "api-keys",
+  "payment",
+  "discord",
+  "test-agent",
+] as const;
 const STEP_LABELS: Record<string, string> = {
   passkey: "Register Passkey",
   "api-keys": "API Key Configuration",
@@ -45,7 +51,9 @@ export default function SetupPage() {
         body: JSON.stringify({ step: "options" }),
       });
       const options = await optionsRes.json();
-      if (!optionsRes.ok) throw new Error(options.error);
+      if (!optionsRes.ok) {
+        throw new Error(options.error);
+      }
 
       const credential = await startRegistration({ optionsJSON: options });
 
@@ -55,7 +63,9 @@ export default function SetupPage() {
         body: JSON.stringify({ step: "verify", response: credential }),
       });
       const result = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(result.error);
+      if (!verifyRes.ok) {
+        throw new Error(result.error);
+      }
 
       advanceStep();
     } catch (err) {
@@ -92,7 +102,9 @@ export default function SetupPage() {
         <div className="auth-card">
           <h1>Setup Complete</h1>
           <p>Your Axiom orchestrator is ready.</p>
-          <a href="/" className="btn-primary">Go to Dashboard</a>
+          <a className="btn-primary" href="/">
+            Go to Dashboard
+          </a>
         </div>
       </div>
     );
@@ -109,7 +121,12 @@ export default function SetupPage() {
         {stepName === "passkey" && (
           <div>
             <p>Register a passkey to secure your dashboard.</p>
-            <button onClick={handlePasskeySetup} disabled={loading} className="btn-primary">
+            <button
+              className="btn-primary"
+              disabled={loading}
+              onClick={handlePasskeySetup}
+              type="button"
+            >
               {loading ? "Registering..." : "Register Passkey"}
             </button>
           </div>
@@ -118,13 +135,28 @@ export default function SetupPage() {
         {stepName === "api-keys" && (
           <div>
             <p>Configure at least one AI provider API key.</p>
-            <input type="password" placeholder="Anthropic API Key"
+            <input
+              onChange={(e) =>
+                setFormData((d) => ({ ...d, anthropicKey: e.target.value }))
+              }
+              placeholder="Anthropic API Key"
+              type="password"
               value={formData.anthropicKey}
-              onChange={(e) => setFormData((d) => ({ ...d, anthropicKey: e.target.value }))} />
-            <input type="password" placeholder="OpenAI API Key (optional)"
+            />
+            <input
+              onChange={(e) =>
+                setFormData((d) => ({ ...d, openaiKey: e.target.value }))
+              }
+              placeholder="OpenAI API Key (optional)"
+              type="password"
               value={formData.openaiKey}
-              onChange={(e) => setFormData((d) => ({ ...d, openaiKey: e.target.value }))} />
-            <button onClick={handleApiKeysSubmit} disabled={loading} className="btn-primary">
+            />
+            <button
+              className="btn-primary"
+              disabled={loading}
+              onClick={handleApiKeysSubmit}
+              type="button"
+            >
               {loading ? "Saving..." : "Save & Continue"}
             </button>
           </div>
@@ -133,17 +165,24 @@ export default function SetupPage() {
         {stepName === "payment" && (
           <div>
             <p>Payment method configuration (coming soon).</p>
-            <button onClick={advanceStep} className="btn-primary">Skip for Now</button>
+            <button className="btn-primary" onClick={advanceStep} type="button">
+              Skip for Now
+            </button>
           </div>
         )}
 
         {stepName === "discord" && (
           <div>
             <p>Configure Discord webhook for notifications.</p>
-            <input type="text" placeholder="Discord Webhook URL"
+            <input
+              onChange={(e) =>
+                setFormData((d) => ({ ...d, discordWebhook: e.target.value }))
+              }
+              placeholder="Discord Webhook URL"
+              type="text"
               value={formData.discordWebhook}
-              onChange={(e) => setFormData((d) => ({ ...d, discordWebhook: e.target.value }))} />
-            <button onClick={advanceStep} className="btn-primary">
+            />
+            <button className="btn-primary" onClick={advanceStep} type="button">
               {formData.discordWebhook ? "Save & Continue" : "Skip for Now"}
             </button>
           </div>
@@ -152,7 +191,9 @@ export default function SetupPage() {
         {stepName === "test-agent" && (
           <div>
             <p>Spawn a test agent to verify your setup.</p>
-            <button onClick={advanceStep} className="btn-primary">Complete Setup</button>
+            <button className="btn-primary" onClick={advanceStep} type="button">
+              Complete Setup
+            </button>
           </div>
         )}
 

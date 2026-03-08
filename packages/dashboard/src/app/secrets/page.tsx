@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback, type FormEvent } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 interface Secret {
-  id: string;
-  name: string;
-  secretType: string;
   allowedAgents: string[];
   allowedDomains: string[];
   createdAt: string;
+  id: string;
+  name: string;
+  secretType: string;
 }
 
 const SECRET_TYPES = [
@@ -34,7 +34,9 @@ export default function SecretsPage() {
   const fetchSecrets = useCallback(async () => {
     try {
       const res = await fetch("/api/secrets");
-      if (!res.ok) throw new Error(`Failed to fetch secrets: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch secrets: ${res.status}`);
+      }
       const json = await res.json();
       setSecrets(json.secrets ?? []);
       setFetchError(null);
@@ -73,7 +75,9 @@ export default function SecretsPage() {
         }),
       });
 
-      if (!res.ok) throw new Error(`Failed to create secret: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Failed to create secret: ${res.status}`);
+      }
 
       setName("");
       setSecretType(SECRET_TYPES[0]);
@@ -97,17 +101,22 @@ export default function SecretsPage() {
     }
   }
 
-  if (loading) return <div style={{ padding: "2rem" }}>Loading secrets...</div>;
-  if (fetchError)
+  if (loading) {
+    return <div style={{ padding: "2rem" }}>Loading secrets...</div>;
+  }
+  if (fetchError) {
     return (
       <div style={{ padding: "2rem", color: "#ef4444" }}>
         Error: {fetchError}
       </div>
     );
+  }
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>
+      <h1
+        style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}
+      >
         Secrets Vault
       </h1>
 
@@ -120,28 +129,45 @@ export default function SecretsPage() {
           borderRadius: "8px",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 500, marginBottom: "1rem" }}>
+        <h2
+          style={{
+            fontSize: "1.125rem",
+            fontWeight: 500,
+            marginBottom: "1rem",
+          }}
+        >
           Create Secret
         </h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <label
+            style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}
+          >
             <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Name</span>
             <input
-              type="text"
-              required
-              value={name}
               onChange={(e) => setName(e.target.value)}
+              required
               style={inputStyle}
+              type="text"
+              value={name}
             />
           </label>
 
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          <label
+            style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}
+          >
             <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Type</span>
             <select
-              value={secretType}
               onChange={(e) => setSecretType(e.target.value)}
               style={inputStyle}
+              value={secretType}
             >
               {SECRET_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -152,49 +178,68 @@ export default function SecretsPage() {
           </label>
         </div>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "1rem" }}>
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.25rem",
+            marginBottom: "1rem",
+          }}
+        >
           <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>Value</span>
           <input
-            type="password"
-            required
-            value={value}
             onChange={(e) => setValue(e.target.value)}
+            required
             style={inputStyle}
+            type="password"
+            value={value}
           />
         </label>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <label
+            style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}
+          >
             <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
               Allowed Agents (comma-separated UUIDs)
             </span>
             <textarea
-              value={allowedAgents}
               onChange={(e) => setAllowedAgents(e.target.value)}
               rows={2}
               style={inputStyle}
+              value={allowedAgents}
             />
           </label>
 
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          <label
+            style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}
+          >
             <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
               Allowed Domains (comma-separated)
             </span>
             <textarea
-              value={allowedDomains}
               onChange={(e) => setAllowedDomains(e.target.value)}
               rows={2}
               style={inputStyle}
+              value={allowedDomains}
             />
           </label>
         </div>
 
         {formError && (
-          <p style={{ color: "#ef4444", marginBottom: "0.5rem" }}>{formError}</p>
+          <p style={{ color: "#ef4444", marginBottom: "0.5rem" }}>
+            {formError}
+          </p>
         )}
 
         <button
-          type="submit"
           disabled={submitting}
           style={{
             padding: "0.5rem 1.5rem",
@@ -205,6 +250,7 @@ export default function SecretsPage() {
             cursor: submitting ? "not-allowed" : "pointer",
             opacity: submitting ? 0.6 : 1,
           }}
+          type="submit"
         >
           {submitting ? "Creating..." : "Create Secret"}
         </button>
@@ -215,7 +261,9 @@ export default function SecretsPage() {
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #374151", textAlign: "left" }}>
+            <tr
+              style={{ borderBottom: "1px solid #374151", textAlign: "left" }}
+            >
               <th style={{ padding: "0.75rem" }}>Name</th>
               <th style={{ padding: "0.75rem" }}>Type</th>
               <th style={{ padding: "0.75rem" }}>Allowed Agents</th>
@@ -239,13 +287,21 @@ export default function SecretsPage() {
                     {secret.secretType}
                   </span>
                 </td>
-                <td style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.875rem" }}>
+                <td
+                  style={{
+                    padding: "0.75rem",
+                    fontFamily: "monospace",
+                    fontSize: "0.875rem",
+                  }}
+                >
                   {secret.allowedAgents?.length ?? 0}
                 </td>
                 <td style={{ padding: "0.75rem", fontSize: "0.875rem" }}>
                   {secret.allowedDomains?.join(", ") || "-"}
                 </td>
-                <td style={{ padding: "0.75rem", display: "flex", gap: "0.5rem" }}>
+                <td
+                  style={{ padding: "0.75rem", display: "flex", gap: "0.5rem" }}
+                >
                   <button
                     onClick={() => handleDelete(secret.id)}
                     style={{
@@ -256,6 +312,7 @@ export default function SecretsPage() {
                       borderRadius: "4px",
                       cursor: "pointer",
                     }}
+                    type="button"
                   >
                     Delete
                   </button>

@@ -1,18 +1,20 @@
-import type Redis from 'ioredis';
+import type Redis from "ioredis";
 
 const STREAM_KEYS = {
-  orchestratorInbox: 'orchestrator:inbox',
+  orchestratorInbox: "orchestrator:inbox",
   agentInbox: (agentId: string) => `agent:${agentId}:inbox`,
 } as const;
 
 const CONSUMER_GROUPS = {
-  agentGroup: 'agent-group',
+  agentGroup: "agent-group",
 } as const;
 
 export interface AgentComms {
-  sendToOrchestrator(message: Record<string, unknown>): Promise<void>;
-  readMessages(count?: number): Promise<Array<{ id: string; data: Record<string, string> }>>;
   acknowledge(messageId: string): Promise<void>;
+  readMessages(
+    count?: number
+  ): Promise<Array<{ id: string; data: Record<string, string> }>>;
+  sendToOrchestrator(message: Record<string, unknown>): Promise<void>;
   startHeartbeat(intervalMs?: number): void;
   stopHeartbeat(): void;
 }
@@ -20,19 +22,22 @@ export interface AgentComms {
 async function ensureConsumerGroup(
   redis: Redis,
   streamKey: string,
-  groupName: string,
+  groupName: string
 ): Promise<void> {
   try {
-    await redis.xgroup('CREATE', streamKey, groupName, '0', 'MKSTREAM');
+    await redis.xgroup("CREATE", streamKey, groupName, "0", "MKSTREAM");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (!message.includes('BUSYGROUP')) {
+    if (!message.includes("BUSYGROUP")) {
       throw err;
     }
   }
 }
 
-export async function startRedisComms(redis: Redis, agentId: string): Promise<AgentComms> {
+export async function startRedisComms(
+  redis: Redis,
+  agentId: string
+): Promise<AgentComms> {
   const inboxKey = STREAM_KEYS.agentInbox(agentId);
   const consumerName = `agent-${agentId}`;
 
@@ -40,26 +45,35 @@ export async function startRedisComms(redis: Redis, agentId: string): Promise<Ag
 
   let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  const sendToOrchestrator = async (message: Record<string, unknown>): Promise<void> => {
-    const type = String(message.type ?? 'unknown');
+  const sendToOrchestrator = async (
+    message: Record<string, unknown>
+  ): Promise<void> => {
+    const type = String(message.type ?? "unknown");
     const payload = JSON.stringify(message);
-    await redis.xadd(STREAM_KEYS.orchestratorInbox, '*', 'type', type, 'payload', payload);
+    await redis.xadd(
+      STREAM_KEYS.orchestratorInbox,
+      "*",
+      "type",
+      type,
+      "payload",
+      payload
+    );
   };
 
   const readMessages = async (
-    count: number = 10,
+    count = 10
   ): Promise<Array<{ id: string; data: Record<string, string> }>> => {
     const results = await redis.xreadgroup(
-      'GROUP',
+      "GROUP",
       CONSUMER_GROUPS.agentGroup,
       consumerName,
-      'COUNT',
+      "COUNT",
       count,
-      'BLOCK',
+      "BLOCK",
       1000,
-      'STREAMS',
+      "STREAMS",
       inboxKey,
-      '>',
+      ">"
     );
 
     if (!results) {
@@ -68,7 +82,7 @@ export async function startRedisComms(redis: Redis, agentId: string): Promise<Ag
 
     const messages: Array<{ id: string; data: Record<string, string> }> = [];
 
-    for (const [, entries] of results as Array<[string, Array<[string, string[]]>]>) {
+    for (const [, entries] of results as [string, [string, string[]][]][]) {
       for (const [id, fields] of entries) {
         const data: Record<string, string> = {};
         for (let i = 0; i < fields.length; i += 2) {
@@ -85,7 +99,7 @@ export async function startRedisComms(redis: Redis, agentId: string): Promise<Ag
     await redis.xack(inboxKey, CONSUMER_GROUPS.agentGroup, messageId);
   };
 
-  const startHeartbeat = (intervalMs: number = 10_000): void => {
+  const startHeartbeat = (intervalMs = 10_000): void => {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
     }
@@ -93,7 +107,7 @@ export async function startRedisComms(redis: Redis, agentId: string): Promise<Ag
     const sendHeartbeat = async (): Promise<void> => {
       try {
         await sendToOrchestrator({
-          type: 'heartbeat',
+          type: "heartbeat",
           agentId,
           timestamp: new Date().toISOString(),
           resources: {

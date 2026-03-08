@@ -1,11 +1,15 @@
 import { eq } from "drizzle-orm";
 import type { Database } from "./drizzle.js";
-import { agents, agentDefinitions, systemConfig } from "./schema.js";
+import { agentDefinitions, agents, systemConfig } from "./schema.js";
 
 // ─── Agent Queries ─────────────────────────────────────────────────
 
 export async function findAgentById(db: Database, id: string) {
-  const result = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+  const result = await db
+    .select()
+    .from(agents)
+    .where(eq(agents.id, id))
+    .limit(1);
   return result[0] ?? null;
 }
 
@@ -19,7 +23,7 @@ export async function findAgentsByStatus(db: Database, status: string) {
 
 export async function insertAgent(
   db: Database,
-  data: typeof agents.$inferInsert,
+  data: typeof agents.$inferInsert
 ) {
   const result = await db.insert(agents).values(data).returning();
   return result[0];
@@ -28,7 +32,7 @@ export async function insertAgent(
 export async function updateAgent(
   db: Database,
   id: string,
-  data: Partial<typeof agents.$inferInsert>,
+  data: Partial<typeof agents.$inferInsert>
 ) {
   const result = await db
     .update(agents)
@@ -59,7 +63,7 @@ export async function findAllDefinitions(db: Database) {
 
 export async function insertDefinition(
   db: Database,
-  data: typeof agentDefinitions.$inferInsert,
+  data: typeof agentDefinitions.$inferInsert
 ) {
   const result = await db.insert(agentDefinitions).values(data).returning();
   return result[0];
@@ -68,7 +72,7 @@ export async function insertDefinition(
 export async function updateDefinition(
   db: Database,
   id: string,
-  data: Partial<typeof agentDefinitions.$inferInsert>,
+  data: Partial<typeof agentDefinitions.$inferInsert>
 ) {
   const result = await db
     .update(agentDefinitions)
@@ -85,13 +89,17 @@ export async function deleteDefinition(db: Database, id: string) {
 // ─── System Config Queries ─────────────────────────────────────────
 
 export async function getSystemConfig(db: Database) {
-  const result = await db.select().from(systemConfig).where(eq(systemConfig.id, 1)).limit(1);
+  const result = await db
+    .select()
+    .from(systemConfig)
+    .where(eq(systemConfig.id, 1))
+    .limit(1);
   return result[0] ?? null;
 }
 
 export async function upsertSystemConfig(
   db: Database,
-  data: Partial<typeof systemConfig.$inferInsert>,
+  data: Partial<typeof systemConfig.$inferInsert>
 ) {
   const existing = await getSystemConfig(db);
   if (existing) {

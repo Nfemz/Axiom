@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PipelineStatus } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createPipeline,
   advanceStage,
-  pausePipeline,
   completePipeline,
+  createPipeline,
   failPipeline,
   findPipelineById,
+  pausePipeline,
 } from "../../src/agents/pipeline-service.js";
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -36,7 +36,9 @@ describe("Pipeline Service", () => {
       id: "p-1",
       name: "Deploy",
       goal: "ship it",
-      stages: [{ name: "Build", completionCriteria: "pass", status: "pending" }],
+      stages: [
+        { name: "Build", completionCriteria: "pass", status: "pending" },
+      ],
       currentStage: 0,
       status: PipelineStatus.Planned,
     };
@@ -55,7 +57,7 @@ describe("Pipeline Service", () => {
       expect.objectContaining({
         status: PipelineStatus.Planned,
         currentStage: 0,
-      }),
+      })
     );
   });
 
@@ -73,7 +75,9 @@ describe("Pipeline Service", () => {
     db.where.mockReturnValueOnce({ limit: vi.fn(() => [pipeline]) });
     // update().set().where().returning()
     const updatedPipeline = { ...pipeline, currentStage: 1 };
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([updatedPipeline]) }));
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([updatedPipeline]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await advanceStage(db as any, "p-1");
@@ -85,45 +89,53 @@ describe("Pipeline Service", () => {
   it("advanceStage throws when pipeline not found", async () => {
     db.where.mockReturnValueOnce({ limit: vi.fn(() => []) });
 
-    await expect(advanceStage(db as any, "missing")).rejects.toThrow("Pipeline not found");
+    await expect(advanceStage(db as any, "missing")).rejects.toThrow(
+      "Pipeline not found"
+    );
   });
 
   it("pausePipeline sets status to paused", async () => {
     const paused = { id: "p-1", status: PipelineStatus.Paused };
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([paused]) }));
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([paused]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await pausePipeline(db as any, "p-1");
 
     expect(result).toEqual(paused);
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: PipelineStatus.Paused }),
+      expect.objectContaining({ status: PipelineStatus.Paused })
     );
   });
 
   it("completePipeline sets status to completed", async () => {
     const completed = { id: "p-1", status: PipelineStatus.Completed };
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([completed]) }));
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([completed]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await completePipeline(db as any, "p-1");
 
     expect(result).toEqual(completed);
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: PipelineStatus.Completed }),
+      expect.objectContaining({ status: PipelineStatus.Completed })
     );
   });
 
   it("failPipeline sets status to failed", async () => {
     const failed = { id: "p-1", status: PipelineStatus.Failed };
-    const whereReturn = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([failed]) }));
+    const whereReturn = vi.fn(() => ({
+      returning: vi.fn().mockResolvedValue([failed]),
+    }));
     db.set.mockReturnValueOnce({ where: whereReturn });
 
     const result = await failPipeline(db as any, "p-1", "out of budget");
 
     expect(result).toEqual(failed);
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: PipelineStatus.Failed }),
+      expect.objectContaining({ status: PipelineStatus.Failed })
     );
   });
 

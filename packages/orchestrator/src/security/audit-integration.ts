@@ -7,10 +7,10 @@
 // ---------------------------------------------------------------------------
 
 import { createLogger } from "@axiom/shared";
-import { appendAuditEntry } from "./audit-log.js";
 import type { Database } from "../db/drizzle.js";
+import { appendAuditEntry } from "./audit-log.js";
 
-const log = createLogger("audit-integration");
+const _log = createLogger("audit-integration");
 
 // ── Agent Spawn ─────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ export async function auditAgentSpawn(
   db: Database,
   agentId: string,
   definitionId: string,
-  goal: string,
+  goal: string
 ) {
   return appendAuditEntry(db, agentId, "agent.spawn", "success", {
     definitionId,
@@ -33,7 +33,7 @@ export async function auditAgentStatusChange(
   agentId: string,
   fromStatus: string,
   toStatus: string,
-  reason?: string,
+  reason?: string
 ) {
   return appendAuditEntry(db, agentId, "agent.status_change", "success", {
     fromStatus,
@@ -49,7 +49,7 @@ export async function auditSecretAccess(
   agentId: string,
   secretName: string,
   allowed: boolean,
-  domain?: string,
+  domain?: string
 ) {
   const outcome = allowed ? "allowed" : "denied";
   const isSecurityEvent = !allowed;
@@ -63,7 +63,7 @@ export async function auditSecretAccess(
       secretName,
       ...(domain ? { domain } : {}),
     },
-    isSecurityEvent,
+    isSecurityEvent
   );
 }
 
@@ -73,7 +73,7 @@ export async function auditSecurityEvent(
   db: Database,
   agentId: string,
   eventType: string,
-  details: Record<string, unknown>,
+  details: Record<string, unknown>
 ) {
   return appendAuditEntry(
     db,
@@ -81,6 +81,6 @@ export async function auditSecurityEvent(
     `security.${eventType}`,
     "flagged",
     details,
-    true,
+    true
   );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeCost } from "../../src/financial/llm-costs.js";
 
 describe("LLM Cost Tracker", () => {
@@ -28,7 +28,7 @@ describe("LLM Cost Tracker", () => {
       // 1000 input at $1.25/1M = $0.00125
       // 500 output at $10/1M = $0.005
       const cost = computeCost("gemini-2.5-pro", 1000, 500);
-      expect(cost).toBeCloseTo(0.00625, 4);
+      expect(cost).toBeCloseTo(0.006_25, 4);
     });
 
     it("includes cache read tokens at 10% of input price", () => {

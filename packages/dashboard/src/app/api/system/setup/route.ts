@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
-import { getDb } from "@/lib/db";
 import {
-  systemConfig,
+  agents,
   operatorCredentials,
   secrets,
-  agents,
+  systemConfig,
 } from "@axiom/orchestrator/db/schema";
-import { eq, count } from "drizzle-orm";
 import type { SetupWizardState } from "@axiom/shared/schemas/api";
+import { count, eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ const STEP_NAMES = ["passkey", "api-keys", "payment", "discord", "test-agent"];
  * Each step is "completed" when its underlying resource exists.
  */
 async function deriveStepCompletion(
-  db: ReturnType<typeof getDb>,
+  db: ReturnType<typeof getDb>
 ): Promise<Record<string, boolean>> {
   const [credRows] = await db.select({ n: count() }).from(operatorCredentials);
   const [secretRows] = await db.select({ n: count() }).from(secrets);
@@ -34,14 +34,14 @@ async function deriveStepCompletion(
     passkey: (credRows?.n ?? 0) > 0,
     "api-keys": (secretRows?.n ?? 0) > 0,
     payment: config?.setupComplete ?? false, // payment accepted when setup marked complete
-    discord: !!(config?.discordBotToken),
+    discord: !!config?.discordBotToken,
     "test-agent": (agentRows?.n ?? 0) > 0,
   };
 }
 
 function buildState(
   completion: Record<string, boolean>,
-  setupComplete: boolean,
+  setupComplete: boolean
 ): SetupWizardState {
   const steps = STEP_NAMES.map((name) => ({
     name,
@@ -63,12 +63,16 @@ export async function GET() {
     .limit(1);
 
   const completion = await deriveStepCompletion(db);
-  return NextResponse.json(buildState(completion, config?.setupComplete ?? false));
+  return NextResponse.json(
+    buildState(completion, config?.setupComplete ?? false)
+  );
 }
 
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const body = await request.json();
   const stepIndex = body.step as number | undefined;
@@ -92,16 +96,18 @@ export async function POST(request: NextRequest) {
       .set({ setupComplete: allComplete, updatedAt: new Date() })
       .where(eq(systemConfig.id, 1));
   } else {
-    await db
-      .insert(systemConfig)
-      .values({ id: 1, setupComplete: allComplete });
+    await db.insert(systemConfig).values({ id: 1, setupComplete: allComplete });
   }
 
   // Build current state from index if provided
   const state = buildState(completion, allComplete);
 
   // If caller provided a step index, advance currentStep past it
-  if (stepIndex !== undefined && stepIndex >= 0 && stepIndex < STEP_NAMES.length) {
+  if (
+    stepIndex !== undefined &&
+    stepIndex >= 0 &&
+    stepIndex < STEP_NAMES.length
+  ) {
     // Step completion is derived from real data, so we just return current state
   }
 

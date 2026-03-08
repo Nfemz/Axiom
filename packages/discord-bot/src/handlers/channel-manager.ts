@@ -1,11 +1,6 @@
-import { ChannelType } from "discord.js";
-import type {
-  CategoryChannel,
-  Client,
-  Guild,
-  TextChannel,
-} from "discord.js";
 import { createLogger } from "@axiom/shared";
+import type { CategoryChannel, Client, Guild, TextChannel } from "discord.js";
+import { ChannelType } from "discord.js";
 
 const log = createLogger("discord-bot:channel-manager");
 
@@ -19,15 +14,18 @@ const NOTIFICATION_CHANNELS: Record<string, string> = {
 export async function getOrCreateAgentChannel(
   guild: Guild,
   agentId: string,
-  agentName: string,
+  agentName: string
 ): Promise<TextChannel> {
   const channelName = `agent-${sanitizeChannelName(agentName)}`;
   const existing = guild.channels.cache.find(
-    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText,
+    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText
   ) as TextChannel | undefined;
 
   if (existing) {
-    log.info("Found existing agent channel", { channelName, channelId: existing.id });
+    log.info("Found existing agent channel", {
+      channelName,
+      channelId: existing.id,
+    });
     return existing;
   }
 
@@ -51,10 +49,10 @@ export async function getOrCreateAgentChannel(
 export async function postToChannel(
   client: Client,
   channelId: string,
-  content: string,
+  content: string
 ): Promise<void> {
   const channel = await client.channels.fetch(channelId);
-  if (!channel || !channel.isTextBased()) {
+  if (!channel?.isTextBased()) {
     log.warn("Channel not found or not text-based", { channelId });
     return;
   }
@@ -73,14 +71,16 @@ export async function postToChannel(
 
 export async function getNotificationChannel(
   guild: Guild,
-  type: "orchestrator" | "approvals",
+  type: "orchestrator" | "approvals"
 ): Promise<TextChannel> {
   const channelName = NOTIFICATION_CHANNELS[type];
   const existing = guild.channels.cache.find(
-    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText,
+    (ch) => ch.name === channelName && ch.type === ChannelType.GuildText
   ) as TextChannel | undefined;
 
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
 
   const category = await getOrCreateCategory(guild, AGENT_CATEGORY_NAME);
 
@@ -101,13 +101,15 @@ export async function getNotificationChannel(
 
 async function getOrCreateCategory(
   guild: Guild,
-  name: string,
+  name: string
 ): Promise<CategoryChannel> {
   const existing = guild.channels.cache.find(
-    (ch) => ch.name === name && ch.type === ChannelType.GuildCategory,
+    (ch) => ch.name === name && ch.type === ChannelType.GuildCategory
   ) as CategoryChannel | undefined;
 
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
 
   const category = await guild.channels.create({
     name,

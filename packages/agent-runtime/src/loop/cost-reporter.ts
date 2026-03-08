@@ -7,13 +7,13 @@
 
 export interface CostReport {
   agentId: string;
-  sessionId?: string;
-  modelProvider: string;
-  modelId: string;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
   cacheCreateTokens: number;
+  cacheReadTokens: number;
+  inputTokens: number;
+  modelId: string;
+  modelProvider: string;
+  outputTokens: number;
+  sessionId?: string;
 }
 
 interface CostReporterComms {
@@ -51,7 +51,7 @@ export function createCostReporter(comms: CostReporterComms): CostReporter {
             component: "cost-reporter",
             message: "Failed to report LLM usage",
             error: errorMsg,
-          }),
+          })
         );
       });
     },
@@ -72,7 +72,9 @@ interface ExtractedUsage {
   outputTokens: number;
 }
 
-export function extractUsageFromResponse(response: VercelAIResponse): ExtractedUsage {
+export function extractUsageFromResponse(
+  response: VercelAIResponse
+): ExtractedUsage {
   return {
     inputTokens: response.usage?.promptTokens ?? 0,
     outputTokens: response.usage?.completionTokens ?? 0,

@@ -6,9 +6,9 @@
 // ---------------------------------------------------------------------------
 
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { readdir, stat, unlink, mkdir } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink } from "node:fs/promises";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { createLogger, DEFAULT_BACKUP_RETENTION_DAYS } from "@axiom/shared";
 import type { ConnectionOptions } from "bullmq";
 import { createQueue, createWorker, QUEUE_NAMES } from "../comms/queues.js";
@@ -24,9 +24,9 @@ export interface BackupConfig {
 }
 
 export interface BackupInfo {
+  createdAt: Date;
   filename: string;
   path: string;
-  createdAt: Date;
   sizeBytes: number;
 }
 
@@ -58,7 +58,7 @@ export async function listBackups(outputDir: string): Promise<BackupInfo[]> {
   }
 
   const backupFiles = entries.filter(
-    (f) => f.startsWith("axiom-backup-") && f.endsWith(".sql"),
+    (f) => f.startsWith("axiom-backup-") && f.endsWith(".sql")
   );
 
   const infos: BackupInfo[] = [];
@@ -81,7 +81,7 @@ export async function listBackups(outputDir: string): Promise<BackupInfo[]> {
 
 export async function pruneOldBackups(
   outputDir: string,
-  retentionDays: number = DEFAULT_BACKUP_RETENTION_DAYS,
+  retentionDays: number = DEFAULT_BACKUP_RETENTION_DAYS
 ): Promise<number> {
   const backups = await listBackups(outputDir);
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
@@ -125,25 +125,33 @@ export async function verifyBackup(backupPath: string): Promise<boolean> {
 
 export async function scheduleBackupJobs(
   config: BackupConfig,
-  connection: ConnectionOptions,
+  connection: ConnectionOptions
 ): Promise<void> {
   const queue = createQueue(QUEUE_NAMES.BACKUP, connection);
 
   // Daily backup at 2 AM UTC
-  await queue.upsertJobScheduler("daily-backup", {
-    pattern: "0 2 * * *",
-  }, {
-    name: "daily-backup",
-    data: { type: "backup" },
-  });
+  await queue.upsertJobScheduler(
+    "daily-backup",
+    {
+      pattern: "0 2 * * *",
+    },
+    {
+      name: "daily-backup",
+      data: { type: "backup" },
+    }
+  );
 
   // Weekly verification on Sundays at 4 AM UTC
-  await queue.upsertJobScheduler("weekly-verify", {
-    pattern: "0 4 * * 0",
-  }, {
-    name: "weekly-verify",
-    data: { type: "verify" },
-  });
+  await queue.upsertJobScheduler(
+    "weekly-verify",
+    {
+      pattern: "0 4 * * 0",
+    },
+    {
+      name: "weekly-verify",
+      data: { type: "verify" },
+    }
+  );
 
   createWorker(
     QUEUE_NAMES.BACKUP,
@@ -156,11 +164,14 @@ export async function scheduleBackupJobs(
         const backups = await listBackups(config.outputDir);
         if (backups.length > 0) {
           const valid = await verifyBackup(backups[0].path);
-          log.info("Scheduled backup verification", { valid, backup: backups[0].filename });
+          log.info("Scheduled backup verification", {
+            valid,
+            backup: backups[0].filename,
+          });
         }
       }
     },
-    connection,
+    connection
   );
 
   log.info("Backup jobs scheduled");

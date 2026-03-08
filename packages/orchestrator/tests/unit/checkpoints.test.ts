@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  generateHandoffPrompt,
   type CognitiveSnapshot,
+  generateHandoffPrompt,
 } from "../../src/agents/checkpoints.js";
 
 function createSnapshot(
-  overrides: Partial<CognitiveSnapshot> = {},
+  overrides: Partial<CognitiveSnapshot> = {}
 ): CognitiveSnapshot {
   return {
     currentGoal: "Complete the integration tests",

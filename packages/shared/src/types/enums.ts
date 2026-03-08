@@ -119,8 +119,7 @@ export const SessionStatus = {
   Ended: "ended",
 } as const;
 
-export type SessionStatus =
-  (typeof SessionStatus)[keyof typeof SessionStatus];
+export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
 // ── Knowledge Entry Type ──────────────────────────────────────────────────────
 

@@ -61,19 +61,30 @@ export const CreateDefinitionRequestSchema = z.object({
     .default({ maxRetries: 3, backoffType: "exponential", backoffDelay: 1000 }),
   heartbeatConfig: z
     .object({
-      timeoutMs: z.number().positive().default(300000),
+      timeoutMs: z.number().positive().default(300_000),
       resourceThresholds: z.record(z.string(), z.number()).default({}),
-      llmCheckInterval: z.number().positive().default(600000),
+      llmCheckInterval: z.number().positive().default(600_000),
     })
-    .default({ timeoutMs: 300000, resourceThresholds: {}, llmCheckInterval: 600000 }),
+    .default({
+      timeoutMs: 300_000,
+      resourceThresholds: {},
+      llmCheckInterval: 600_000,
+    }),
 });
 
-export type CreateDefinitionRequest = z.infer<typeof CreateDefinitionRequestSchema>;
+export type CreateDefinitionRequest = z.infer<
+  typeof CreateDefinitionRequestSchema
+>;
 
 // Secret CRUD
 export const CreateSecretRequestSchema = z.object({
   name: z.string().min(1).max(255),
-  secretType: z.enum(["api_key", "credential", "payment_method", "oauth_token"]),
+  secretType: z.enum([
+    "api_key",
+    "credential",
+    "payment_method",
+    "oauth_token",
+  ]),
   value: z.string().min(1),
   allowedAgents: z.array(z.string().uuid()).default([]),
   allowedDomains: z.array(z.string()).default([]),
@@ -97,7 +108,7 @@ export const CreatePipelineRequestSchema = z.object({
     z.object({
       name: z.string(),
       completionCriteria: z.string(),
-    }),
+    })
   ),
   budgetTotal: z.number().positive(),
 });
@@ -120,7 +131,9 @@ export const CreateAlertRuleRequestSchema = z.object({
   notifyDiscord: z.boolean().default(true),
 });
 
-export type CreateAlertRuleRequest = z.infer<typeof CreateAlertRuleRequestSchema>;
+export type CreateAlertRuleRequest = z.infer<
+  typeof CreateAlertRuleRequestSchema
+>;
 
 // System config
 export const UpdateSystemConfigRequestSchema = z.object({
@@ -138,7 +151,9 @@ export const UpdateSystemConfigRequestSchema = z.object({
   discordWebhookUrl: z.string().url().optional(),
 });
 
-export type UpdateSystemConfigRequest = z.infer<typeof UpdateSystemConfigRequestSchema>;
+export type UpdateSystemConfigRequest = z.infer<
+  typeof UpdateSystemConfigRequestSchema
+>;
 
 // Health endpoint
 export const HealthResponseSchema = z.object({
@@ -167,7 +182,7 @@ export const SetupWizardStateSchema = z.object({
     z.object({
       name: z.string(),
       completed: z.boolean(),
-    }),
+    })
   ),
   setupComplete: z.boolean(),
 });

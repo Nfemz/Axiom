@@ -1,8 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getCommands } from "../../src/commands/index.js";
 import type { BotCommand } from "../../src/index.js";
 
-const EXPECTED_COMMAND_NAMES = ["status", "agent", "budget", "approve", "deny", "spawn"];
+const EXPECTED_COMMAND_NAMES = [
+  "status",
+  "agent",
+  "budget",
+  "approve",
+  "deny",
+  "spawn",
+];
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
 
@@ -20,7 +27,7 @@ function makeMockInteraction(overrides: Record<string, unknown> = {}) {
           reason: "test reason",
           goal: "do stuff",
           action: "status",
-          ...(overrides.stringOptions as Record<string, string> ?? {}),
+          ...((overrides.stringOptions as Record<string, string>) ?? {}),
         };
         return map[name] ?? null;
       }),
@@ -41,7 +48,9 @@ function makeMockRedis(data: Record<string, Record<string, string>> = {}) {
 function findCommand(name: string): BotCommand {
   const commands = getCommands();
   const cmd = commands.find((c) => c.data.name === name);
-  if (!cmd) throw new Error(`Command "${name}" not found`);
+  if (!cmd) {
+    throw new Error(`Command "${name}" not found`);
+  }
   return cmd;
 }
 
@@ -94,7 +103,7 @@ describe("status command", () => {
 
     expect(interaction.deferReply).toHaveBeenCalled();
     expect(interaction.followUp).toHaveBeenCalledWith(
-      expect.objectContaining({ embeds: expect.any(Array) }),
+      expect.objectContaining({ embeds: expect.any(Array) })
     );
   });
 });
@@ -103,13 +112,17 @@ describe("agent command", () => {
   it("shows agent details for status action", async () => {
     const interaction = makeMockInteraction();
     const redis = makeMockRedis({
-      "agent:agent-123:meta": { name: "TestBot", status: "running", goal: "test" },
+      "agent:agent-123:meta": {
+        name: "TestBot",
+        status: "running",
+        goal: "test",
+      },
     });
 
     await findCommand("agent").execute(interaction, redis);
 
     expect(interaction.followUp).toHaveBeenCalledWith(
-      expect.objectContaining({ embeds: expect.any(Array) }),
+      expect.objectContaining({ embeds: expect.any(Array) })
     );
   });
 
@@ -120,7 +133,7 @@ describe("agent command", () => {
     await findCommand("agent").execute(interaction, redis);
 
     expect(interaction.followUp).toHaveBeenCalledWith(
-      expect.stringContaining("not found"),
+      expect.stringContaining("not found")
     );
   });
 
@@ -130,8 +143,12 @@ describe("agent command", () => {
     });
     // Override getString to return "pause" for action
     interaction.options.getString = vi.fn((name: string) => {
-      if (name === "id") return "agent-123";
-      if (name === "action") return "pause";
+      if (name === "id") {
+        return "agent-123";
+      }
+      if (name === "action") {
+        return "pause";
+      }
       return null;
     });
     const redis = makeMockRedis();
@@ -139,10 +156,14 @@ describe("agent command", () => {
     await findCommand("agent").execute(interaction, redis);
 
     expect(redis.xadd).toHaveBeenCalledWith(
-      "orchestrator:inbox", "*",
-      "type", "agent:pause",
-      "agentId", "agent-123",
-      "source", "discord",
+      "orchestrator:inbox",
+      "*",
+      "type",
+      "agent:pause",
+      "agentId",
+      "agent-123",
+      "source",
+      "discord"
     );
   });
 });
@@ -156,14 +177,19 @@ describe("approve command", () => {
 
     expect(interaction.deferReply).toHaveBeenCalledWith({ ephemeral: true });
     expect(redis.xadd).toHaveBeenCalledWith(
-      "orchestrator:inbox", "*",
-      "type", "approval:response",
-      "requestId", "req-456",
-      "decision", "approved",
-      "operator", "testuser#0001",
+      "orchestrator:inbox",
+      "*",
+      "type",
+      "approval:response",
+      "requestId",
+      "req-456",
+      "decision",
+      "approved",
+      "operator",
+      "testuser#0001"
     );
     expect(interaction.followUp).toHaveBeenCalledWith(
-      expect.objectContaining({ content: expect.stringContaining("Approved") }),
+      expect.objectContaining({ content: expect.stringContaining("Approved") })
     );
   });
 });
@@ -176,12 +202,18 @@ describe("deny command", () => {
     await findCommand("deny").execute(interaction, redis);
 
     expect(redis.xadd).toHaveBeenCalledWith(
-      "orchestrator:inbox", "*",
-      "type", "approval:response",
-      "requestId", "req-456",
-      "decision", "denied",
-      "reason", "test reason",
-      "operator", "testuser#0001",
+      "orchestrator:inbox",
+      "*",
+      "type",
+      "approval:response",
+      "requestId",
+      "req-456",
+      "decision",
+      "denied",
+      "reason",
+      "test reason",
+      "operator",
+      "testuser#0001"
     );
   });
 });
@@ -195,7 +227,7 @@ describe("spawn command", () => {
 
     expect(redis.xadd).toHaveBeenCalled();
     expect(interaction.followUp).toHaveBeenCalledWith(
-      expect.objectContaining({ embeds: expect.any(Array) }),
+      expect.objectContaining({ embeds: expect.any(Array) })
     );
   });
 });

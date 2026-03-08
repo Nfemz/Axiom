@@ -1,12 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getIronSession } from "iron-session";
 import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from "@simplewebauthn/server";
-import { sessionOptions, type SessionData } from "@/lib/session";
-import { getAllCredentials, getCredentialById, updateCredentialCounter } from "@/lib/webauthn-store";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { type SessionData, sessionOptions } from "@/lib/session";
+import {
+  getAllCredentials,
+  getCredentialById,
+  updateCredentialCounter,
+} from "@/lib/webauthn-store";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +22,10 @@ const USER_ID = "axiom-operator";
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(
+    cookieStore,
+    sessionOptions
+  );
 
   if (body.step === "options") {
     const credentials = await getAllCredentials();
@@ -40,17 +47,26 @@ export async function POST(request: NextRequest) {
 
   if (body.step === "verify") {
     if (!session.challenge) {
-      return NextResponse.json({ error: "No challenge in session" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No challenge in session" },
+        { status: 400 }
+      );
     }
 
     const credentialId = body.response?.id as string | undefined;
     if (!credentialId) {
-      return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing credential ID" },
+        { status: 400 }
+      );
     }
 
     const credential = await getCredentialById(credentialId);
     if (!credential) {
-      return NextResponse.json({ error: "Unknown credential" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Unknown credential" },
+        { status: 400 }
+      );
     }
 
     const verification = await verifyAuthenticationResponse({
@@ -62,7 +78,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verification.verified) {
-      return NextResponse.json({ error: "Verification failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Verification failed" },
+        { status: 400 }
+      );
     }
 
     // Update the credential counter to prevent replay attacks

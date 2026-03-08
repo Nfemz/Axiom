@@ -5,9 +5,12 @@
 // and dispatches them to the appropriate handler.
 // ---------------------------------------------------------------------------
 
+import {
+  AgentStatus,
+  AgentToOrchestratorSchema,
+  createLogger,
+} from "@axiom/shared";
 import type Redis from "ioredis";
-
-import { AgentToOrchestratorSchema, AgentStatus, createLogger } from "@axiom/shared";
 
 import type { Database } from "../db/drizzle.js";
 import { updateAgent } from "../db/queries.js";
@@ -29,12 +32,12 @@ let running = false;
 
 export async function startInboxConsumer(
   db: Database,
-  redis: Redis,
+  redis: Redis
 ): Promise<() => void> {
   await ensureConsumerGroup(
     redis,
     STREAM_KEYS.ORCHESTRATOR_INBOX,
-    CONSUMER_GROUPS.ORCHESTRATOR,
+    CONSUMER_GROUPS.ORCHESTRATOR
   );
 
   running = true;
@@ -60,7 +63,7 @@ async function pollLoop(db: Database, redis: Redis): Promise<void> {
         redis,
         STREAM_KEYS.ORCHESTRATOR_INBOX,
         CONSUMER_GROUPS.ORCHESTRATOR,
-        CONSUMER_NAME,
+        CONSUMER_NAME
       );
 
       for (const msg of messages) {
@@ -69,7 +72,7 @@ async function pollLoop(db: Database, redis: Redis): Promise<void> {
           redis,
           STREAM_KEYS.ORCHESTRATOR_INBOX,
           CONSUMER_GROUPS.ORCHESTRATOR,
-          msg.id,
+          msg.id
         );
       }
     } catch (error) {
@@ -88,7 +91,7 @@ async function pollLoop(db: Database, redis: Redis): Promise<void> {
 
 async function processMessage(
   db: Database,
-  data: Record<string, string>,
+  data: Record<string, string>
 ): Promise<void> {
   const parsed = JSON.parse(data.payload);
   const result = AgentToOrchestratorSchema.safeParse(parsed);

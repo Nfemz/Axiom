@@ -1,75 +1,125 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+const ALERT_ID_RE = /^alert-/;
+
+import { describe, expect, it, vi } from "vitest";
+import type { AlertCondition } from "../../src/security/alert-engine.js";
 import {
+  acknowledgeAlert,
   evaluateCondition,
   evaluateRules,
   fireAlert,
-  acknowledgeAlert,
   getActiveAlerts,
 } from "../../src/security/alert-engine.js";
-import type { AlertCondition } from "../../src/security/alert-engine.js";
 
 // ─── evaluateCondition ──────────────────────────────────────────────
 
 describe("evaluateCondition", () => {
   it("gt: returns true when value > threshold", () => {
-    const cond: AlertCondition = { metric: "cpu", operator: "gt", threshold: 80 };
+    const cond: AlertCondition = {
+      metric: "cpu",
+      operator: "gt",
+      threshold: 80,
+    };
     expect(evaluateCondition(cond, 90)).toBe(true);
   });
 
   it("gt: returns false when value equals threshold (boundary)", () => {
-    const cond: AlertCondition = { metric: "cpu", operator: "gt", threshold: 80 };
+    const cond: AlertCondition = {
+      metric: "cpu",
+      operator: "gt",
+      threshold: 80,
+    };
     expect(evaluateCondition(cond, 80)).toBe(false);
   });
 
   it("gt: returns false when value < threshold", () => {
-    const cond: AlertCondition = { metric: "cpu", operator: "gt", threshold: 80 };
+    const cond: AlertCondition = {
+      metric: "cpu",
+      operator: "gt",
+      threshold: 80,
+    };
     expect(evaluateCondition(cond, 70)).toBe(false);
   });
 
   it("lt: returns true when value < threshold", () => {
-    const cond: AlertCondition = { metric: "memory", operator: "lt", threshold: 50 };
+    const cond: AlertCondition = {
+      metric: "memory",
+      operator: "lt",
+      threshold: 50,
+    };
     expect(evaluateCondition(cond, 30)).toBe(true);
   });
 
   it("lt: returns false when value equals threshold (boundary)", () => {
-    const cond: AlertCondition = { metric: "memory", operator: "lt", threshold: 50 };
+    const cond: AlertCondition = {
+      metric: "memory",
+      operator: "lt",
+      threshold: 50,
+    };
     expect(evaluateCondition(cond, 50)).toBe(false);
   });
 
   it("lt: returns false when value > threshold", () => {
-    const cond: AlertCondition = { metric: "memory", operator: "lt", threshold: 50 };
+    const cond: AlertCondition = {
+      metric: "memory",
+      operator: "lt",
+      threshold: 50,
+    };
     expect(evaluateCondition(cond, 60)).toBe(false);
   });
 
   it("eq: returns true when value === threshold", () => {
-    const cond: AlertCondition = { metric: "agents", operator: "eq", threshold: 10 };
+    const cond: AlertCondition = {
+      metric: "agents",
+      operator: "eq",
+      threshold: 10,
+    };
     expect(evaluateCondition(cond, 10)).toBe(true);
   });
 
   it("eq: returns false when value !== threshold", () => {
-    const cond: AlertCondition = { metric: "agents", operator: "eq", threshold: 10 };
+    const cond: AlertCondition = {
+      metric: "agents",
+      operator: "eq",
+      threshold: 10,
+    };
     expect(evaluateCondition(cond, 11)).toBe(false);
   });
 
   it("gte: returns true when value >= threshold", () => {
-    const cond: AlertCondition = { metric: "cost", operator: "gte", threshold: 100 };
+    const cond: AlertCondition = {
+      metric: "cost",
+      operator: "gte",
+      threshold: 100,
+    };
     expect(evaluateCondition(cond, 100)).toBe(true);
     expect(evaluateCondition(cond, 150)).toBe(true);
   });
 
   it("gte: returns false when value < threshold", () => {
-    const cond: AlertCondition = { metric: "cost", operator: "gte", threshold: 100 };
+    const cond: AlertCondition = {
+      metric: "cost",
+      operator: "gte",
+      threshold: 100,
+    };
     expect(evaluateCondition(cond, 99)).toBe(false);
   });
 
   it("lte: returns true when value <= threshold", () => {
-    const cond: AlertCondition = { metric: "uptime", operator: "lte", threshold: 5 };
+    const cond: AlertCondition = {
+      metric: "uptime",
+      operator: "lte",
+      threshold: 5,
+    };
     expect(evaluateCondition(cond, 5)).toBe(true);
     expect(evaluateCondition(cond, 3)).toBe(true);
   });
 
   it("lte: returns false when value > threshold", () => {
-    const cond: AlertCondition = { metric: "uptime", operator: "lte", threshold: 5 };
+    const cond: AlertCondition = {
+      metric: "uptime",
+      operator: "lte",
+      threshold: 5,
+    };
     expect(evaluateCondition(cond, 6)).toBe(false);
   });
 });
@@ -81,13 +131,19 @@ function createMockDb() {
   let idCounter = 0;
 
   const mockReturning = vi.fn((cols?: Record<string, unknown>) => {
-    const last = store[store.length - 1];
+    const last = store.at(-1);
     return [cols ? { id: last.id } : last];
   });
 
   const mockValues = vi.fn((row: Record<string, unknown>) => {
     idCounter++;
-    const newRow = { id: `alert-${idCounter}`, ...row, acknowledged: false, acknowledgedAt: null, createdAt: new Date() };
+    const newRow = {
+      id: `alert-${idCounter}`,
+      ...row,
+      acknowledged: false,
+      acknowledgedAt: null,
+      createdAt: new Date(),
+    };
     store.push(newRow);
     return { returning: mockReturning };
   });
@@ -97,7 +153,7 @@ function createMockDb() {
   }));
 
   const mockSet = vi.fn(() => ({
-    where: vi.fn((condition: unknown) => {
+    where: vi.fn((_condition: unknown) => {
       // Simulate updating the matching row
       for (const row of store) {
         // The mock always updates; in tests we control the alertId
@@ -113,9 +169,7 @@ function createMockDb() {
   }));
 
   const mockLimit = vi.fn((n: number) => {
-    return store
-      .filter((r) => !r.acknowledged)
-      .slice(0, n);
+    return store.filter((r) => !r.acknowledged).slice(0, n);
   });
 
   const mockOrderBy = vi.fn(() => ({
@@ -151,10 +205,16 @@ function createMockDb() {
 describe("fireAlert", () => {
   it("inserts an alert event and returns its id", async () => {
     const db = createMockDb() as any;
-    const id = await fireAlert(db, "rule-1", "agent-1", "critical", "CPU too high");
+    const id = await fireAlert(
+      db,
+      "rule-1",
+      "agent-1",
+      "critical",
+      "CPU too high"
+    );
 
     expect(db.insert).toHaveBeenCalledTimes(1);
-    expect(id).toMatch(/^alert-/);
+    expect(id).toMatch(ALERT_ID_RE);
   });
 
   it("passes correct values to the insert", async () => {
@@ -202,7 +262,7 @@ describe("evaluateRules", () => {
 
     // Only rule r1 should fire (cpu 95 > 80); r2 should not (memory 50 is not < 20)
     expect(firedIds).toHaveLength(1);
-    expect(firedIds[0]).toMatch(/^alert-/);
+    expect(firedIds[0]).toMatch(ALERT_ID_RE);
     expect(db.insert).toHaveBeenCalledTimes(1);
   });
 

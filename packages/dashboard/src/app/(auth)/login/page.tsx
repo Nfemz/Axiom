@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
+import { useState } from "react";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,9 @@ export default function LoginPage() {
         body: JSON.stringify({ step: "options" }),
       });
       const options = await optionsRes.json();
-      if (!optionsRes.ok) throw new Error(options.error);
+      if (!optionsRes.ok) {
+        throw new Error(options.error);
+      }
 
       const credential = await startAuthentication({ optionsJSON: options });
 
@@ -27,7 +29,9 @@ export default function LoginPage() {
         body: JSON.stringify({ step: "verify", response: credential }),
       });
       const result = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(result.error);
+      if (!verifyRes.ok) {
+        throw new Error(result.error);
+      }
 
       window.location.href = "/";
     } catch (err) {
@@ -42,11 +46,18 @@ export default function LoginPage() {
       <div className="auth-card">
         <h1>Axiom</h1>
         <p>Autonomous Agent Orchestrator</p>
-        <button onClick={handleLogin} disabled={loading} className="btn-primary">
+        <button
+          className="btn-primary"
+          disabled={loading}
+          onClick={handleLogin}
+          type="button"
+        >
           {loading ? "Authenticating..." : "Login with Passkey"}
         </button>
         {error && <p className="error">{error}</p>}
-        <a href="/setup" className="setup-link">First time? Set up your system</a>
+        <a className="setup-link" href="/setup">
+          First time? Set up your system
+        </a>
       </div>
     </div>
   );

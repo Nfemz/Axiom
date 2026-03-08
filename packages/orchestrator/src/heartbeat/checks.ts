@@ -5,10 +5,10 @@ import { findAgentsByStatus, updateAgent } from "../db/queries.js";
 const log = createLogger("heartbeat:checks");
 
 interface HeartbeatCheckResult {
+  action: "kill" | "restart" | "escalate";
   agentId: string;
   agentName: string;
   issue: "timeout" | "resource_exceeded" | "stall_detected";
-  action: "kill" | "restart" | "escalate";
 }
 
 // Layer 1: Heartbeat timeout detection (cheapest check first)
@@ -19,7 +19,9 @@ async function checkHeartbeatTimeouts(): Promise<HeartbeatCheckResult[]> {
   const results: HeartbeatCheckResult[] = [];
 
   for (const agent of runningAgents) {
-    if (!agent.heartbeatAt) continue;
+    if (!agent.heartbeatAt) {
+      continue;
+    }
     const elapsed = now - new Date(agent.heartbeatAt).getTime();
     if (elapsed > HEARTBEAT_TIMEOUT_MS) {
       log.warn("Agent heartbeat timeout", {
@@ -78,7 +80,9 @@ async function checkForStalls(): Promise<HeartbeatCheckResult[]> {
   const results: HeartbeatCheckResult[] = [];
 
   for (const agent of runningAgents) {
-    if (!agent.updatedAt) continue;
+    if (!agent.updatedAt) {
+      continue;
+    }
     const lastUpdate = new Date(agent.updatedAt).getTime();
     const elapsed = now - lastUpdate;
 

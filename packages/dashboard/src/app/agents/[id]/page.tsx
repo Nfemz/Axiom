@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 interface AgentDetail {
-  id: string;
-  name?: string;
-  status: string;
-  model?: string;
   budgetSpent?: number;
   budgetTotal?: number;
-  currentTask?: string;
-  mission?: string;
   createdAt?: string;
-  updatedAt?: string;
+  currentTask?: string;
+  id: string;
+  mission?: string;
+  model?: string;
+  name?: string;
   parentId?: string | null;
+  status: string;
+  updatedAt?: string;
 }
 
 type TabKey = "sessions" | "memory" | "checkpoints" | "children";
@@ -49,7 +49,9 @@ export default function AgentDetailPage() {
   const fetchAgent = useCallback(async () => {
     try {
       const res = await fetch(`/api/agents/${agentId}`);
-      if (!res.ok) throw new Error(`Failed to fetch agent: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch agent: ${res.status}`);
+      }
       const json = await res.json();
       setAgent(json);
       setError(null);
@@ -72,26 +74,51 @@ export default function AgentDetailPage() {
         body: JSON.stringify({ action, ...(directive ? { directive } : {}) }),
       });
       await fetchAgent();
-      if (action === "resteer") setResteerDirective("");
+      if (action === "resteer") {
+        setResteerDirective("");
+      }
     } catch {
       // TODO: Show error toast
     }
   }
 
-  if (loading) return <div style={{ padding: "2rem" }}>Loading agent...</div>;
-  if (error) return <div style={{ padding: "2rem", color: "#ef4444" }}>Error: {error}</div>;
-  if (!agent) return <div style={{ padding: "2rem" }}>Agent not found.</div>;
+  if (loading) {
+    return <div style={{ padding: "2rem" }}>Loading agent...</div>;
+  }
+  if (error) {
+    return (
+      <div style={{ padding: "2rem", color: "#ef4444" }}>Error: {error}</div>
+    );
+  }
+  if (!agent) {
+    return <div style={{ padding: "2rem" }}>Agent not found.</div>;
+  }
 
   const statusColor = STATUS_COLORS[agent.status] ?? "#9ca3af";
 
   return (
     <div style={{ padding: "2rem" }}>
-      <a href="/agents" style={{ color: "#60a5fa", textDecoration: "none", fontSize: "0.875rem" }}>
+      <a
+        href="/agents"
+        style={{
+          color: "#60a5fa",
+          textDecoration: "none",
+          fontSize: "0.875rem",
+        }}
+      >
         &larr; Back to Agents
       </a>
 
       <div style={{ marginTop: "1rem", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <h1
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+          }}
+        >
           {agent.name ?? agent.id}
           <span
             style={{
@@ -102,12 +129,23 @@ export default function AgentDetailPage() {
               backgroundColor: statusColor,
             }}
           />
-          <span style={{ fontSize: "0.875rem", fontWeight: 400, color: "#9ca3af" }}>{agent.status}</span>
+          <span
+            style={{ fontSize: "0.875rem", fontWeight: 400, color: "#9ca3af" }}
+          >
+            {agent.status}
+          </span>
         </h1>
       </div>
 
       {/* Agent Info */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
         <InfoField label="ID" value={agent.id} />
         <InfoField label="Model" value={agent.model ?? "-"} />
         <InfoField
@@ -125,17 +163,40 @@ export default function AgentDetailPage() {
       </div>
 
       {agent.mission && (
-        <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#1f2937", borderRadius: "8px" }}>
+        <div
+          style={{
+            marginBottom: "1.5rem",
+            padding: "1rem",
+            backgroundColor: "#1f2937",
+            borderRadius: "8px",
+          }}
+        >
           <strong>Mission:</strong> {agent.mission}
         </div>
       )}
 
       {/* Controls */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "0.5rem",
+          marginBottom: "2rem",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         {agent.status === "running" && (
           <button
             onClick={() => handleAction("pause")}
-            style={{ padding: "0.5rem 1rem", backgroundColor: "#eab308", color: "#000", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            style={{
+              padding: "0.5rem 1rem",
+              backgroundColor: "#eab308",
+              color: "#000",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            type="button"
           >
             Pause
           </button>
@@ -143,7 +204,15 @@ export default function AgentDetailPage() {
         {agent.status === "paused" && (
           <button
             onClick={() => handleAction("resume")}
-            style={{ padding: "0.5rem 1rem", backgroundColor: "#22c55e", color: "#000", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            style={{
+              padding: "0.5rem 1rem",
+              backgroundColor: "#22c55e",
+              color: "#000",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            type="button"
           >
             Resume
           </button>
@@ -151,15 +220,21 @@ export default function AgentDetailPage() {
         {agent.status !== "terminated" && (
           <button
             onClick={() => handleAction("terminate")}
-            style={{ padding: "0.5rem 1rem", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+            style={{
+              padding: "0.5rem 1rem",
+              backgroundColor: "#ef4444",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            type="button"
           >
             Terminate
           </button>
         )}
         <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
           <input
-            type="text"
-            value={resteerDirective}
             onChange={(e) => setResteerDirective(e.target.value)}
             placeholder="Resteer directive..."
             style={{
@@ -170,10 +245,12 @@ export default function AgentDetailPage() {
               color: "#e5e7eb",
               width: "250px",
             }}
+            type="text"
+            value={resteerDirective}
           />
           <button
-            onClick={() => handleAction("resteer", resteerDirective)}
             disabled={!resteerDirective.trim()}
+            onClick={() => handleAction("resteer", resteerDirective)}
             style={{
               padding: "0.5rem 1rem",
               backgroundColor: resteerDirective.trim() ? "#6366f1" : "#374151",
@@ -182,6 +259,7 @@ export default function AgentDetailPage() {
               borderRadius: "4px",
               cursor: resteerDirective.trim() ? "pointer" : "not-allowed",
             }}
+            type="button"
           >
             Resteer
           </button>
@@ -189,7 +267,14 @@ export default function AgentDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "0", borderBottom: "1px solid #374151", marginBottom: "1rem" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "0",
+          borderBottom: "1px solid #374151",
+          marginBottom: "1rem",
+        }}
+      >
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -199,10 +284,14 @@ export default function AgentDetailPage() {
               backgroundColor: "transparent",
               color: activeTab === tab.key ? "#60a5fa" : "#9ca3af",
               border: "none",
-              borderBottom: activeTab === tab.key ? "2px solid #60a5fa" : "2px solid transparent",
+              borderBottom:
+                activeTab === tab.key
+                  ? "2px solid #60a5fa"
+                  : "2px solid transparent",
               cursor: "pointer",
               fontWeight: activeTab === tab.key ? 600 : 400,
             }}
+            type="button"
           >
             {tab.label}
           </button>
@@ -210,7 +299,7 @@ export default function AgentDetailPage() {
       </div>
 
       {/* Tab Content */}
-      <TabContent tab={activeTab} agentId={agentId} />
+      <TabContent agentId={agentId} tab={activeTab} />
     </div>
   );
 }
@@ -218,10 +307,25 @@ export default function AgentDetailPage() {
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontSize: "0.75rem", color: "#9ca3af", textTransform: "uppercase", marginBottom: "0.25rem" }}>
+      <div
+        style={{
+          fontSize: "0.75rem",
+          color: "#9ca3af",
+          textTransform: "uppercase",
+          marginBottom: "0.25rem",
+        }}
+      >
         {label}
       </div>
-      <div style={{ fontSize: "0.875rem", color: "#e5e7eb", wordBreak: "break-all" }}>{value}</div>
+      <div
+        style={{
+          fontSize: "0.875rem",
+          color: "#e5e7eb",
+          wordBreak: "break-all",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -252,7 +356,9 @@ function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
     const endpoint = `/api/agents/${agentId}/${TAB_ENDPOINTS[tab]}`;
     fetch(endpoint)
       .then((res) => {
-        if (!res.ok) throw new Error(`Failed to fetch ${tab}: ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch ${tab}: ${res.status}`);
+        }
         return res.json();
       })
       .then((json) => {
@@ -266,13 +372,25 @@ function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
       .finally(() => setLoading(false));
   }, [tab, agentId]);
 
-  if (loading) return <p style={{ color: "#9ca3af" }}>Loading {tab}...</p>;
-  if (error) return <p style={{ color: "#ef4444" }}>Error: {error}</p>;
-  if (items.length === 0) return <p style={{ color: "#6b7280" }}>No {tab} found for this agent.</p>;
+  if (loading) {
+    return <p style={{ color: "#9ca3af" }}>Loading {tab}...</p>;
+  }
+  if (error) {
+    return <p style={{ color: "#ef4444" }}>Error: {error}</p>;
+  }
+  if (items.length === 0) {
+    return <p style={{ color: "#6b7280" }}>No {tab} found for this agent.</p>;
+  }
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: "0.8rem",
+        }}
+      >
         <thead>
           <tr>
             {Object.keys(items[0]).map((key) => (
@@ -295,9 +413,9 @@ function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
         <tbody>
           {items.map((item, idx) => (
             <tr key={String(item.id ?? idx)}>
-              {Object.values(item).map((val, i) => (
+              {Object.entries(item).map(([colKey, val]) => (
                 <td
-                  key={i}
+                  key={colKey}
                   style={{
                     padding: "0.5rem 0.75rem",
                     borderBottom: "1px solid #1f2937",
@@ -308,11 +426,15 @@ function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {val === null || val === undefined
-                    ? "-"
-                    : typeof val === "object"
-                      ? JSON.stringify(val)
-                      : String(val)}
+                  {(() => {
+                    if (val === null || val === undefined) {
+                      return "-";
+                    }
+                    if (typeof val === "object") {
+                      return JSON.stringify(val);
+                    }
+                    return String(val);
+                  })()}
                 </td>
               ))}
             </tr>

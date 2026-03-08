@@ -1,13 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SkillStatus } from "@axiom/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createSkill,
-  validateSkill,
   activateSkill,
+  createSkill,
   deprecateSkill,
-  getSkill,
-  listSkills,
   publishNewVersion,
+  validateSkill,
 } from "../../src/skills/registry.js";
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -53,21 +51,31 @@ describe("Skill Registry", () => {
         status: SkillStatus.Draft,
         version: 1,
         name: "web-search",
-      }),
+      })
     );
   });
 
   it("validateSkill throws when skill not found", async () => {
     db.where.mockReturnValueOnce({ limit: vi.fn(() => []) });
 
-    await expect(validateSkill(db as any, "missing")).rejects.toThrow("Skill not found");
+    await expect(validateSkill(db as any, "missing")).rejects.toThrow(
+      "Skill not found"
+    );
   });
 
   it("validateSkill throws when required fields are missing", async () => {
-    const incomplete = { id: "sk-1", name: "x", triggerCondition: "", successCriteria: "", failureCriteria: "f" };
+    const incomplete = {
+      id: "sk-1",
+      name: "x",
+      triggerCondition: "",
+      successCriteria: "",
+      failureCriteria: "f",
+    };
     db.where.mockReturnValueOnce({ limit: vi.fn(() => [incomplete]) });
 
-    await expect(validateSkill(db as any, "sk-1")).rejects.toThrow("missing required fields");
+    await expect(validateSkill(db as any, "sk-1")).rejects.toThrow(
+      "missing required fields"
+    );
   });
 
   it("validateSkill updates status to validated when all fields present", async () => {
@@ -83,7 +91,7 @@ describe("Skill Registry", () => {
     await validateSkill(db as any, "sk-1");
 
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: SkillStatus.Validated }),
+      expect.objectContaining({ status: SkillStatus.Validated })
     );
   });
 
@@ -91,7 +99,7 @@ describe("Skill Registry", () => {
     await activateSkill(db as any, "sk-1");
 
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: SkillStatus.Active }),
+      expect.objectContaining({ status: SkillStatus.Active })
     );
   });
 
@@ -99,7 +107,7 @@ describe("Skill Registry", () => {
     await deprecateSkill(db as any, "sk-1");
 
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: SkillStatus.Deprecated }),
+      expect.objectContaining({ status: SkillStatus.Deprecated })
     );
   });
 
@@ -110,13 +118,19 @@ describe("Skill Registry", () => {
     await publishNewVersion(db as any, "sk-1", { name: "web-search-v3" });
 
     expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ version: 3, status: SkillStatus.Draft, name: "web-search-v3" }),
+      expect.objectContaining({
+        version: 3,
+        status: SkillStatus.Draft,
+        name: "web-search-v3",
+      })
     );
   });
 
   it("publishNewVersion throws when skill not found", async () => {
     db.where.mockReturnValueOnce({ limit: vi.fn(() => []) });
 
-    await expect(publishNewVersion(db as any, "missing", {})).rejects.toThrow("Skill not found");
+    await expect(publishNewVersion(db as any, "missing", {})).rejects.toThrow(
+      "Skill not found"
+    );
   });
 });

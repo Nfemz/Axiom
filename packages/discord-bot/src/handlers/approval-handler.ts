@@ -1,34 +1,30 @@
+import { createLogger } from "@axiom/shared";
+import type { ButtonInteraction, Client, TextChannel } from "discord.js";
 import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
 } from "discord.js";
-import type {
-  ButtonInteraction,
-  Client,
-  TextChannel,
-} from "discord.js";
 import type Redis from "ioredis";
-import { createLogger } from "@axiom/shared";
 
 const log = createLogger("discord-bot:approval-handler");
 
 export interface ApprovalRequest {
-  id: string;
   agentId: string;
   description: string;
+  id: string;
   options?: string[];
 }
 
 export function buildApprovalEmbed(request: ApprovalRequest): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setTitle("Approval Required")
-    .setColor(0xffa500)
+    .setColor(0xff_a5_00)
     .setDescription(request.description)
     .addFields(
       { name: "Request ID", value: request.id, inline: true },
-      { name: "Agent", value: request.agentId, inline: true },
+      { name: "Agent", value: request.agentId, inline: true }
     )
     .setTimestamp();
 
@@ -43,7 +39,7 @@ export function buildApprovalEmbed(request: ApprovalRequest): EmbedBuilder {
 }
 
 export function buildApprovalButtons(
-  requestId: string,
+  requestId: string
 ): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -57,13 +53,13 @@ export function buildApprovalButtons(
     new ButtonBuilder()
       .setCustomId(`details:${requestId}`)
       .setLabel("Details")
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
   );
 }
 
 export async function sendApprovalRequest(
   channel: TextChannel,
-  request: ApprovalRequest,
+  request: ApprovalRequest
 ): Promise<void> {
   const embed = buildApprovalEmbed(request);
   const row = buildApprovalButtons(request.id);
@@ -77,12 +73,20 @@ export async function sendApprovalRequest(
 
 export function registerApprovalHandler(client: Client, redis: Redis): void {
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isButton()) return;
+    if (!interaction.isButton()) {
+      return;
+    }
 
     const buttonInteraction = interaction as ButtonInteraction;
     const customId = buttonInteraction.customId;
 
-    if (!customId.startsWith("approve:") && !customId.startsWith("deny:") && !customId.startsWith("details:")) {
+    if (
+      !(
+        customId.startsWith("approve:") ||
+        customId.startsWith("deny:") ||
+        customId.startsWith("details:")
+      )
+    ) {
       return;
     }
 
@@ -101,7 +105,7 @@ async function handleDecisionButton(
   interaction: ButtonInteraction,
   redis: Redis,
   requestId: string,
-  action: string,
+  action: string
 ): Promise<void> {
   await interaction.deferUpdate();
 
@@ -118,10 +122,10 @@ async function handleDecisionButton(
       "decision",
       decision,
       "operator",
-      interaction.user.tag,
+      interaction.user.tag
     );
 
-    const statusColor = decision === "approved" ? 0x57f287 : 0xed4245;
+    const statusColor = decision === "approved" ? 0x57_f2_87 : 0xed_42_45;
     const statusLabel = decision === "approved" ? "Approved" : "Denied";
 
     const updatedEmbed = EmbedBuilder.from(interaction.message.embeds[0])
@@ -133,7 +137,11 @@ async function handleDecisionButton(
       components: [],
     });
 
-    log.info("Approval decision recorded", { requestId, decision, operator: interaction.user.tag });
+    log.info("Approval decision recorded", {
+      requestId,
+      decision,
+      operator: interaction.user.tag,
+    });
   } catch (err) {
     log.error("Failed to process approval", { requestId, error: String(err) });
     await interaction.followUp({
@@ -146,7 +154,7 @@ async function handleDecisionButton(
 async function handleDetailsButton(
   interaction: ButtonInteraction,
   redis: Redis,
-  requestId: string,
+  requestId: string
 ): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
@@ -162,7 +170,7 @@ async function handleDetailsButton(
 
   const embed = new EmbedBuilder()
     .setTitle(`Request Details: ${requestId}`)
-    .setColor(0x5865f2);
+    .setColor(0x58_65_f2);
 
   for (const [key, value] of Object.entries(data)) {
     embed.addFields({ name: key, value: value || "N/A" });

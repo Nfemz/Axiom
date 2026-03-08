@@ -1,10 +1,7 @@
-import { describe, it, expect } from "vitest";
-import {
-  assessCapabilities,
-  type CapabilityAssessment,
-} from "../../src/loop/capability-check.js";
-import { ToolRegistry } from "../../src/tools/registry.js";
+import { describe, expect, it } from "vitest";
+import { assessCapabilities } from "../../src/loop/capability-check.js";
 import type { ToolDefinition } from "../../src/tools/registry.js";
+import { ToolRegistry } from "../../src/tools/registry.js";
 
 function mockTool(name: string): ToolDefinition {
   return {

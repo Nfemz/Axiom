@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { sessionOptions, type SessionData } from "./session";
+import { type SessionData, sessionOptions } from "./session";
 
 /**
  * Get the current session from cookies.

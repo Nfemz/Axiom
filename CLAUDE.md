@@ -41,8 +41,10 @@ pnpm test             # Run all tests (Vitest)
 pnpm test:e2e         # Run E2E tests (Playwright)
 pnpm db:migrate       # Run database migrations
 pnpm db:studio        # Open Drizzle Studio
-pnpm format           # Format with Prettier
-pnpm lint             # Lint with ESLint
+pnpm lint             # Lint with Biome (via Ultracite)
+pnpm fix              # Auto-fix lint + format issues
+pnpm format           # Same as fix
+pnpm check            # Same as lint
 ```
 
 ## Code Style

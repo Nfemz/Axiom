@@ -1,13 +1,14 @@
 // ---------------------------------------------------------------------------
 // T069d – Agent Spawn Flow Integration Tests (Testcontainers, DB-only)
 // ---------------------------------------------------------------------------
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema.js";
 import {
-  setupPgContainer,
   insertTestDefinition,
   type PgTestContext,
+  setupPgContainer,
 } from "./helpers/pg-container.js";
 
 describe("Agent Spawn Integration", () => {

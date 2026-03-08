@@ -7,7 +7,7 @@
 // ---------------------------------------------------------------------------
 
 import { createLogger } from "@axiom/shared";
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { auditLog } from "../db/schema.js";
 
@@ -16,13 +16,13 @@ const log = createLogger("audit-log");
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface AuditFilter {
-  agentId?: string;
   actionType?: string;
+  agentId?: string;
   fromDate?: Date;
-  toDate?: Date;
-  securityOnly?: boolean;
   limit?: number;
   offset?: number;
+  securityOnly?: boolean;
+  toDate?: Date;
 }
 
 // ── Append (immutable write) ────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export async function appendAuditEntry(
   actionType: string,
   outcome: string,
   details: Record<string, unknown>,
-  securityEvent: boolean = false,
+  securityEvent = false
 ) {
   const result = await db
     .insert(auditLog)
@@ -71,7 +71,7 @@ export async function queryAuditLog(db: Database, filters: AuditFilter) {
 
 // ── Security events ─────────────────────────────────────────────────────────
 
-export async function getSecurityEvents(db: Database, limit: number = 50) {
+export async function getSecurityEvents(db: Database, limit = 50) {
   return db
     .select()
     .from(auditLog)
@@ -83,7 +83,7 @@ export async function getSecurityEvents(db: Database, limit: number = 50) {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildConditions(filters: AuditFilter) {
-  const conditions = [];
+  const conditions: ReturnType<typeof eq>[] = [];
 
   if (filters.agentId) {
     conditions.push(eq(auditLog.agentId, filters.agentId));

@@ -1,9 +1,9 @@
 import { createServer } from "node:http";
 import { createLogger } from "@axiom/shared";
-import { loadConfig } from "./config.js";
-import { getDb, closeDb } from "./db/drizzle.js";
-import { getRedis, closeRedis } from "./comms/redis.js";
 import { closeAllQueues } from "./comms/queues.js";
+import { closeRedis, getRedis } from "./comms/redis.js";
+import { loadConfig } from "./config.js";
+import { closeDb, getDb } from "./db/drizzle.js";
 import { handleHealthCheck } from "./health/handler.js";
 
 const log = createLogger("orchestrator");

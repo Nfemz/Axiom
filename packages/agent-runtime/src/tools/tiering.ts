@@ -1,5 +1,4 @@
-import type { ToolDefinition, ToolResult } from "./registry.js";
-import type { ToolRegistry } from "./registry.js";
+import type { ToolDefinition, ToolRegistry, ToolResult } from "./registry.js";
 
 export const ToolTier = {
   Api: "api",
@@ -13,7 +12,7 @@ export const TIER_PRIORITY: ToolTierValue[] = ["api", "headless", "pixel"];
 
 export function selectBestTool(
   registry: ToolRegistry,
-  capability: string,
+  capability: string
 ): ToolDefinition | null {
   for (const tier of TIER_PRIORITY) {
     const tools = registry.listByTier(tier);
@@ -29,7 +28,7 @@ export function selectBestTool(
 
 export function shouldEscalateTier(
   currentTier: string,
-  result: ToolResult,
+  result: ToolResult
 ): boolean {
   if (result.success) {
     return false;

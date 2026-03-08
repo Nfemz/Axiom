@@ -13,9 +13,9 @@ const MAX_BACKOFF_MS = 5 * 60 * 1000; // 5 minutes
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface RetryPolicy {
-  maxRetries: number;
-  backoffType: "exponential" | "linear";
   backoffDelay: number; // base delay in ms
+  backoffType: "exponential" | "linear";
+  maxRetries: number;
 }
 
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
@@ -29,7 +29,7 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
 export function calculateBackoff(policy: RetryPolicy, attempt: number): number {
   const raw =
     policy.backoffType === "exponential"
-      ? policy.backoffDelay * Math.pow(2, attempt)
+      ? policy.backoffDelay * 2 ** attempt
       : policy.backoffDelay * (attempt + 1);
 
   return Math.min(raw, MAX_BACKOFF_MS);
@@ -46,7 +46,7 @@ export function sleep(ms: number): Promise<void> {
 export async function executeWithRetry<T>(
   fn: () => Promise<T>,
   policy: RetryPolicy = DEFAULT_RETRY_POLICY,
-  label: string = "operation",
+  label = "operation"
 ): Promise<T> {
   let lastError: unknown;
 
@@ -81,6 +81,6 @@ export async function executeWithRetry<T>(
   throw new Error(
     `[${label}] Failed after ${policy.maxRetries + 1} attempts: ${
       lastError instanceof Error ? lastError.message : String(lastError)
-    }`,
+    }`
   );
 }

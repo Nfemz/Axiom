@@ -1,22 +1,22 @@
-import { Sandbox } from "e2b";
 import { createLogger } from "@axiom/shared";
+import { Sandbox } from "e2b";
 
 const log = createLogger("sandbox");
 
 export interface CreateSandboxOptions {
-  template?: string;
-  envVars?: Record<string, string>;
   contextFiles?: Array<{ path: string; content: string }>;
+  envVars?: Record<string, string>;
+  template?: string;
   timeoutMs?: number;
 }
 
 export interface SandboxInfo {
-  sandboxId: string;
   sandbox: Sandbox;
+  sandboxId: string;
 }
 
 export async function createSandbox(
-  options: CreateSandboxOptions,
+  options: CreateSandboxOptions
 ): Promise<SandboxInfo> {
   const { template, envVars, contextFiles, timeoutMs } = options;
 
@@ -31,9 +31,7 @@ export async function createSandbox(
     if (contextFiles && contextFiles.length > 0) {
       log.info("Injecting context files", { count: contextFiles.length });
       await Promise.all(
-        contextFiles.map((file) =>
-          sandbox.files.write(file.path, file.content),
-        ),
+        contextFiles.map((file) => sandbox.files.write(file.path, file.content))
       );
     }
 

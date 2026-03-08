@@ -1,5 +1,9 @@
-import { eq, sql, and, desc } from "drizzle-orm";
-import { createLogger, TransactionType, DEFAULT_BUDGET_CURRENCY } from "@axiom/shared";
+import {
+  createLogger,
+  DEFAULT_BUDGET_CURRENCY,
+  TransactionType,
+} from "@axiom/shared";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { financialTransactions } from "../db/schema.js";
 
@@ -9,21 +13,21 @@ const log = createLogger("financial:ledger");
 
 interface RecordTransactionParams {
   agentId?: string;
-  ventureId?: string;
-  type: typeof TransactionType[keyof typeof TransactionType];
   amount: string;
-  currency?: string;
   category: string;
+  currency?: string;
   description?: string;
   externalRef?: string;
   preAuthVerified?: boolean;
+  type: (typeof TransactionType)[keyof typeof TransactionType];
+  ventureId?: string;
 }
 
 interface TransactionFilters {
   agentId?: string;
-  ventureId?: string;
-  type?: string;
   limit?: number;
+  type?: string;
+  ventureId?: string;
 }
 
 export interface RevenueSplitResult {
@@ -33,7 +37,10 @@ export interface RevenueSplitResult {
 
 // ─── Record Transaction ──────────────────────────────────────────
 
-export async function recordTransaction(db: Database, params: RecordTransactionParams) {
+export async function recordTransaction(
+  db: Database,
+  params: RecordTransactionParams
+) {
   const data: typeof financialTransactions.$inferInsert = {
     agentId: params.agentId ?? null,
     ventureId: params.ventureId ?? null,
@@ -46,7 +53,10 @@ export async function recordTransaction(db: Database, params: RecordTransactionP
     preAuthVerified: params.preAuthVerified ?? false,
   };
 
-  const result = await db.insert(financialTransactions).values(data).returning();
+  const result = await db
+    .insert(financialTransactions)
+    .values(data)
+    .returning();
   const tx = result[0];
 
   log.info("Transaction recorded", {
@@ -61,7 +71,10 @@ export async function recordTransaction(db: Database, params: RecordTransactionP
 
 // ─── Balance Queries ─────────────────────────────────────────────
 
-export async function getBalance(db: Database, agentId: string): Promise<number> {
+export async function getBalance(
+  db: Database,
+  agentId: string
+): Promise<number> {
   const result = await db
     .select({
       balance: sql<string>`
@@ -76,10 +89,13 @@ export async function getBalance(db: Database, agentId: string): Promise<number>
     .from(financialTransactions)
     .where(eq(financialTransactions.agentId, agentId));
 
-  return parseFloat(result[0]?.balance ?? "0");
+  return Number.parseFloat(result[0]?.balance ?? "0");
 }
 
-export async function getVentureBalance(db: Database, ventureId: string): Promise<number> {
+export async function getVentureBalance(
+  db: Database,
+  ventureId: string
+): Promise<number> {
   const result = await db
     .select({
       balance: sql<string>`
@@ -94,7 +110,7 @@ export async function getVentureBalance(db: Database, ventureId: string): Promis
     .from(financialTransactions)
     .where(eq(financialTransactions.ventureId, ventureId));
 
-  return parseFloat(result[0]?.balance ?? "0");
+  return Number.parseFloat(result[0]?.balance ?? "0");
 }
 
 // ─── Revenue Split ───────────────────────────────────────────────
@@ -102,7 +118,7 @@ export async function getVentureBalance(db: Database, ventureId: string): Promis
 export function computeRevenueSplit(
   amount: number,
   operatorRate: number,
-  reinvestRate: number,
+  reinvestRate: number
 ): RevenueSplitResult {
   return {
     operatorAmount: Math.round(amount * operatorRate * 100) / 100,
@@ -112,8 +128,11 @@ export function computeRevenueSplit(
 
 // ─── Filtered Queries ────────────────────────────────────────────
 
-export async function getTransactions(db: Database, filters?: TransactionFilters) {
-  const conditions = [];
+export async function getTransactions(
+  db: Database,
+  filters?: TransactionFilters
+) {
+  const conditions: ReturnType<typeof eq>[] = [];
 
   if (filters?.agentId) {
     conditions.push(eq(financialTransactions.agentId, filters.agentId));

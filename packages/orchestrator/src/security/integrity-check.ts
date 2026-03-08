@@ -5,11 +5,10 @@
 // detect unauthorised tampering of agent definitions at runtime.
 // ---------------------------------------------------------------------------
 
-import { createLogger } from "@axiom/shared";
 import { createHash } from "node:crypto";
-import { findAgentById } from "../db/queries.js";
-import { findDefinitionById } from "../db/queries.js";
+import { createLogger } from "@axiom/shared";
 import type { Database } from "../db/drizzle.js";
+import { findAgentById, findDefinitionById } from "../db/queries.js";
 
 const log = createLogger("integrity-check");
 
@@ -17,7 +16,7 @@ const log = createLogger("integrity-check");
 
 export function computeConfigChecksum(
   mission: string,
-  config: Record<string, unknown>,
+  config: Record<string, unknown>
 ): string {
   const sortedConfig = JSON.stringify(config, Object.keys(config).sort());
   const payload = mission + sortedConfig;
@@ -29,7 +28,7 @@ export function computeConfigChecksum(
 
 export async function verifyAgentIntegrity(
   db: Database,
-  agentId: string,
+  agentId: string
 ): Promise<{ valid: boolean; expected: string; actual: string }> {
   const agent = await findAgentById(db, agentId);
   if (!agent) {
@@ -46,10 +45,10 @@ export async function verifyAgentIntegrity(
   const expected = agent.configChecksum ?? "";
   const valid = actual === expected;
 
-  if (!valid) {
-    log.warn("Integrity check failed", { agentId, expected, actual });
-  } else {
+  if (valid) {
     log.debug("Integrity check passed", { agentId });
+  } else {
+    log.warn("Integrity check failed", { agentId, expected, actual });
   }
 
   return { valid, expected, actual };
@@ -58,7 +57,7 @@ export async function verifyAgentIntegrity(
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildConfigObject(
-  definition: Record<string, unknown>,
+  definition: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     modelProvider: definition.modelProvider,

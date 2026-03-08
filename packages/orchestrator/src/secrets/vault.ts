@@ -5,7 +5,7 @@
 // Values are encrypted before storage and decrypted on retrieval.
 // ---------------------------------------------------------------------------
 
-import { createLogger, encrypt, decrypt, deriveKey } from "@axiom/shared";
+import { createLogger, decrypt, deriveKey, encrypt } from "@axiom/shared";
 import { eq } from "drizzle-orm";
 import type { Database } from "../db/drizzle.js";
 import { secrets } from "../db/schema.js";
@@ -21,7 +21,7 @@ export async function createSecret(
   value: string,
   encryptionKey: string,
   allowedAgents?: string[],
-  allowedDomains?: string[],
+  allowedDomains?: string[]
 ): Promise<string> {
   const key = deriveKey(encryptionKey);
   const encryptedValue = Buffer.from(encrypt(value, key), "base64");
@@ -46,7 +46,7 @@ export async function createSecret(
 export async function getSecret(
   db: Database,
   id: string,
-  encryptionKey: string,
+  encryptionKey: string
 ) {
   const rows = await db
     .select()
@@ -55,7 +55,9 @@ export async function getSecret(
     .limit(1);
 
   const secret = rows[0] ?? null;
-  if (!secret) return null;
+  if (!secret) {
+    return null;
+  }
 
   const key = deriveKey(encryptionKey);
   const base64 = secret.encryptedValue.toString("base64");
@@ -94,14 +96,22 @@ export async function updateSecret(
     allowedAgents?: string[];
     allowedDomains?: string[];
   },
-  encryptionKey?: string,
+  encryptionKey?: string
 ) {
   const data: Record<string, unknown> = { updatedAt: new Date() };
 
-  if (updates.name !== undefined) data.name = updates.name;
-  if (updates.secretType !== undefined) data.secretType = updates.secretType;
-  if (updates.allowedAgents !== undefined) data.allowedAgents = updates.allowedAgents;
-  if (updates.allowedDomains !== undefined) data.allowedDomains = updates.allowedDomains;
+  if (updates.name !== undefined) {
+    data.name = updates.name;
+  }
+  if (updates.secretType !== undefined) {
+    data.secretType = updates.secretType;
+  }
+  if (updates.allowedAgents !== undefined) {
+    data.allowedAgents = updates.allowedAgents;
+  }
+  if (updates.allowedDomains !== undefined) {
+    data.allowedDomains = updates.allowedDomains;
+  }
 
   if (updates.value !== undefined) {
     if (!encryptionKey) {

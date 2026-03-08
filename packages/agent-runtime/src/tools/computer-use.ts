@@ -2,7 +2,11 @@ import type { ToolDefinition, ToolResult } from "./registry.js";
 
 type ComputerAction = "screenshot" | "click" | "type" | "key" | "move";
 
-function log(level: string, msg: string, extra?: Record<string, unknown>): void {
+function log(
+  level: string,
+  msg: string,
+  extra?: Record<string, unknown>
+): void {
   console.log(JSON.stringify({ level, msg, tool: "computer_use", ...extra }));
 }
 
@@ -56,6 +60,7 @@ export function createComputerUseTool(): ToolDefinition {
       },
       required: ["action"],
     },
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex tool dispatch logic
     async execute(input: Record<string, unknown>): Promise<ToolResult> {
       const action = input.action as ComputerAction;
       const x = input.x as number | undefined;
@@ -68,23 +73,39 @@ export function createComputerUseTool(): ToolDefinition {
           case "screenshot":
             return captureScreenshot();
           case "click":
-            if (x === undefined || y === undefined)
-              return { success: false, output: null, error: "x and y required" };
+            if (x === undefined || y === undefined) {
+              return {
+                success: false,
+                output: null,
+                error: "x and y required",
+              };
+            }
             return clickAt(x, y);
           case "type":
-            if (!text)
+            if (!text) {
               return { success: false, output: null, error: "text required" };
+            }
             return typeText(text);
           case "key":
-            if (!key)
+            if (!key) {
               return { success: false, output: null, error: "key required" };
+            }
             return pressKey(key);
           case "move":
-            if (x === undefined || y === undefined)
-              return { success: false, output: null, error: "x and y required" };
+            if (x === undefined || y === undefined) {
+              return {
+                success: false,
+                output: null,
+                error: "x and y required",
+              };
+            }
             return moveMouse(x, y);
           default:
-            return { success: false, output: null, error: `Unknown action: ${action as string}` };
+            return {
+              success: false,
+              output: null,
+              error: `Unknown action: ${action as string}`,
+            };
         }
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);

@@ -5,10 +5,9 @@
 // sandbox creation and agent initialisation via `spawnAgent`.
 // ---------------------------------------------------------------------------
 
+import { createLogger } from "@axiom/shared";
 import type { ConnectionOptions } from "bullmq";
 import type Redis from "ioredis";
-
-import { createLogger } from "@axiom/shared";
 
 import { createWorker, QUEUE_NAMES } from "../comms/queues.js";
 import type { Database } from "../db/drizzle.js";
@@ -17,11 +16,11 @@ import { spawnAgent } from "./spawn.js";
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface SpawnJobData {
-  definitionId: string;
-  parentId?: string;
-  goal: string;
   budget?: number;
+  definitionId: string;
+  goal: string;
   modelOverride?: { provider: string; modelId: string };
+  parentId?: string;
 }
 
 // ── Worker ─────────────────────────────────────────────────────────────────
@@ -31,7 +30,7 @@ const log = createLogger("spawn-worker");
 export function startSpawnWorker(
   db: Database,
   redis: Redis,
-  connection: ConnectionOptions,
+  connection: ConnectionOptions
 ) {
   const worker = createWorker<SpawnJobData>(
     QUEUE_NAMES.AGENT_SPAWN,
@@ -63,7 +62,7 @@ export function startSpawnWorker(
         throw error;
       }
     },
-    connection,
+    connection
   );
 
   log.info("Spawn worker started");

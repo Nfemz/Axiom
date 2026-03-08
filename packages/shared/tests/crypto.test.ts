@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { deriveKey, encrypt, decrypt } from "../src/crypto.js";
+import { describe, expect, it } from "vitest";
+import { decrypt, deriveKey, encrypt } from "../src/crypto.js";
 
 describe("deriveKey", () => {
   it("returns a 32-byte Buffer", () => {

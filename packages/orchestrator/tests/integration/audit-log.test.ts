@@ -1,17 +1,16 @@
 // ---------------------------------------------------------------------------
 // T090e – Audit Log Integration Tests (Testcontainers)
 // ---------------------------------------------------------------------------
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   appendAuditEntry,
   queryAuditLog,
 } from "../../src/security/audit-log.js";
-import * as schema from "../../src/db/schema.js";
 import {
-  setupPgContainer,
-  insertTestDefinition,
   insertTestAgent,
+  insertTestDefinition,
   type PgTestContext,
+  setupPgContainer,
 } from "./helpers/pg-container.js";
 
 describe("Audit Log Integration", () => {
@@ -41,7 +40,7 @@ describe("Audit Log Integration", () => {
       agentId,
       "tool.execute",
       "success",
-      { tool: "bash", args: ["ls"] },
+      { tool: "bash", args: ["ls"] }
     );
 
     expect(entry).toBeDefined();
@@ -54,13 +53,9 @@ describe("Audit Log Integration", () => {
 
   it("queryAuditLog returns inserted records", async () => {
     // Insert a second entry
-    await appendAuditEntry(
-      ctx.db,
-      agentId,
-      "agent.spawn",
-      "success",
-      { reason: "test" },
-    );
+    await appendAuditEntry(ctx.db, agentId, "agent.spawn", "success", {
+      reason: "test",
+    });
 
     const results = await queryAuditLog(ctx.db, {});
     expect(results.length).toBeGreaterThanOrEqual(2);
@@ -68,13 +63,9 @@ describe("Audit Log Integration", () => {
 
   it("queryAuditLog filters by agentId", async () => {
     // Insert entry for agent2
-    await appendAuditEntry(
-      ctx.db,
-      agent2Id,
-      "tool.execute",
-      "failure",
-      { error: "permission denied" },
-    );
+    await appendAuditEntry(ctx.db, agent2Id, "tool.execute", "failure", {
+      error: "permission denied",
+    });
 
     const agent1Results = await queryAuditLog(ctx.db, { agentId });
     const agent2Results = await queryAuditLog(ctx.db, { agentId: agent2Id });
@@ -92,7 +83,7 @@ describe("Audit Log Integration", () => {
       "sandbox.escape_attempt",
       "blocked",
       { path: "/etc/passwd" },
-      true,
+      true
     );
 
     const securityResults = await queryAuditLog(ctx.db, {

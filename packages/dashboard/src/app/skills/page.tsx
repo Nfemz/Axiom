@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 interface Skill {
-  id: string;
-  name: string;
-  version: number;
-  status: string;
-  invocationCount: number;
-  successCount: number;
   authoringAgentName: string | null;
+  id: string;
+  invocationCount: number;
+  name: string;
+  status: string;
+  successCount: number;
+  version: number;
 }
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -78,7 +78,9 @@ export default function SkillsPage() {
   const fetchSkills = useCallback(async () => {
     try {
       const res = await fetch("/api/skills");
-      if (!res.ok) throw new Error("Failed to fetch skills");
+      if (!res.ok) {
+        throw new Error("Failed to fetch skills");
+      }
       const json = await res.json();
       const fetched = json.skills as Skill[] | undefined;
       setSkills(fetched && fetched.length > 0 ? fetched : PLACEHOLDER_SKILLS);
@@ -95,18 +97,27 @@ export default function SkillsPage() {
 
   const totalSkills = skills.length;
   const activeSkills = skills.filter((s) => s.status === "active").length;
-  const deprecatedSkills = skills.filter((s) => s.status === "deprecated").length;
-  const totalInvocations = skills.reduce((sum, s) => sum + s.invocationCount, 0);
+  const deprecatedSkills = skills.filter(
+    (s) => s.status === "deprecated"
+  ).length;
+  const totalInvocations = skills.reduce(
+    (sum, s) => sum + s.invocationCount,
+    0
+  );
 
   function successRate(skill: Skill): string {
-    if (skill.invocationCount === 0) return "-";
+    if (skill.invocationCount === 0) {
+      return "-";
+    }
     return `${((skill.successCount / skill.invocationCount) * 100).toFixed(1)}%`;
   }
 
   function statusBadge(status: string) {
     const cls = STATUS_CLASSES[status] ?? "bg-gray-100 text-gray-800";
     return (
-      <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${cls}`}>
+      <span
+        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
+      >
         {status}
       </span>
     );
@@ -119,25 +130,35 @@ export default function SkillsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">Skills</h1>
+        <h1 className="mb-8 font-bold text-2xl text-gray-900">Skills</h1>
 
         {/* Summary Cards */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Skills</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{totalSkills}</p>
+            <p className="font-medium text-gray-500 text-sm">Total Skills</p>
+            <p className="mt-1 font-bold text-2xl text-gray-900">
+              {totalSkills}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Active</p>
-            <p className="mt-1 text-2xl font-bold text-green-600">{activeSkills}</p>
+            <p className="font-medium text-gray-500 text-sm">Active</p>
+            <p className="mt-1 font-bold text-2xl text-green-600">
+              {activeSkills}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Deprecated</p>
-            <p className="mt-1 text-2xl font-bold text-red-600">{deprecatedSkills}</p>
+            <p className="font-medium text-gray-500 text-sm">Deprecated</p>
+            <p className="mt-1 font-bold text-2xl text-red-600">
+              {deprecatedSkills}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Invocations</p>
-            <p className="mt-1 text-2xl font-bold text-blue-600">{totalInvocations}</p>
+            <p className="font-medium text-gray-500 text-sm">
+              Total Invocations
+            </p>
+            <p className="mt-1 font-bold text-2xl text-blue-600">
+              {totalInvocations}
+            </p>
           </div>
         </div>
 
@@ -146,32 +167,66 @@ export default function SkillsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Version</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Invocations</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Success Rate</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Author</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Version
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Invocations
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Success Rate
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Author
+                </th>
+                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {skills.map((skill) => (
-                <tr key={skill.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{skill.name}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">v{skill.version}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">{statusBadge(skill.status)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{skill.invocationCount}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{successRate(skill)}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{skill.authoringAgentName ?? "-"}</td>
+                <tr className="hover:bg-gray-50" key={skill.id}>
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
+                    {skill.name}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    v{skill.version}
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <button className="text-blue-600 hover:text-blue-800">View</button>
+                    {statusBadge(skill.status)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {skill.invocationCount}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {successRate(skill)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
+                    {skill.authoringAgentName ?? "-"}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <button
+                      className="text-blue-600 hover:text-blue-800"
+                      type="button"
+                    >
+                      View
+                    </button>
                   </td>
                 </tr>
               ))}
               {skills.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <td
+                    className="px-6 py-12 text-center text-gray-500 text-sm"
+                    colSpan={7}
+                  >
                     No skills registered.
                   </td>
                 </tr>

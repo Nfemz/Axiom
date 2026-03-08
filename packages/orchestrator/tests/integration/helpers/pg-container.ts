@@ -1,18 +1,21 @@
 // ---------------------------------------------------------------------------
 // Shared PostgreSQL Testcontainer helper for integration tests
 // ---------------------------------------------------------------------------
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+import {
+  PostgreSqlContainer,
+  type StartedPostgreSqlContainer,
+} from "@testcontainers/postgresql";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { sql } from "drizzle-orm";
 import * as schema from "../../../src/db/schema.js";
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
 
 export interface PgTestContext {
+  client: ReturnType<typeof postgres>;
   container: StartedPostgreSqlContainer;
   db: TestDb;
-  client: ReturnType<typeof postgres>;
 }
 
 /**
@@ -142,7 +145,7 @@ export async function insertTestAgent(
   db: TestDb,
   definitionId: string,
   name = "test-agent",
-  overrides: Partial<typeof schema.agents.$inferInsert> = {},
+  overrides: Partial<typeof schema.agents.$inferInsert> = {}
 ) {
   const [row] = await db
     .insert(schema.agents)

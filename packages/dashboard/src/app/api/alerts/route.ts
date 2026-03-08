@@ -1,14 +1,16 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { alertEvents, alertRules } from "@axiom/orchestrator/db/schema";
+import { desc } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { alertRules, alertEvents } from "@axiom/orchestrator/db/schema";
-import { desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const view = request.nextUrl.searchParams.get("view");
   const db = getDb();
@@ -29,7 +31,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const body = await request.json();
   const db = getDb();

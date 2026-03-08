@@ -7,9 +7,13 @@ export const metadata: Metadata = {
   description: "Autonomous Agent Orchestrator Platform",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className="dark">
+    <html className="dark" lang="en">
       <body>
         <div className="layout">
           <Sidebar />

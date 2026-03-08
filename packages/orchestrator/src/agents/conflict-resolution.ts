@@ -6,12 +6,12 @@
 // escalation support.
 // ---------------------------------------------------------------------------
 
-import { createLogger } from "@axiom/shared";
-import type { Database } from "../db/drizzle.js";
-import type Redis from "ioredis";
-import { sharedKnowledge } from "../db/schema.js";
-import { publishToStream, STREAM_KEYS } from "../comms/streams.js";
 import { randomUUID } from "node:crypto";
+import { createLogger } from "@axiom/shared";
+import type Redis from "ioredis";
+import { publishToStream, STREAM_KEYS } from "../comms/streams.js";
+import type { Database } from "../db/drizzle.js";
+import { sharedKnowledge } from "../db/schema.js";
 
 const log = createLogger("conflict-resolution");
 
@@ -23,17 +23,17 @@ export type ConflictType =
   | "budget_conflict";
 
 export interface Conflict {
-  id: string;
-  type: ConflictType;
   agentIds: string[];
   description: string;
   detectedAt: Date;
+  id: string;
+  type: ConflictType;
 }
 
 interface AgentInfo {
-  id: string;
-  currentTask: string | null;
   budgetSpent: number;
+  currentTask: string | null;
+  id: string;
 }
 
 // ── Detect Conflict ─────────────────────────────────────────────────────────
@@ -67,10 +67,10 @@ export function detectConflict(agents: AgentInfo[]): Conflict | null {
 // ── Escalate to Parent ──────────────────────────────────────────────────────
 
 export async function escalateToParent(
-  db: Database,
+  _db: Database,
   redis: Redis,
   conflict: Conflict,
-  parentAgentId?: string,
+  parentAgentId?: string
 ): Promise<void> {
   log.warn("Escalating conflict to parent", {
     conflictId: conflict.id,
@@ -107,7 +107,7 @@ export async function escalateToParent(
 export async function resolveConflict(
   db: Database,
   conflict: Conflict,
-  resolution: string,
+  resolution: string
 ): Promise<void> {
   log.info("Conflict resolved", {
     conflictId: conflict.id,

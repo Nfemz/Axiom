@@ -2,9 +2,9 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface Logger {
   debug(message: string, meta?: Record<string, unknown>): void;
+  error(message: string, meta?: Record<string, unknown>): void;
   info(message: string, meta?: Record<string, unknown>): void;
   warn(message: string, meta?: Record<string, unknown>): void;
-  error(message: string, meta?: Record<string, unknown>): void;
 }
 
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -30,9 +30,11 @@ function emit(
   level: LogLevel,
   message: string,
   context: string,
-  meta?: Record<string, unknown>,
+  meta?: Record<string, unknown>
 ): void {
-  if (!shouldLog(level)) return;
+  if (!shouldLog(level)) {
+    return;
+  }
 
   const entry: Record<string, unknown> = {
     level,
@@ -57,6 +59,9 @@ function emit(
       break;
     case "error":
       console.error(serialized);
+      break;
+    default:
+      console.log(serialized);
       break;
   }
 }

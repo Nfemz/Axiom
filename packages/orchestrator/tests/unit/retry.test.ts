@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   calculateBackoff,
-  executeWithRetry,
   DEFAULT_RETRY_POLICY,
+  executeWithRetry,
   type RetryPolicy,
 } from "../../src/agents/retry.js";
 
@@ -96,7 +96,7 @@ describe("executeWithRetry", () => {
     };
 
     await expect(executeWithRetry(fn, fastPolicy, "test")).rejects.toThrow(
-      "persistent failure",
+      "persistent failure"
     );
     // Initial attempt + 3 retries = 4 total calls
     expect(callCount).toBe(4);

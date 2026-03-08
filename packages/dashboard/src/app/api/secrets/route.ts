@@ -1,14 +1,16 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { secrets } from "@axiom/orchestrator/db/schema";
+import { deriveKey, encrypt } from "@axiom/shared/crypto";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { secrets } from "@axiom/orchestrator/db/schema";
-import { encrypt, deriveKey } from "@axiom/shared/crypto";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const db = getDb();
   const result = await db
@@ -28,7 +30,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const body = await request.json();
   const { name, secretType, value, allowedAgents, allowedDomains } = body as {

@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 
 test.describe("Setup Wizard", () => {
-  test.skip("completes full setup flow", async ({ page }) => {
+  test("completes full setup flow", async ({ page }) => {
     // This test requires a running dashboard + orchestrator
     // Skip by default, run manually with: pnpm test:e2e
     await page.goto("/");
@@ -13,7 +13,7 @@ test.describe("Setup Wizard", () => {
   test("setup page renders", async ({ page }) => {
     // Basic smoke test -- just check the page loads
     // Will fail if dashboard isn't running, which is expected in CI
-    test.skip(process.env.CI !== undefined, "Requires running dashboard");
+    test(process.env.CI !== undefined, "Requires running dashboard");
     await page.goto("http://localhost:3000");
     // Just verify no crash
   });

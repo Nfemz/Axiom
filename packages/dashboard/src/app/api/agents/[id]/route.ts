@@ -1,17 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
-import { getDb } from "@/lib/db";
 import { agents } from "@axiom/orchestrator/db/schema";
 import { eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const db = getDb();
@@ -31,27 +33,29 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const body = await request.json();
   const { action, directive } = body;
 
   const validActions = ["pause", "resume", "terminate", "resteer"];
-  if (!action || !validActions.includes(action)) {
+  if (!(action && validActions.includes(action))) {
     return NextResponse.json(
       { error: `Invalid action. Must be one of: ${validActions.join(", ")}` },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (action === "resteer" && !directive) {
     return NextResponse.json(
       { error: "directive is required for resteer action" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -87,11 +91,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const { id } = await params;
   const db = getDb();

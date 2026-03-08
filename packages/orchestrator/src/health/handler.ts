@@ -1,9 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getDb } from "../db/drizzle.js";
+import type { HealthResponse } from "@axiom/shared";
 import { getRedis } from "../comms/redis.js";
+import { getDb } from "../db/drizzle.js";
 import { findAgentsByStatus } from "../db/queries.js";
 import { getUptimeSeconds } from "./uptime-tracker.js";
-import type { HealthResponse } from "@axiom/shared";
 
 async function checkPostgres(): Promise<"up" | "down"> {
   try {
@@ -27,14 +27,17 @@ async function checkRedis(): Promise<"up" | "down"> {
 
 export async function handleHealthCheck(
   _req: IncomingMessage,
-  res: ServerResponse,
+  res: ServerResponse
 ): Promise<void> {
-  const [pgStatus, redisStatus] = await Promise.all([checkPostgres(), checkRedis()]);
+  const [pgStatus, redisStatus] = await Promise.all([
+    checkPostgres(),
+    checkRedis(),
+  ]);
 
-  let runningAgents: number = 0;
-  let pausedAgents: number = 0;
-  let errorAgents: number = 0;
-  let totalAgents: number = 0;
+  let runningAgents = 0;
+  let pausedAgents = 0;
+  let errorAgents = 0;
+  let totalAgents = 0;
 
   try {
     const db = getDb();
@@ -54,8 +57,15 @@ export async function handleHealthCheck(
   const allUp = pgStatus === "up" && redisStatus === "up";
   const allDown = pgStatus === "down" && redisStatus === "down";
 
+  let healthStatus: HealthResponse["status"] = "degraded";
+  if (allUp) {
+    healthStatus = "healthy";
+  } else if (allDown) {
+    healthStatus = "unhealthy";
+  }
+
   const response: HealthResponse = {
-    status: allUp ? "healthy" : allDown ? "unhealthy" : "degraded",
+    status: healthStatus,
     uptime: getUptimeSeconds(),
     services: {
       orchestrator: "up",
