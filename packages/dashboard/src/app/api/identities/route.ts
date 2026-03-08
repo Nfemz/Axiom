@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
+import { identities } from "@axiom/orchestrator/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -7,5 +9,8 @@ export async function GET() {
   const authError = await requireAuth();
   if (authError) return authError;
 
-  return NextResponse.json({ identities: [], total: 0 });
+  const db = getDb();
+  const result = await db.select().from(identities);
+
+  return NextResponse.json({ identities: result, total: result.length });
 }

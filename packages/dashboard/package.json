@@ -11,7 +11,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@axiom/orchestrator": "workspace:*",
     "@axiom/shared": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "postgres": "^3.4.8",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.3",
     "ioredis": "^5.10.0",

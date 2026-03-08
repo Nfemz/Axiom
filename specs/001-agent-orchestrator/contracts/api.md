@@ -19,12 +19,12 @@ Base: `/api`
 
 ### Authentication
 
+Uses a step-based dispatch pattern — registration and login are consolidated into single endpoints that accept a `step` parameter in the request body.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/register/options` | POST | Generate WebAuthn registration challenge |
-| `/api/auth/register/verify` | POST | Verify registration response, store credential |
-| `/api/auth/login/options` | POST | Generate WebAuthn authentication challenge |
-| `/api/auth/login/verify` | POST | Verify authentication response, create session |
+| `/api/auth/register` | POST | `{ step: "challenge" }` — generate WebAuthn registration challenge; `{ step: "verify", credential }` — verify registration response, store credential |
+| `/api/auth/login` | POST | `{ step: "challenge" }` — generate WebAuthn authentication challenge; `{ step: "verify", credential }` — verify authentication response, create session |
 | `/api/auth/logout` | POST | Destroy session |
 
 ### Agents
@@ -113,11 +113,13 @@ Base: `/api`
 
 ### Financial
 
+Uses a `?view=` query parameter for dispatch: `transactions` (default), `summary`, or `costs`.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/financial/transactions` | GET | List transactions (filterable by agent, venture, type) |
-| `/api/financial/summary` | GET | Aggregate summary (total in/out, per-agent, per-venture ROI) |
-| `/api/financial/costs` | GET | LLM cost breakdown (per-agent, per-model, trends) |
+| `/api/financial?view=transactions` | GET | List transactions (filterable by agent, venture, type) |
+| `/api/financial?view=summary` | GET | Aggregate summary (total in/out, per-agent, per-venture ROI) |
+| `/api/financial?view=costs` | GET | LLM cost breakdown (per-agent, per-model, trends) |
 
 ### Identities
 
@@ -136,13 +138,14 @@ Base: `/api`
 
 ### Alerts
 
+The main `/api/alerts` endpoint uses a `?view=` query parameter: `rules` (default) or `events`. Sub-routes handle individual rule/event operations.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/alerts/rules` | GET | List alert rules |
-| `/api/alerts/rules` | POST | Create alert rule |
+| `/api/alerts` | GET | `?view=rules` (default) — list alert rules; `?view=events` — list alert events |
+| `/api/alerts` | POST | Create alert rule |
 | `/api/alerts/rules/:id` | PUT | Update alert rule |
 | `/api/alerts/rules/:id` | DELETE | Delete alert rule |
-| `/api/alerts/events` | GET | List alert events (filterable) |
 | `/api/alerts/events/:id/ack` | POST | Acknowledge alert |
 
 ### System

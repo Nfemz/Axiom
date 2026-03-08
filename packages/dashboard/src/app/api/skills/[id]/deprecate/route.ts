@@ -1,25 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { getDb } from "@/lib/db";
-import { identities } from "@axiom/orchestrator/db/schema";
+import { skills } from "@axiom/orchestrator/db/schema";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-export async function DELETE(
-  _request: Request,
+export async function POST(
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
   const authError = await requireAuth();
   if (authError) return authError;
 
+  const { id } = await params;
   const db = getDb();
 
   const [updated] = await db
-    .update(identities)
-    .set({ status: "revoked", revokedAt: new Date() })
-    .where(eq(identities.id, id))
+    .update(skills)
+    .set({ status: "deprecated", updatedAt: new Date() })
+    .where(eq(skills.id, id))
     .returning();
 
   if (!updated) {

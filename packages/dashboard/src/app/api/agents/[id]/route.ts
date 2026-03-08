@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
+import { agents } from "@axiom/orchestrator/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +14,19 @@ export async function GET(
   if (authError) return authError;
 
   const { id } = await params;
-  // TODO: Fetch agent by ID from orchestrator DB
-  return NextResponse.json({ id, status: "unknown" });
+  const db = getDb();
+
+  const [agent] = await db
+    .select()
+    .from(agents)
+    .where(eq(agents.id, id))
+    .limit(1);
+
+  if (!agent) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(agent);
 }
 
 export async function PATCH(
@@ -26,14 +40,50 @@ export async function PATCH(
   const body = await request.json();
   const { action, directive } = body;
 
-  // TODO: Validate action is one of: pause, resume, terminate, resteer
-  // TODO: Send control command to orchestrator via BullMQ
+  const validActions = ["pause", "resume", "terminate", "resteer"];
+  if (!action || !validActions.includes(action)) {
+    return NextResponse.json(
+      { error: `Invalid action. Must be one of: ${validActions.join(", ")}` },
+      { status: 400 },
+    );
+  }
 
-  return NextResponse.json({
-    id,
-    status: action === "terminate" ? "terminated" : "updated",
-    updatedAt: new Date().toISOString(),
-  });
+  if (action === "resteer" && !directive) {
+    return NextResponse.json(
+      { error: "directive is required for resteer action" },
+      { status: 400 },
+    );
+  }
+
+  const db = getDb();
+
+  const statusMap: Record<string, string> = {
+    pause: "paused",
+    resume: "running",
+    terminate: "terminated",
+    resteer: "running",
+  };
+
+  const updates: Record<string, unknown> = {
+    status: statusMap[action],
+    updatedAt: new Date(),
+  };
+
+  if (directive) {
+    updates.currentTask = directive;
+  }
+
+  const [updated] = await db
+    .update(agents)
+    .set(updates)
+    .where(eq(agents.id, id))
+    .returning();
+
+  if (!updated) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(
@@ -44,7 +94,17 @@ export async function DELETE(
   if (authError) return authError;
 
   const { id } = await params;
-  // TODO: Terminate agent via orchestrator
+  const db = getDb();
 
-  return NextResponse.json({ id, status: "terminated" });
+  const [updated] = await db
+    .update(agents)
+    .set({ status: "terminated", updatedAt: new Date() })
+    .where(eq(agents.id, id))
+    .returning();
+
+  if (!updated) {
+    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(updated);
 }

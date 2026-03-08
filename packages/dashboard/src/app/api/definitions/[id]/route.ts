@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
+import { agentDefinitions } from "@axiom/orchestrator/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +14,17 @@ export async function GET(
   if (authError) return authError;
 
   const { id } = await params;
-  // TODO: Fetch definition by ID from orchestrator DB
-  return NextResponse.json({ id });
+  const db = getDb();
+  const [definition] = await db
+    .select()
+    .from(agentDefinitions)
+    .where(eq(agentDefinitions.id, id));
+
+  if (!definition) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(definition);
 }
 
 export async function PUT(
@@ -24,14 +36,18 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  // TODO: Validate with agent definition schema from @axiom/shared
-  // TODO: Update definition in orchestrator DB
+  const db = getDb();
+  const [definition] = await db
+    .update(agentDefinitions)
+    .set({ ...body, updatedAt: new Date() })
+    .where(eq(agentDefinitions.id, id))
+    .returning();
 
-  return NextResponse.json({
-    id,
-    updatedAt: new Date().toISOString(),
-    ...body,
-  });
+  if (!definition) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(definition);
 }
 
 export async function DELETE(
@@ -42,7 +58,15 @@ export async function DELETE(
   if (authError) return authError;
 
   const { id } = await params;
-  // TODO: Delete definition from orchestrator DB
+  const db = getDb();
+  const [definition] = await db
+    .delete(agentDefinitions)
+    .where(eq(agentDefinitions.id, id))
+    .returning();
 
-  return NextResponse.json({ id, deleted: true });
+  if (!definition) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(definition);
 }

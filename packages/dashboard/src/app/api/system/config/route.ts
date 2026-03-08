@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { UpdateSystemConfigRequestSchema } from "@axiom/shared/schemas/api";
+import { getDb } from "@/lib/db";
+import { systemConfig } from "@axiom/orchestrator/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-// In-memory config (will be persisted to DB later)
-let systemConfig = {
-  heartbeatIntervalMs: 300000,
-  activeHours: { start: "00:00", end: "23:59", timezone: "UTC" },
-  revenueSplitOperator: 0.7,
-  revenueSplitReinvest: 0.3,
-  backupRetentionDays: 30,
-  discordWebhookUrl: null as string | null,
+const DEFAULTS = {
+  heartbeatIntervalMs: 1800000,
+  activeHours: { start: "06:00", end: "22:00", timezone: "UTC" },
+  revenueSplitOperator: 0.2,
+  revenueSplitReinvest: 0.8,
+  backupRetentionDays: 90,
+  discordWebhookUrl: null,
 };
 
 export async function GET() {
   const authError = await requireAuth();
   if (authError) return authError;
 
-  return NextResponse.json(systemConfig);
+  const db = getDb();
+  const [config] = await db.select().from(systemConfig).where(eq(systemConfig.id, 1)).limit(1);
+
+  if (!config) {
+    return NextResponse.json(DEFAULTS);
+  }
+
+  return NextResponse.json(config);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -32,7 +41,22 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Invalid config", details: parsed.error.issues }, { status: 400 });
   }
 
-  systemConfig = { ...systemConfig, ...parsed.data };
+  const db = getDb();
+  const [existing] = await db.select().from(systemConfig).where(eq(systemConfig.id, 1)).limit(1);
 
-  return NextResponse.json(systemConfig);
+  let result;
+  if (existing) {
+    [result] = await db
+      .update(systemConfig)
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(eq(systemConfig.id, 1))
+      .returning();
+  } else {
+    [result] = await db
+      .insert(systemConfig)
+      .values({ id: 1, ...parsed.data })
+      .returning();
+  }
+
+  return NextResponse.json(result);
 }

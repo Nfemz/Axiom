@@ -107,7 +107,7 @@
 
 - [x] T044b [P] [US1] Unit tests for health endpoint logic (orchestrator/redis/pg status aggregation) in `packages/orchestrator/tests/unit/health.test.ts`
 - [x] T044c [P] [US1] Unit tests for heartbeat scheduler (interval timing, cheap-checks-first order, active hours filtering) and three-layer check logic in `packages/orchestrator/tests/unit/heartbeat.test.ts`
-- [ ] T044d [P] [US1] Integration tests for WebAuthn registration/login flow (challenge generation, credential verification, session creation) in `packages/dashboard/tests/integration/auth.test.ts`
+- [x] T044d [P] [US1] Integration tests for WebAuthn registration/login flow (challenge generation, credential verification, session creation) in `packages/dashboard/tests/integration/auth.test.ts`
 - [x] T044e [US1] E2E test: full setup wizard flow — passkey registration through test agent spawn — using Playwright in `packages/dashboard/tests/e2e/setup-wizard.spec.ts`
 
 **Checkpoint**: Orchestrator starts, `/health` returns healthy, dashboard loads, passkey auth works, setup wizard completes, system status visible

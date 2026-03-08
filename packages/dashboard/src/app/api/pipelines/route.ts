@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
+import { getDb } from "@/lib/db";
+import { pipelines } from "@axiom/orchestrator/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -7,8 +9,10 @@ export async function GET() {
   const authError = await requireAuth();
   if (authError) return authError;
 
-  // TODO: Connect to orchestrator DB
-  return NextResponse.json({ pipelines: [], total: 0 });
+  const db = getDb();
+  const result = await db.select().from(pipelines);
+
+  return NextResponse.json({ pipelines: result, total: result.length });
 }
 
 export async function POST(request: NextRequest) {
@@ -16,15 +20,13 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   const body = await request.json();
+  const { name, goal, stages, budgetTotal } = body;
 
-  // TODO: Validate with Zod, create pipeline via orchestrator
-  return NextResponse.json(
-    {
-      id: "placeholder",
-      name: body.name,
-      status: "planned",
-      createdAt: new Date().toISOString(),
-    },
-    { status: 201 },
-  );
+  const db = getDb();
+  const [created] = await db
+    .insert(pipelines)
+    .values({ name, goal, stages: stages ?? [], budgetTotal: String(budgetTotal) })
+    .returning();
+
+  return NextResponse.json(created, { status: 201 });
 }

@@ -317,6 +317,7 @@ export const alertRules = pgTable("alert_rules", {
   enabled: boolean("enabled").notNull().default(true),
   notifyDiscord: boolean("notify_discord").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // ─── Alert Event ───────────────────────────────────────────────────
