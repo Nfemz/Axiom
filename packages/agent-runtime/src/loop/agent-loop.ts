@@ -1,6 +1,18 @@
 import type { AgentComms } from '../comms/redis-client.js';
 import type { AgentState } from '../comms/message-handler.js';
 import type { MemoryOps } from '../memory/memory-ops.js';
+import {
+  recordFailure,
+  findSimilarFailures,
+  getSuccessfulResolutions,
+  type FailureRecord,
+  type ResolutionRecord,
+} from '../memory/self-learning.js';
+import {
+  createDegradationContext,
+  enterDegradedMode,
+  type DegradationContext,
+} from './degradation.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,6 +33,9 @@ export interface LoopContext {
   state: AgentState;
   memory: MemoryOps;
   config: AgentLoopConfig;
+  failures?: FailureRecord[];
+  resolutions?: ResolutionRecord[];
+  degradation?: DegradationContext;
 }
 
 export interface TurnResult {
@@ -93,6 +108,9 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
   });
 
   let consecutiveErrors = 0;
+  let failures: FailureRecord[] = ctx.failures ?? [];
+  const resolutions: ResolutionRecord[] = ctx.resolutions ?? [];
+  let degradation = ctx.degradation ?? createDegradationContext();
 
   while (!ctx.state.terminated && ctx.config.budgetSpent < ctx.config.budgetTotal) {
     // 1. Pause check
@@ -100,6 +118,15 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
       log('Agent paused, waiting', { agentId: ctx.config.agentId });
       await sleep(1000);
       continue;
+    }
+
+    // Check degradation state
+    if (degradation.state === 'degraded') {
+      log('Operating in degraded mode', {
+        agentId: ctx.config.agentId,
+        failedServices: degradation.failedServices,
+        queuedOps: degradation.queuedOps.length,
+      });
     }
 
     // 2. Check for resteer directive
@@ -145,11 +172,38 @@ export async function runAgentLoop(ctx: LoopContext): Promise<void> {
       consecutiveErrors++;
       const errorMessage = err instanceof Error ? err.message : String(err);
 
+      // Record failure for self-learning
+      failures = recordFailure(failures, ctx.config.goal, errorMessage, {
+        budgetSpent: ctx.config.budgetSpent,
+        consecutiveErrors,
+      });
+
+      // Check if we've seen this before and have successful resolutions
+      const pastResolutions = getSuccessfulResolutions(resolutions, ctx.config.goal);
+      if (pastResolutions.length > 0) {
+        log('Found past successful resolutions', {
+          agentId: ctx.config.agentId,
+          resolutions: pastResolutions,
+        });
+      }
+
       log('Turn error', {
         agentId: ctx.config.agentId,
         error: errorMessage,
         consecutiveErrors,
+        similarPastFailures: findSimilarFailures(failures, ctx.config.goal).length,
       });
+
+      // Check if this is an infrastructure failure
+      if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('Redis') || errorMessage.includes('database')) {
+        const service = errorMessage.includes('Redis') ? 'redis' : 'database';
+        degradation = enterDegradedMode(degradation, service);
+        log('Entered degraded mode', {
+          agentId: ctx.config.agentId,
+          failedService: service,
+          state: degradation.state,
+        });
+      }
 
       if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
         log('Unrecoverable error — max retries exceeded', {

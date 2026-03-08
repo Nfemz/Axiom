@@ -42,6 +42,42 @@ async function sendCommand(
   await publishToStream(redis, streamKey, { command, ...payload });
 }
 
+// ── Approval Gates ───────────────────────────────────────────────────────────
+
+async function checkApprovalGate(
+  db: Database,
+  redis: Redis,
+  agentId: string,
+  action: string,
+): Promise<boolean> {
+  const agent = await requireAgent(db, agentId);
+  const { findDefinitionById } = await import("../db/queries.js");
+  const definition = await findDefinitionById(db, agent.definitionId);
+  const policies = definition?.approvalPolicies;
+
+  if (!policies || typeof policies !== "object") return true;
+  const policyList = Array.isArray(policies) ? policies : [];
+
+  const requiresApproval = policyList.some(
+    (p: unknown) => {
+      const policy = p as { action?: string };
+      return policy.action === action || policy.action === "*";
+    },
+  );
+
+  if (!requiresApproval) return true;
+
+  await publishToStream(redis, STREAM_KEYS.ORCHESTRATOR_INBOX, {
+    type: "approval_required",
+    agentId,
+    action,
+    timestamp: new Date().toISOString(),
+  });
+
+  log.info("Approval gate triggered", { agentId, action });
+  return false;
+}
+
 // ── Pause ───────────────────────────────────────────────────────────────────
 
 export async function pauseAgent(
@@ -124,6 +160,12 @@ export async function terminateAgent(
   const agent = await requireAgent(db, agentId);
   assertTransition(agent.status as AgentStatus, AgentStatus.Terminated);
 
+  const approved = await checkApprovalGate(db, redis, agentId, "terminate");
+  if (!approved) {
+    log.info("Terminate blocked by approval gate", { agentId });
+    return agent;
+  }
+
   const sandboxId = requireSandboxId(agent);
   log.info("Terminating agent", { agentId, reason });
 
@@ -153,6 +195,12 @@ export async function resteerAgent(
     throw new Error(
       `Cannot resteer agent in "${agent.status}" status; must be "running"`,
     );
+  }
+
+  const approved = await checkApprovalGate(db, redis, agentId, "resteer");
+  if (!approved) {
+    log.info("Resteer blocked by approval gate", { agentId });
+    return;
   }
 
   log.info("Resteering agent", { agentId, directive });

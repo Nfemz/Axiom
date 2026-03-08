@@ -14,14 +14,21 @@ function createMocks() {
     on: vi.fn(),
   };
 
+  const mockSubscriber = {
+    subscribe: vi.fn().mockResolvedValue(undefined),
+    on: vi.fn(),
+    disconnect: vi.fn(),
+  };
+
   const mockRedis = {
     xgroup: vi.fn().mockResolvedValue("OK"),
     xreadgroup: vi.fn().mockReturnValue(hang()),
     xack: vi.fn().mockResolvedValue(1),
     xadd: vi.fn().mockResolvedValue("1-0"),
+    duplicate: vi.fn().mockReturnValue(mockSubscriber),
   };
 
-  return { mockClient, mockRedis };
+  return { mockClient, mockRedis, mockSubscriber };
 }
 
 describe("Message Router Integration", () => {

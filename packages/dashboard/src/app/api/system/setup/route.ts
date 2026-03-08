@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
 import type { SetupWizardState } from "@axiom/shared/schemas/api";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   const body = await request.json();
   const stepIndex = body.step as number | undefined;
 

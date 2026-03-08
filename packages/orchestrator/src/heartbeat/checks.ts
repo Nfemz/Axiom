@@ -41,16 +41,63 @@ async function checkHeartbeatTimeouts(): Promise<HeartbeatCheckResult[]> {
 
 // Layer 2: Resource/cost heuristic checks
 async function checkResourceUsage(): Promise<HeartbeatCheckResult[]> {
-  // Resource checks are evaluated when heartbeat messages arrive
-  // with ResourceMetrics. This is a placeholder for scheduled checks.
-  return [];
+  const db = getDb();
+  const runningAgents = await findAgentsByStatus(db, "running");
+  const results: HeartbeatCheckResult[] = [];
+
+  for (const agent of runningAgents) {
+    const budgetTotal = Number(agent.budgetTotal);
+    const budgetSpent = Number(agent.budgetSpent);
+
+    if (budgetTotal > 0 && budgetSpent / budgetTotal > 0.8) {
+      log.warn("Agent approaching budget limit", {
+        agentId: agent.id,
+        name: agent.name,
+        budgetSpent,
+        budgetTotal,
+        pct: Math.round((budgetSpent / budgetTotal) * 100),
+      });
+      results.push({
+        agentId: agent.id,
+        agentName: agent.name,
+        issue: "resource_exceeded",
+        action: "escalate",
+      });
+    }
+  }
+
+  return results;
 }
 
-// Layer 3: LLM self-assessment (most expensive, run least frequently)
+// Layer 3: Stall detection (running agents with no recent updates)
 async function checkForStalls(): Promise<HeartbeatCheckResult[]> {
-  // Periodic LLM-based stall detection will be implemented
-  // when the agent-runtime LLM loop is in place (Phase 4)
-  return [];
+  const db = getDb();
+  const runningAgents = await findAgentsByStatus(db, "running");
+  const now = Date.now();
+  const STALL_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+  const results: HeartbeatCheckResult[] = [];
+
+  for (const agent of runningAgents) {
+    if (!agent.updatedAt) continue;
+    const lastUpdate = new Date(agent.updatedAt).getTime();
+    const elapsed = now - lastUpdate;
+
+    if (elapsed > STALL_THRESHOLD_MS) {
+      log.warn("Agent may be stalled", {
+        agentId: agent.id,
+        name: agent.name,
+        elapsedMs: elapsed,
+      });
+      results.push({
+        agentId: agent.id,
+        agentName: agent.name,
+        issue: "stall_detected",
+        action: "escalate",
+      });
+    }
+  }
+
+  return results;
 }
 
 export async function runHeartbeatChecks(): Promise<void> {

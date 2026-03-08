@@ -8,6 +8,10 @@
 import type Redis from "ioredis";
 import { createLogger } from "@axiom/shared";
 import type { Database } from "../db/drizzle.js";
+import { findAgentsByStatus, findAllAgents } from "../db/queries.js";
+import { spawnAgent } from "../agents/spawn.js";
+import { pipelines } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 const log = createLogger("heartbeat:standing-orders");
 
@@ -89,69 +93,119 @@ async function evaluateOrder(
 // ─── Spawn Agent Order ───────────────────────────────────────────
 
 async function evaluateSpawnOrder(
-  _db: Database,
-  _redis: Redis,
+  db: Database,
+  redis: Redis,
   order: StandingOrder,
 ): Promise<OrderResult> {
-  // TODO: Check conditions (e.g. pipeline stage needs agent, queue depth)
-  // and spawn agent via BullMQ agent:spawn queue
-  log.debug("Evaluating spawn order", { orderId: order.id, config: order.config });
+  const config = order.config as { definitionId?: string; goal?: string; maxConcurrent?: number };
+  if (!config.definitionId || !config.goal) {
+    return { orderId: order.id, type: "spawn_agent", executed: false, result: "Missing definitionId or goal" };
+  }
 
-  return {
-    orderId: order.id,
-    type: "spawn_agent",
-    executed: false,
-    result: "Spawn order evaluation placeholder",
-  };
+  const running = await findAgentsByStatus(db, "running");
+  const maxConcurrent = config.maxConcurrent ?? 10;
+
+  if (running.length >= maxConcurrent) {
+    return { orderId: order.id, type: "spawn_agent", executed: false, result: `At max concurrent agents (${maxConcurrent})` };
+  }
+
+  await spawnAgent(db, redis, { definitionId: config.definitionId, goal: config.goal });
+  log.info("Standing order spawned agent", { orderId: order.id, definitionId: config.definitionId });
+
+  return { orderId: order.id, type: "spawn_agent", executed: true, result: "Agent spawned" };
 }
 
 // ─── Pipeline Advancement Order ──────────────────────────────────
 
 async function evaluatePipelineOrder(
-  _db: Database,
+  db: Database,
   order: StandingOrder,
 ): Promise<OrderResult> {
-  // TODO: Check pipeline stage completion criteria, advance if met
-  log.debug("Evaluating pipeline order", { orderId: order.id, config: order.config });
+  const config = order.config as { pipelineId?: string };
+  if (!config.pipelineId) {
+    return { orderId: order.id, type: "advance_pipeline", executed: false, result: "Missing pipelineId" };
+  }
 
-  return {
-    orderId: order.id,
-    type: "advance_pipeline",
-    executed: false,
-    result: "Pipeline order evaluation placeholder",
-  };
+  const pipeline = await db.select().from(pipelines).where(eq(pipelines.id, config.pipelineId)).limit(1);
+  if (!pipeline[0] || pipeline[0].status !== "active") {
+    return { orderId: order.id, type: "advance_pipeline", executed: false, result: "Pipeline not active" };
+  }
+
+  const p = pipeline[0];
+  const stages = p.stages as Array<{ name: string; completed?: boolean }>;
+  const currentIdx = p.currentStage;
+
+  if (currentIdx >= stages.length) {
+    return { orderId: order.id, type: "advance_pipeline", executed: false, result: "All stages complete" };
+  }
+
+  await db.update(pipelines)
+    .set({ currentStage: currentIdx + 1, updatedAt: new Date() })
+    .where(eq(pipelines.id, config.pipelineId));
+
+  log.info("Pipeline advanced", { pipelineId: config.pipelineId, newStage: currentIdx + 1 });
+  return { orderId: order.id, type: "advance_pipeline", executed: true, result: `Advanced to stage ${currentIdx + 1}` };
 }
 
 // ─── Budget Check Order ──────────────────────────────────────────
 
 async function evaluateBudgetOrder(
-  _db: Database,
+  db: Database,
   order: StandingOrder,
 ): Promise<OrderResult> {
-  // TODO: Check agent/venture budgets, flag overspend, escalate
-  log.debug("Evaluating budget order", { orderId: order.id, config: order.config });
+  const config = order.config as { threshold?: number };
+  const threshold = config.threshold ?? 0.9;
+
+  const allAgents = await findAllAgents(db);
+  const overBudget = allAgents.filter((a) => {
+    const total = Number(a.budgetTotal);
+    const spent = Number(a.budgetSpent);
+    return total > 0 && spent / total >= threshold;
+  });
+
+  if (overBudget.length === 0) {
+    return { orderId: order.id, type: "check_budget", executed: true, result: "All budgets within limits" };
+  }
+
+  log.warn("Agents over budget threshold", {
+    orderId: order.id,
+    count: overBudget.length,
+    agentIds: overBudget.map((a) => a.id),
+  });
 
   return {
     orderId: order.id,
     type: "check_budget",
-    executed: false,
-    result: "Budget order evaluation placeholder",
+    executed: true,
+    result: `${overBudget.length} agent(s) at/above ${threshold * 100}% budget`,
   };
 }
 
 // ─── Resource Reallocation Order ─────────────────────────────────
 
 async function evaluateReallocateOrder(
-  _db: Database,
+  db: Database,
   order: StandingOrder,
 ): Promise<OrderResult> {
-  // TODO: Evaluate resource utilization, suspend idle agents, redistribute budget
-  log.debug("Evaluating reallocate order", { orderId: order.id, config: order.config });
+  const allAgents = await findAllAgents(db);
+  const idle = allAgents.filter(
+    (a) => a.status === "running" && !a.currentTask,
+  );
+
+  if (idle.length === 0) {
+    return { orderId: order.id, type: "reallocate", executed: true, result: "No idle agents" };
+  }
+
+  log.info("Idle agents detected for potential reallocation", {
+    orderId: order.id,
+    idleCount: idle.length,
+    idleIds: idle.map((a) => a.id),
+  });
 
   return {
     orderId: order.id,
     type: "reallocate",
-    executed: false,
-    result: "Reallocate order evaluation placeholder",
+    executed: true,
+    result: `${idle.length} idle agent(s) identified for reallocation`,
   };
 }

@@ -10,6 +10,8 @@ import { promisify } from "node:util";
 import { readdir, stat, unlink, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createLogger, DEFAULT_BACKUP_RETENTION_DAYS } from "@axiom/shared";
+import type { ConnectionOptions } from "bullmq";
+import { createQueue, createWorker, QUEUE_NAMES } from "../comms/queues.js";
 
 const execFileAsync = promisify(execFile);
 const log = createLogger("db-backup");
@@ -117,4 +119,49 @@ export async function verifyBackup(backupPath: string): Promise<boolean> {
     log.warn("Backup file not found or inaccessible", { backupPath });
     return false;
   }
+}
+
+// ── Backup Scheduler ───────────────────────────────────────────────────────
+
+export async function scheduleBackupJobs(
+  config: BackupConfig,
+  connection: ConnectionOptions,
+): Promise<void> {
+  const queue = createQueue(QUEUE_NAMES.BACKUP, connection);
+
+  // Daily backup at 2 AM UTC
+  await queue.upsertJobScheduler("daily-backup", {
+    pattern: "0 2 * * *",
+  }, {
+    name: "daily-backup",
+    data: { type: "backup" },
+  });
+
+  // Weekly verification on Sundays at 4 AM UTC
+  await queue.upsertJobScheduler("weekly-verify", {
+    pattern: "0 4 * * 0",
+  }, {
+    name: "weekly-verify",
+    data: { type: "verify" },
+  });
+
+  createWorker(
+    QUEUE_NAMES.BACKUP,
+    async (job: { data: { type: string } }) => {
+      if (job.data.type === "backup") {
+        const backupPath = await createBackup(config);
+        await pruneOldBackups(config.outputDir);
+        log.info("Scheduled backup completed", { backupPath });
+      } else if (job.data.type === "verify") {
+        const backups = await listBackups(config.outputDir);
+        if (backups.length > 0) {
+          const valid = await verifyBackup(backups[0].path);
+          log.info("Scheduled backup verification", { valid, backup: backups[0].filename });
+        }
+      }
+    },
+    connection,
+  );
+
+  log.info("Backup jobs scheduled");
 }

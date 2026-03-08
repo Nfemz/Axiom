@@ -8,7 +8,9 @@
 import { createLogger } from "@axiom/shared";
 import type { Database } from "../db/drizzle.js";
 import type Redis from "ioredis";
-import { randomUUID } from "node:crypto";
+import { spawnAgent } from "./spawn.js";
+import { pipelines } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 const log = createLogger("workflow-coordinator");
 
@@ -35,55 +37,86 @@ export interface WorkflowStatus {
 // ── Workflow Lifecycle ──────────────────────────────────────────────────────
 
 /**
- * Creates a new workflow and returns its ID.
- *
- * PLACEHOLDER: Logs the creation and returns a generated ID.
- * TODO: Spawn workflow lead agent, allocate budget, track workflow.
+ * Creates a new workflow, persists it as a pipeline record, and spawns a lead agent.
  */
 export async function createWorkflow(
   db: Database,
   redis: Redis,
   config: WorkflowConfig,
 ): Promise<string> {
-  const workflowId = randomUUID();
-
   log.info("Creating workflow", {
-    workflowId,
     name: config.name,
     goal: config.goal,
-    leadDefinitionId: config.leadDefinitionId,
     budget: config.budget,
-    subWorkflowCount: config.subWorkflows?.length ?? 0,
   });
 
-  // TODO: persist workflow record to DB
-  // TODO: spawn lead agent via spawnAgent()
-  // TODO: allocate budget from parent or top-level pool
+  // Persist workflow as a pipeline record
+  const result = await db.insert(pipelines).values({
+    name: config.name,
+    goal: config.goal,
+    stages: config.subWorkflows?.map((sw) => ({ name: sw.name, goal: sw.goal, completed: false })) ?? [],
+    status: "active",
+    budgetTotal: String(config.budget),
+  }).returning();
 
-  return workflowId;
+  const workflow = result[0];
+
+  // Spawn lead agent for the workflow
+  try {
+    const agent = await spawnAgent(db, redis, {
+      definitionId: config.leadDefinitionId,
+      goal: config.goal,
+      budget: config.budget,
+    });
+
+    await db.update(pipelines)
+      .set({ leadAgentId: agent.id, updatedAt: new Date() })
+      .where(eq(pipelines.id, workflow.id));
+
+    log.info("Workflow created with lead agent", {
+      workflowId: workflow.id,
+      leadAgentId: agent.id,
+    });
+  } catch (err) {
+    log.error("Failed to spawn lead agent for workflow", {
+      workflowId: workflow.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  return workflow.id;
 }
 
 // ── Status ──────────────────────────────────────────────────────────────────
 
 /**
- * Retrieves the current status of a workflow.
- *
- * PLACEHOLDER: Returns a basic pending status object.
- * TODO: Query DB for workflow state and child statuses.
+ * Retrieves the current status of a workflow from the pipelines table.
  */
 export async function getWorkflowStatus(
   db: Database,
   workflowId: string,
 ): Promise<WorkflowStatus> {
-  log.info("Fetching workflow status", { workflowId });
+  const result = await db.select().from(pipelines).where(eq(pipelines.id, workflowId)).limit(1);
 
-  // TODO: query workflow record and nested sub-workflows from DB
+  if (!result[0]) {
+    return {
+      id: workflowId,
+      name: "unknown",
+      status: "failed",
+      subWorkflows: [],
+      budgetAllocated: 0,
+      budgetSpent: 0,
+    };
+  }
+
+  const p = result[0];
   return {
-    id: workflowId,
-    name: "unknown",
-    status: "pending",
+    id: p.id,
+    name: p.name,
+    status: p.status === "active" ? "active" : p.status === "completed" ? "completed" : "pending",
+    leadAgentId: p.leadAgentId ?? undefined,
     subWorkflows: [],
-    budgetAllocated: 0,
-    budgetSpent: 0,
+    budgetAllocated: Number(p.budgetTotal),
+    budgetSpent: Number(p.budgetSpent),
   };
 }

@@ -8,7 +8,9 @@
 
 import { createLogger } from "@axiom/shared";
 import type { Database } from "../db/drizzle.js";
+import type Redis from "ioredis";
 import { sharedKnowledge } from "../db/schema.js";
+import { publishToStream, STREAM_KEYS } from "../comms/streams.js";
 import { randomUUID } from "node:crypto";
 
 const log = createLogger("conflict-resolution");
@@ -66,16 +68,38 @@ export function detectConflict(agents: AgentInfo[]): Conflict | null {
 
 export async function escalateToParent(
   db: Database,
+  redis: Redis,
   conflict: Conflict,
+  parentAgentId?: string,
 ): Promise<void> {
-  log.warn("Conflict escalated to parent", {
+  log.warn("Escalating conflict to parent", {
     conflictId: conflict.id,
     type: conflict.type,
     agentIds: conflict.agentIds,
-    description: conflict.description,
   });
 
-  // Placeholder: in production, this would notify the parent agent or operator
+  // If there's a parent agent, notify it via its inbox stream
+  if (parentAgentId) {
+    const inboxKey = STREAM_KEYS.agentInbox(parentAgentId);
+    await publishToStream(redis, inboxKey, {
+      type: "conflict_escalation",
+      conflictId: conflict.id,
+      conflictType: conflict.type,
+      agentIds: conflict.agentIds.join(","),
+      description: conflict.description,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Also notify the orchestrator inbox for visibility
+  await publishToStream(redis, STREAM_KEYS.ORCHESTRATOR_INBOX, {
+    type: "conflict_escalation",
+    conflictId: conflict.id,
+    conflictType: conflict.type,
+    agentIds: conflict.agentIds.join(","),
+    description: conflict.description,
+    timestamp: new Date().toISOString(),
+  });
 }
 
 // ── Resolve Conflict ────────────────────────────────────────────────────────

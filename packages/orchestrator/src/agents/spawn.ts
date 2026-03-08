@@ -7,7 +7,7 @@
 
 import type Redis from "ioredis";
 import { createLogger, AgentStatus } from "@axiom/shared";
-import { insertAgent, findDefinitionById, updateAgent } from "../db/queries.js";
+import { insertAgent, findDefinitionById, updateAgent, findAgentById } from "../db/queries.js";
 import { createSandbox } from "./sandbox.js";
 import {
   publishToStream,
@@ -77,6 +77,19 @@ async function createAgentRecord(
   const provider = modelOverride?.provider ?? definition.modelProvider;
   const modelId = modelOverride?.modelId ?? definition.modelId;
   const agentBudget = budget ?? Number(definition.defaultBudget);
+
+  // Enforce budget cascade: child budget cannot exceed parent's remaining budget
+  if (params.parentId) {
+    const parent = await findAgentById(db, params.parentId);
+    if (parent) {
+      const parentRemaining = Number(parent.budgetTotal) - Number(parent.budgetSpent);
+      if (agentBudget > parentRemaining) {
+        throw new Error(
+          `Child budget ($${agentBudget}) exceeds parent remaining budget ($${parentRemaining})`,
+        );
+      }
+    }
+  }
 
   log.info("Inserting agent record", { definitionId: definition.id });
 
