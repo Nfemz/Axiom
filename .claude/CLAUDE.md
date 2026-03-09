@@ -1,123 +1,128 @@
-# Ultracite Code Standards
+# Axiom
 
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
+Autonomous agent orchestration platform — TypeScript monorepo (pnpm + Turborepo) with PostgreSQL, Redis, E2B sandboxes, Vercel AI SDK, Next.js 15 dashboard, and Discord bot.
 
-## Quick Reference
+## Documentation
 
-- **Format code**: `pnpm dlx ultracite fix`
-- **Check for issues**: `pnpm dlx ultracite check`
-- **Diagnose setup**: `pnpm dlx ultracite doctor`
+Read these docs for patterns, rules, and how things connect.
 
-Biome (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
+| Doc | What it covers |
+|-----|----------------|
+| @docs/architecture.md | System overview, package structure, dependency graph, request lifecycle, subsystems, infrastructure |
+| @docs/conventions/project.md | File naming, directory conventions, config patterns, env vars, package structure |
+| @docs/conventions/code-style.md | TypeScript style rules, Biome/Ultracite, framework patterns, performance, security |
+| @docs/conventions/testing.md | Test strategy, tiers (unit/integration/E2E), TDD workflow, quality rules |
+| @docs/data-layer.md | Drizzle ORM schema, migrations, query patterns, pgvector usage |
+| @docs/api-patterns.md | API routes, error handling, middleware, SSE streaming, Zod validation |
 
----
+## Quick Rules
 
-## Core Principles
+### Formatting & Linting
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+- **Formatter**: Ultracite (Biome) auto-fixes on save (PostToolUse hook) and pre-commit. Run `pnpm fix` to fix all. Run `pnpm lint` to check.
+- **Lint issues**: Fix the actual error — suppression comments are rarely appropriate.
+- **Markdown**: All fenced code blocks must have a language specifier — never bare triple backticks. Surround tables with blank lines.
 
-### Type Safety & Explicitness
+### Naming & Style
 
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
+- **Naming**: Use full words — `context` not `c`, `request` not `req`, `response` not `res`. No single-letter abbreviations except loop counters.
+- **ESM**: All packages use `"type": "module"`. Import with `.js` extensions in non-bundled packages.
+- **Enums**: Use const objects with `as const` and derive types. See `packages/shared/src/types/enums.ts`.
+- **Functions**: ~30 lines max, <3 nesting depth. Extract early.
+- **Files**: ~300 line limit. Split into subdirectories when over.
+- **Imports**: Use `@axiom/shared` for shared types, schemas, constants, crypto, logger.
+- **No inline helpers**: Never define utility functions inside component bodies or handlers. Extract to module-level.
 
-### Modern JavaScript/TypeScript
+### TypeScript
 
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
+- **Strict mode**: Enabled globally. No `any` — use `unknown` when type is genuinely unknown.
+- **Arrow functions**: For callbacks and short functions. Named `function` declarations for top-level exports.
+- **Loops**: Prefer `for...of` over `.forEach()` and indexed `for` loops.
+- **Const**: Default to `const`. Use `let` only when reassignment is needed. Never `var`.
+- **Zod v4**: `z.record()` requires two args. All validation through Zod schemas.
 
-### Async & Promises
+### Database & ORM
 
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
+- **ORM**: Drizzle ORM. Schema in `packages/orchestrator/src/db/schema.ts`.
+- **Queries**: Use helpers in `packages/orchestrator/src/db/queries.ts`. See `§ docs/data-layer.md`.
+- **Migrations**: `drizzle/` directory. Run `pnpm db:migrate`. Never edit existing migrations.
+- **Vectors**: pgvector with 1536 dimensions for embeddings.
 
-### React & JSX
+### Redis & Messaging
 
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
+- **Job queues**: BullMQ via `packages/orchestrator/src/comms/queues.ts`.
+- **Real-time**: Redis Streams via `packages/orchestrator/src/comms/streams.ts`.
+- **Connection**: ioredis pooling in `packages/orchestrator/src/comms/redis.ts`.
 
-### Error Handling & Debugging
+### API & Dashboard
 
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
+- **Dashboard**: Next.js 15 App Router with Server Components. See `§ docs/api-patterns.md`.
+- **Auth**: WebAuthn/Passkey via @simplewebauthn. Sessions via iron-session.
+- **SSE**: Server-sent events at `/api/stream/` endpoints for real-time updates.
+- **Validation**: All request bodies validated with Zod schemas from `@axiom/shared`.
+- **Images**: Use Next.js `<Image>` component, never `<img>`.
+- **Deep links**: Every view must have a unique, shareable URL with all context in the route path.
 
-### Code Organization
+### Agent Runtime
 
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
+- **Sandbox**: Agents run in E2B sandboxes, never locally.
+- **State machine**: Transitions defined in `VALID_STATUS_TRANSITIONS` from `@axiom/shared`.
+- **Encryption**: AES-256-GCM via `@axiom/shared/crypto` for secrets.
 
-### Security
+### Testing
 
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
+- **Framework**: Vitest for unit + integration. Playwright for E2E. Testcontainers for infra.
+- **Location**: Tests in `tests/` directories mirroring `src/` — NOT co-located with source.
+- **TDD**: Default workflow — RED (failing test) → GREEN (minimal pass) → REFACTOR.
+- **Names**: Describe behavior — `rejects expired token` not `test auth`.
+- **Independence**: No shared mutable state, no ordering dependencies.
+- **Mocks**: Only mock external boundaries. Prefer real code paths.
+- **Run**: `pnpm test` (all unit), `pnpm test:e2e` (Playwright).
 
-### Performance
+### Logging
 
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
+- **Logger**: `createLogger(context)` from `@axiom/shared`. Structured JSON output.
+- **No console.log**: Use the logger. Remove `console.log`, `debugger`, `alert` from production code.
 
-### Framework-Specific Guidance
+### Git & Workflow
 
-**Next.js:**
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
+- **Commits**: Do NOT include `Co-Authored-By: Claude` trailers.
+- **PRs**: Do NOT include "Test plan" sections or "Generated with Claude Code" footers.
+- **Pre-existing errors**: Never defer broken tests or types during refactoring. Fix in the same changeset.
+- **Plan files**: NEVER write plan files or design docs inside the codebase. Use Claude Code plan mode or the memory directory.
 
-**React 19+:**
-- Use ref as a prop instead of `React.forwardRef`
+### Env Vars
 
-**Solid/Svelte/Vue/Qwik:**
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+- **Validation**: Zod schema in `packages/orchestrator/src/config.ts`. App crashes on invalid config.
+- **Adding a var**: Update (1) Zod schema, (2) `.env.example`, (3) relevant docs.
+- **Secrets**: Never commit `.env`. Use `.env.example` with placeholders.
 
----
+### Doc Maintenance
 
-## Testing
+- **Doc file size limit**: All LLM-consumed files (`docs/`, `.claude/`) must stay under 300 lines. Split into subdirectories when over.
+- **Living docs**: When a pattern changes, update docs in the same changeset.
+- **Cross-reference**: Use `§ Section Name` notation instead of duplicating content.
 
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
+### Performance & Optimization
 
-## When Biome Can't Help
+- **Memoization**: Only when profiling shows measurable value. Never as a default pattern.
+- **No premature abstraction**: Three similar lines > one premature helper.
 
-Biome's linter will catch most issues automatically. Focus your attention on:
+## Commands
 
-1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
+```bash
+pnpm dev              # Start all services (Turborepo)
+pnpm build            # Build all packages
+pnpm test             # Run all Vitest tests
+pnpm test:e2e         # Run Playwright E2E tests
+pnpm db:migrate       # Run Drizzle migrations
+pnpm db:studio        # Open Drizzle Studio (TTY required)
+pnpm lint             # Check with Biome/Ultracite
+pnpm fix              # Auto-fix lint + format
+```
 
----
+## Claude Code Environment
 
-Most formatting and common issues are automatically fixed by Biome. Run `pnpm dlx ultracite fix` before committing to ensure compliance.
+`.claude/.env` holds developer tooling credentials (gitignored). Each developer creates their own from `.claude/.env.example`.
+
+No credentials currently required. Add rows here as tooling integrations are added.
