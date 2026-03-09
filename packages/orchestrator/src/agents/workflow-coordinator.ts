@@ -59,8 +59,8 @@ export async function createWorkflow(
       stages:
         config.subWorkflows?.map((sw) => ({
           name: sw.name,
-          goal: sw.goal,
-          completed: false,
+          completionCriteria: sw.goal,
+          status: "pending" as const,
         })) ?? [],
       status: "active",
       budgetTotal: String(config.budget),

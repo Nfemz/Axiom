@@ -18,7 +18,7 @@ export type SpawnAgentRequest = z.infer<typeof SpawnAgentRequestSchema>;
 
 export const SpawnAgentResponseSchema = z.object({
   id: z.string().uuid(),
-  status: z.literal("spawning"),
+  status: z.literal("running"),
   sandboxId: z.string(),
   parentId: z.string().uuid().nullable(),
   createdAt: z.string().datetime(),

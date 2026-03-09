@@ -43,7 +43,13 @@ export async function POST(request: NextRequest) {
     allowedDomains?: string[];
   };
 
-  const key = deriveKey(process.env.ENCRYPTION_KEY ?? "axiom-dev-key");
+  if (!process.env.ENCRYPTION_KEY) {
+    return NextResponse.json(
+      { error: "ENCRYPTION_KEY environment variable is not configured" },
+      { status: 500 }
+    );
+  }
+  const key = deriveKey(process.env.ENCRYPTION_KEY);
   const encrypted = encrypt(value, key);
   const encryptedBuffer = Buffer.from(encrypted, "base64");
 

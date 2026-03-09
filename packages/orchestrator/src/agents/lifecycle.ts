@@ -58,9 +58,12 @@ async function checkApprovalGate(
   if (!policies || typeof policies !== "object") {
     return true;
   }
-  const policyList = Array.isArray(policies) ? policies : [];
 
-  const requiresApproval = policyList.some((p: unknown) => {
+  // policies is a Record<string, unknown> from the DB/API schema.
+  // Check if any policy value matches the requested action.
+  const policyValues = Object.values(policies);
+  const requiresApproval = policyValues.some((p: unknown) => {
+    if (typeof p !== "object" || p === null) return false;
     const policy = p as { action?: string };
     return policy.action === action || policy.action === "*";
   });
