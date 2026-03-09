@@ -15,6 +15,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
     "db:migrate": "drizzle-kit migrate",
     "db:generate": "drizzle-kit generate",

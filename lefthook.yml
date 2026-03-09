@@ -28,4 +28,4 @@ pre-push:
         fi
 
     typecheck:
-      run: npx tsc --noEmit
+      run: pnpm typecheck

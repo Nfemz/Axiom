@@ -13,6 +13,7 @@
     "lint": "ultracite check",
     "db:migrate": "pnpm --filter orchestrator db:migrate",
     "db:studio": "pnpm --filter orchestrator db:studio",
+    "typecheck": "turbo typecheck",
     "test:e2e": "pnpm --filter dashboard test:e2e",
     "format": "ultracite fix",
     "format:check": "ultracite check",
