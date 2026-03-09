@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@axiom/shared": ["../shared/src"],
+      "@axiom/shared/*": ["../shared/src/*"]
+    },
+    "strictNullChecks": true
+  },
+  "include": ["src"]
+}

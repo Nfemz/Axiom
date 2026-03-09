@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next"
+  ],
+  "files": {
+    "includes": [
+      "packages/**/*.ts",
+      "packages/**/*.tsx",
+      "packages/**/*.js",
+      "packages/**/*.json",
+      "package.json",
+      "biome.jsonc"
+    ]
+  },
+  "linter": {
+    "rules": {
+      "performance": {
+        // Barrel files are intentional for the shared package's public API
+        "noBarrelFile": "off",
+        // Namespace imports used for drizzle schema and test helpers
+        "noNamespaceImport": "off"
+      },
+      "suspicious": {
+        // Many stub/placeholder implementations use async without await
+        "useAwait": "off"
+      },
+      "complexity": {
+        // Fire-and-forget patterns are intentional (void poll(), void start())
+        "noVoid": "off"
+      }
+    }
+  }
+}

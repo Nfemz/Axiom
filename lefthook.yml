@@ -1,0 +1,31 @@
+pre-commit:
+  commands:
+    protect-main:
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+          echo "Direct commits to $branch are not allowed. Use a feature branch."
+          exit 1
+        fi
+
+    format-staged:
+      glob: "*.{ts,tsx,js,jsx,css}"
+      run: pnpm dlx ultracite fix {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    format-changed:
+      glob: "*.{ts,tsx,js,jsx,css}"
+      run: |
+        changed=$(git diff --name-only origin/main...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' 2>/dev/null || true)
+        if [ -n "$changed" ]; then
+          echo "$changed" | xargs pnpm dlx ultracite fix
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "style: auto-format changed files"
+          fi
+        fi
+
+    typecheck:
+      run: pnpm typecheck

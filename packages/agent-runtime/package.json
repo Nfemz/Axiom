@@ -1,0 +1,27 @@
+{
+  "name": "@axiom/agent-runtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "echo 'agent-runtime runs inside E2B sandboxes, not locally'",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@e2b/desktop": "^2.2.2",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/openai": "^3.0.41",
+    "@axiom/shared": "workspace:*",
+    "ai": "^6.0.116",
+    "ioredis": "^5.10.0",
+    "playwright": "^1.58.2",
+    "zod": "^4.3.6"
+  }
+}

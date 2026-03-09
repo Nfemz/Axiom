@@ -1,0 +1,35 @@
+{
+  "name": "@axiom/dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@axiom/orchestrator": "workspace:*",
+    "@axiom/shared": "workspace:*",
+    "@simplewebauthn/browser": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.3",
+    "drizzle-orm": "^0.45.1",
+    "ioredis": "^5.10.0",
+    "iron-session": "^8.0.4",
+    "next": "^16.1.6",
+    "postgres": "^3.4.8",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.3.1"
+  }
+}
