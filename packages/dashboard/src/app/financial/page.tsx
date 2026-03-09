@@ -1,7 +1,28 @@
 "use client";
 
+import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
 import CostCharts from "@/components/cost-charts";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface Transaction {
   agentId: string | null;
@@ -34,19 +55,19 @@ export default function FinancialPage() {
     setLoading(true);
     setError(null);
     try {
-      const [txRes, summaryRes] = await Promise.all([
+      const [transactionResponse, summaryResponse] = await Promise.all([
         fetch("/api/financial?view=transactions"),
         fetch("/api/financial?view=summary"),
       ]);
 
-      if (!(txRes.ok && summaryRes.ok)) {
+      if (!(transactionResponse.ok && summaryResponse.ok)) {
         throw new Error("Failed to fetch financial data");
       }
 
-      const txData = await txRes.json();
-      const summaryData: SummaryData = await summaryRes.json();
+      const transactionData = await transactionResponse.json();
+      const summaryData: SummaryData = await summaryResponse.json();
 
-      setTransactions(txData.transactions ?? []);
+      setTransactions(transactionData.transactions ?? []);
       setSummary(summaryData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -60,150 +81,163 @@ export default function FinancialPage() {
   }, [fetchData]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 font-bold text-2xl text-gray-900">
-          Financial Dashboard
-        </h1>
+    <div className="flex flex-col gap-8">
+      <h1 className="font-bold text-2xl">Financial Dashboard</h1>
 
-        {/* Summary Cards */}
-        {summary && (
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="font-medium text-gray-500 text-sm">Total Revenue</p>
-              <p className="mt-1 font-bold text-2xl text-green-600">
-                {formatCurrency(summary.totalRevenue)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="font-medium text-gray-500 text-sm">
-                Total Expenses
-              </p>
-              <p className="mt-1 font-bold text-2xl text-red-600">
-                {formatCurrency(summary.totalExpenses)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="font-medium text-gray-500 text-sm">Net Balance</p>
-              <p className="mt-1 font-bold text-2xl text-gray-900">
-                {formatCurrency(summary.netBalance)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <p className="font-medium text-gray-500 text-sm">LLM Costs</p>
-              <p className="mt-1 font-bold text-2xl text-orange-600">
-                {formatCurrency(summary.llmCosts)}
-              </p>
-            </div>
-          </div>
-        )}
+      {summary && <SummaryCards summary={summary} />}
 
-        {loading && !summary && (
-          <div className="mb-8 flex items-center justify-center py-8">
-            <p className="text-gray-500 text-sm">Loading financial data...</p>
-          </div>
-        )}
+      {loading && !summary && (
+        <p className="py-8 text-center text-muted-foreground text-sm">
+          Loading financial data...
+        </p>
+      )}
 
-        {error && (
-          <div className="mb-8 rounded-lg border border-red-200 bg-red-50 p-6">
-            <p className="text-red-700 text-sm">Error: {error}</p>
-            <button
-              className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-800"
-              onClick={() => void fetchData()}
-              type="button"
-            >
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertDescription className="flex items-center gap-2">
+            Error: {error}
+            <Button onClick={() => void fetchData()} size="sm" variant="link">
+              <RefreshCwIcon data-icon="inline-start" />
               Retry
-            </button>
-          </div>
-        )}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Token Economics (Cost Charts) */}
-        <div className="mb-8">
-          <CostCharts />
-        </div>
+      <CostCharts />
 
-        {/* Transactions */}
-        <div>
-          <h2 className="mb-4 font-semibold text-gray-900 text-lg">
-            Recent Transactions
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Agent
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {transactions.map((tx) => (
-                  <tr className="hover:bg-gray-50" key={tx.id}>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${
-                          tx.type === "revenue"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {tx.type}
-                      </span>
-                    </td>
-                    <td
-                      className={`whitespace-nowrap px-6 py-4 font-medium text-sm ${
-                        tx.type === "revenue"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {tx.type === "revenue" ? "+" : "-"}
-                      {formatCurrency(Number.parseFloat(tx.amount))}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                      {tx.agentId ?? "-"}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                      {tx.category}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">
-                      {tx.description ?? "-"}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                      {new Date(tx.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {transactions.length === 0 && !loading && (
-                  <tr>
-                    <td
-                      className="px-6 py-12 text-center text-gray-500 text-sm"
-                      colSpan={6}
-                    >
-                      No transactions recorded yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <TransactionsSection loading={loading} transactions={transactions} />
     </div>
+  );
+}
+
+function SummaryCards({ summary }: { summary: SummaryData }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <MetricCard
+        title="Total Revenue"
+        value={formatCurrency(summary.totalRevenue)}
+        valueClassName="text-chart-2"
+      />
+      <MetricCard
+        title="Total Expenses"
+        value={formatCurrency(summary.totalExpenses)}
+        valueClassName="text-destructive"
+      />
+      <MetricCard
+        title="Net Balance"
+        value={formatCurrency(summary.netBalance)}
+      />
+      <MetricCard
+        title="LLM Costs"
+        value={formatCurrency(summary.llmCosts)}
+        valueClassName="text-chart-4"
+      />
+    </div>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  valueClassName,
+}: {
+  title: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription>{title}</CardDescription>
+        <CardTitle className={cn("text-2xl", valueClassName)}>
+          {value}
+        </CardTitle>
+      </CardHeader>
+    </Card>
+  );
+}
+
+function TransactionsSection({
+  transactions,
+  loading,
+}: {
+  loading: boolean;
+  transactions: Transaction[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Transactions</CardTitle>
+        <CardDescription>
+          View all financial transactions across your agents.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Agent</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))}
+            {transactions.length === 0 && !loading && (
+              <TableRow>
+                <TableCell
+                  className="py-12 text-center text-muted-foreground"
+                  colSpan={6}
+                >
+                  No transactions recorded yet.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TransactionRow({ transaction }: { transaction: Transaction }) {
+  const isRevenue = transaction.type === "revenue";
+
+  return (
+    <TableRow>
+      <TableCell>
+        <Badge variant={isRevenue ? "secondary" : "destructive"}>
+          {transaction.type}
+        </Badge>
+      </TableCell>
+      <TableCell
+        className={cn(
+          "font-medium",
+          isRevenue ? "text-chart-2" : "text-destructive"
+        )}
+      >
+        {isRevenue ? "+" : "-"}
+        {formatCurrency(Number.parseFloat(transaction.amount))}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {transaction.agentId ?? "-"}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {transaction.category}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {transaction.description ?? "-"}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {new Date(transaction.createdAt).toLocaleString()}
+      </TableCell>
+    </TableRow>
   );
 }

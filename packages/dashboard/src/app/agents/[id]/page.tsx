@@ -1,7 +1,31 @@
 "use client";
 
+import { ArrowLeft, Pause, Play, RotateCw, Skull } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AgentDetail {
   budgetSpent?: number;
@@ -19,315 +43,27 @@ interface AgentDetail {
 
 type TabKey = "sessions" | "memory" | "checkpoints" | "children";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "sessions", label: "Sessions" },
-  { key: "memory", label: "Memory" },
-  { key: "checkpoints", label: "Checkpoints" },
-  { key: "children", label: "Children" },
-];
+type StatusVariant = "default" | "secondary" | "destructive" | "outline";
 
-const STATUS_COLORS: Record<string, string> = {
-  running: "#22c55e",
-  paused: "#eab308",
-  suspended: "#9ca3af",
-  error: "#ef4444",
-  terminated: "#6b7280",
-  spawning: "#3b82f6",
-  idle: "#a3e635",
+const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
+  running: "default",
+  idle: "default",
+  spawning: "secondary",
+  paused: "outline",
+  suspended: "outline",
+  error: "destructive",
+  terminated: "secondary",
 };
 
-export default function AgentDetailPage() {
-  const params = useParams<{ id: string }>();
-  const agentId = params.id;
-
-  const [agent, setAgent] = useState<AgentDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("sessions");
-  const [resteerDirective, setResteerDirective] = useState("");
-
-  const fetchAgent = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/agents/${agentId}`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch agent: ${res.status}`);
-      }
-      const json = await res.json();
-      setAgent(json);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, [agentId]);
-
-  useEffect(() => {
-    fetchAgent();
-  }, [fetchAgent]);
-
-  async function handleAction(action: string, directive?: string) {
-    try {
-      await fetch(`/api/agents/${agentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...(directive ? { directive } : {}) }),
-      });
-      await fetchAgent();
-      if (action === "resteer") {
-        setResteerDirective("");
-      }
-    } catch {
-      // TODO: Show error toast
-    }
-  }
-
-  if (loading) {
-    return <div style={{ padding: "2rem" }}>Loading agent...</div>;
-  }
-  if (error) {
-    return (
-      <div style={{ padding: "2rem", color: "#ef4444" }}>Error: {error}</div>
-    );
-  }
-  if (!agent) {
-    return <div style={{ padding: "2rem" }}>Agent not found.</div>;
-  }
-
-  const statusColor = STATUS_COLORS[agent.status] ?? "#9ca3af";
-
-  return (
-    <div style={{ padding: "2rem" }}>
-      <a
-        href="/agents"
-        style={{
-          color: "#60a5fa",
-          textDecoration: "none",
-          fontSize: "0.875rem",
-        }}
-      >
-        &larr; Back to Agents
-      </a>
-
-      <div style={{ marginTop: "1rem", marginBottom: "1.5rem" }}>
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-          }}
-        >
-          {agent.name ?? agent.id}
-          <span
-            style={{
-              display: "inline-block",
-              width: "10px",
-              height: "10px",
-              borderRadius: "50%",
-              backgroundColor: statusColor,
-            }}
-          />
-          <span
-            style={{ fontSize: "0.875rem", fontWeight: 400, color: "#9ca3af" }}
-          >
-            {agent.status}
-          </span>
-        </h1>
-      </div>
-
-      {/* Agent Info */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <InfoField label="ID" value={agent.id} />
-        <InfoField label="Model" value={agent.model ?? "-"} />
-        <InfoField
-          label="Budget"
-          value={
-            agent.budgetSpent != null && agent.budgetTotal != null
-              ? `$${agent.budgetSpent.toFixed(2)} / $${agent.budgetTotal.toFixed(2)}`
-              : "-"
-          }
-        />
-        <InfoField label="Current Task" value={agent.currentTask ?? "-"} />
-        <InfoField label="Parent ID" value={agent.parentId ?? "None (root)"} />
-        <InfoField label="Created" value={agent.createdAt ?? "-"} />
-        <InfoField label="Updated" value={agent.updatedAt ?? "-"} />
-      </div>
-
-      {agent.mission && (
-        <div
-          style={{
-            marginBottom: "1.5rem",
-            padding: "1rem",
-            backgroundColor: "#1f2937",
-            borderRadius: "8px",
-          }}
-        >
-          <strong>Mission:</strong> {agent.mission}
-        </div>
-      )}
-
-      {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          marginBottom: "2rem",
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        {agent.status === "running" && (
-          <button
-            onClick={() => handleAction("pause")}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "#eab308",
-              color: "#000",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-            type="button"
-          >
-            Pause
-          </button>
-        )}
-        {agent.status === "paused" && (
-          <button
-            onClick={() => handleAction("resume")}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "#22c55e",
-              color: "#000",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-            type="button"
-          >
-            Resume
-          </button>
-        )}
-        {agent.status !== "terminated" && (
-          <button
-            onClick={() => handleAction("terminate")}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "#ef4444",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-            type="button"
-          >
-            Terminate
-          </button>
-        )}
-        <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
-          <input
-            onChange={(e) => setResteerDirective(e.target.value)}
-            placeholder="Resteer directive..."
-            style={{
-              padding: "0.5rem",
-              backgroundColor: "#111827",
-              border: "1px solid #374151",
-              borderRadius: "4px",
-              color: "#e5e7eb",
-              width: "250px",
-            }}
-            type="text"
-            value={resteerDirective}
-          />
-          <button
-            disabled={!resteerDirective.trim()}
-            onClick={() => handleAction("resteer", resteerDirective)}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: resteerDirective.trim() ? "#6366f1" : "#374151",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: resteerDirective.trim() ? "pointer" : "not-allowed",
-            }}
-            type="button"
-          >
-            Resteer
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0",
-          borderBottom: "1px solid #374151",
-          marginBottom: "1rem",
-        }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              padding: "0.75rem 1.5rem",
-              backgroundColor: "transparent",
-              color: activeTab === tab.key ? "#60a5fa" : "#9ca3af",
-              border: "none",
-              borderBottom:
-                activeTab === tab.key
-                  ? "2px solid #60a5fa"
-                  : "2px solid transparent",
-              cursor: "pointer",
-              fontWeight: activeTab === tab.key ? 600 : 400,
-            }}
-            type="button"
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <TabContent agentId={agentId} tab={activeTab} />
-    </div>
-  );
+function getStatusVariant(status: string): StatusVariant {
+  return STATUS_VARIANT_MAP[status] ?? "outline";
 }
 
-function InfoField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: "0.75rem",
-          color: "#9ca3af",
-          textTransform: "uppercase",
-          marginBottom: "0.25rem",
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: "0.875rem",
-          color: "#e5e7eb",
-          wordBreak: "break-all",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
+function formatBudget(spent?: number, total?: number): string {
+  if (spent == null || total == null) {
+    return "-";
+  }
+  return `$${spent.toFixed(2)} / $${total.toFixed(2)}`;
 }
 
 const TAB_ENDPOINTS: Record<TabKey, string> = {
@@ -344,7 +80,80 @@ const TAB_DATA_KEY: Record<TabKey, string> = {
   children: "children",
 };
 
-function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
+function InfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-muted-foreground text-xs uppercase">{label}</span>
+      <span className="break-all text-foreground text-sm">{value}</span>
+    </div>
+  );
+}
+
+function AgentControls({
+  agent,
+  resteerDirective,
+  onResteerChange,
+  onAction,
+}: {
+  agent: AgentDetail;
+  resteerDirective: string;
+  onResteerChange: (value: string) => void;
+  onAction: (action: string, directive?: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {agent.status === "running" && (
+        <Button
+          onClick={() => onAction("pause")}
+          type="button"
+          variant="outline"
+        >
+          <Pause className="size-4" />
+          Pause
+        </Button>
+      )}
+      {agent.status === "paused" && (
+        <Button
+          onClick={() => onAction("resume")}
+          type="button"
+          variant="outline"
+        >
+          <Play className="size-4" />
+          Resume
+        </Button>
+      )}
+      {agent.status !== "terminated" && (
+        <Button
+          onClick={() => onAction("terminate")}
+          type="button"
+          variant="destructive"
+        >
+          <Skull className="size-4" />
+          Terminate
+        </Button>
+      )}
+      <div className="flex items-center gap-1.5">
+        <Input
+          className="w-64"
+          onChange={(event) => onResteerChange(event.target.value)}
+          placeholder="Resteer directive..."
+          type="text"
+          value={resteerDirective}
+        />
+        <Button
+          disabled={!resteerDirective.trim()}
+          onClick={() => onAction("resteer", resteerDirective)}
+          type="button"
+        >
+          <RotateCw className="size-4" />
+          Resteer
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TabDataTable({ tab, agentId }: { tab: TabKey; agentId: string }) {
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,92 +164,220 @@ function TabContent({ tab, agentId }: { tab: TabKey; agentId: string }) {
 
     const endpoint = `/api/agents/${agentId}/${TAB_ENDPOINTS[tab]}`;
     fetch(endpoint)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch ${tab}: ${res.status}`);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${tab}: ${response.status}`);
         }
-        return res.json();
+        return response.json();
       })
       .then((json) => {
         const key = TAB_DATA_KEY[tab];
         setItems(json[key] ?? []);
       })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Unknown error");
+      .catch((error_) => {
+        setError(error_ instanceof Error ? error_.message : "Unknown error");
         setItems([]);
       })
       .finally(() => setLoading(false));
   }, [tab, agentId]);
 
   if (loading) {
-    return <p style={{ color: "#9ca3af" }}>Loading {tab}...</p>;
+    return (
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+    );
   }
+
   if (error) {
-    return <p style={{ color: "#ef4444" }}>Error: {error}</p>;
+    return <p className="text-destructive text-sm">Error: {error}</p>;
   }
+
   if (items.length === 0) {
-    return <p style={{ color: "#6b7280" }}>No {tab} found for this agent.</p>;
+    return (
+      <p className="text-muted-foreground text-sm">
+        No {tab} found for this agent.
+      </p>
+    );
+  }
+
+  const columns = Object.keys(items[0]);
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {columns.map((key) => (
+            <TableHead className="text-xs uppercase" key={key}>
+              {key}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item, index) => (
+          <TableRow key={String(item.id ?? index)}>
+            {columns.map((colKey) => (
+              <TableCell className="max-w-[300px] truncate" key={colKey}>
+                {formatCellValue(item[colKey])}
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function formatCellValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+export default function AgentDetailPage() {
+  const params = useParams<{ id: string }>();
+  const agentId = params.id;
+
+  const [agent, setAgent] = useState<AgentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [resteerDirective, setResteerDirective] = useState("");
+
+  const fetchAgent = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/agents/${agentId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agent: ${response.status}`);
+      }
+      const json = await response.json();
+      setAgent(json);
+      setError(null);
+    } catch (error_) {
+      setError(error_ instanceof Error ? error_.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    fetchAgent();
+  }, [fetchAgent]);
+
+  const handleAction = useCallback(
+    async (action: string, directive?: string) => {
+      try {
+        await fetch(`/api/agents/${agentId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, ...(directive ? { directive } : {}) }),
+        });
+        await fetchAgent();
+        if (action === "resteer") {
+          setResteerDirective("");
+        }
+      } catch {
+        // TODO: Show error toast
+      }
+    },
+    [agentId, fetchAgent]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-destructive text-sm">Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (!agent) {
+    return <p className="text-muted-foreground text-sm">Agent not found.</p>;
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: "0.8rem",
-        }}
+    <div className="flex flex-col gap-6">
+      <Link
+        className="flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
+        href="/agents"
       >
-        <thead>
-          <tr>
-            {Object.keys(items[0]).map((key) => (
-              <th
-                key={key}
-                style={{
-                  textAlign: "left",
-                  padding: "0.5rem 0.75rem",
-                  borderBottom: "1px solid #374151",
-                  color: "#9ca3af",
-                  fontSize: "0.75rem",
-                  textTransform: "uppercase",
-                }}
-              >
-                {key}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, idx) => (
-            <tr key={String(item.id ?? idx)}>
-              {Object.entries(item).map(([colKey, val]) => (
-                <td
-                  key={colKey}
-                  style={{
-                    padding: "0.5rem 0.75rem",
-                    borderBottom: "1px solid #1f2937",
-                    color: "#e5e7eb",
-                    maxWidth: "300px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {(() => {
-                    if (val === null || val === undefined) {
-                      return "-";
-                    }
-                    if (typeof val === "object") {
-                      return JSON.stringify(val);
-                    }
-                    return String(val);
-                  })()}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <ArrowLeft className="size-4" />
+        Back to Agents
+      </Link>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-xl">
+            {agent.name ?? agent.id}
+            <Badge variant={getStatusVariant(agent.status)}>
+              {agent.status}
+            </Badge>
+          </CardTitle>
+          {agent.mission && <CardDescription>{agent.mission}</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <InfoField label="ID" value={agent.id} />
+            <InfoField label="Model" value={agent.model ?? "-"} />
+            <InfoField
+              label="Budget"
+              value={formatBudget(agent.budgetSpent, agent.budgetTotal)}
+            />
+            <InfoField label="Current Task" value={agent.currentTask ?? "-"} />
+            <InfoField
+              label="Parent ID"
+              value={agent.parentId ?? "None (root)"}
+            />
+            <InfoField label="Created" value={agent.createdAt ?? "-"} />
+            <InfoField label="Updated" value={agent.updatedAt ?? "-"} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <AgentControls
+        agent={agent}
+        onAction={handleAction}
+        onResteerChange={setResteerDirective}
+        resteerDirective={resteerDirective}
+      />
+
+      <Separator />
+
+      <Tabs defaultValue="sessions">
+        <TabsList variant="line">
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="memory">Memory</TabsTrigger>
+          <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
+          <TabsTrigger value="children">Children</TabsTrigger>
+        </TabsList>
+        <TabsContent value="sessions">
+          <TabDataTable agentId={agentId} tab="sessions" />
+        </TabsContent>
+        <TabsContent value="memory">
+          <TabDataTable agentId={agentId} tab="memory" />
+        </TabsContent>
+        <TabsContent value="checkpoints">
+          <TabDataTable agentId={agentId} tab="checkpoints" />
+        </TabsContent>
+        <TabsContent value="children">
+          <TabDataTable agentId={agentId} tab="children" />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

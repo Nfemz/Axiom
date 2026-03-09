@@ -13,8 +13,14 @@
       "packages/**/*.json",
       "package.json",
       "biome.jsonc"
-    ]
+    ],
   },
+  "overrides": [
+    {
+      "includes": ["packages/dashboard/src/components/ui/**"],
+      "linter": { "enabled": false }
+    }
+  ],
   "linter": {
     "rules": {
       "performance": {

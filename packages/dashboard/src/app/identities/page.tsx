@@ -1,6 +1,42 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -18,24 +54,45 @@ interface Identity {
 type TypeFilter = "all" | "email" | "phone" | "voice" | "service_account";
 type StatusFilter = "all" | "active" | "revoked";
 
-const TYPE_BADGE_CLASSES: Record<string, string> = {
-  email: "bg-blue-100 text-blue-800",
-  phone: "bg-purple-100 text-purple-800",
-  voice: "bg-orange-100 text-orange-800",
-  service_account: "bg-gray-100 text-gray-800",
-};
-
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-  active: "bg-green-100 text-green-800",
-  revoked: "bg-red-100 text-red-800",
-};
-
 const TYPE_LABELS: Record<string, string> = {
   email: "Email",
   phone: "Phone",
   voice: "Voice",
   service_account: "Service Account",
 };
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function typeBadge(type: string) {
+  const label = TYPE_LABELS[type] ?? type;
+  switch (type) {
+    case "email":
+      return <Badge variant="default">{label}</Badge>;
+    case "phone":
+      return <Badge variant="secondary">{label}</Badge>;
+    case "voice":
+      return <Badge variant="outline">{label}</Badge>;
+    case "service_account":
+      return <Badge variant="secondary">{label}</Badge>;
+    default:
+      return <Badge variant="secondary">{label}</Badge>;
+  }
+}
+
+function statusBadge(status: string) {
+  switch (status) {
+    case "active":
+      return (
+        <Badge className="text-success" variant="outline">
+          {status}
+        </Badge>
+      );
+    case "revoked":
+      return <Badge variant="destructive">{status}</Badge>;
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+}
 
 // ─── Component ──────────────────────────────────────────────────────
 
@@ -47,11 +104,11 @@ export default function IdentitiesPage() {
 
   const fetchIdentities = useCallback(async () => {
     try {
-      const res = await fetch("/api/identities");
-      if (!res.ok) {
+      const response = await fetch("/api/identities");
+      if (!response.ok) {
         return;
       }
-      const json = await res.json();
+      const json = await response.json();
       setIdentities(json.identities ?? []);
     } finally {
       setLoading(false);
@@ -64,39 +121,16 @@ export default function IdentitiesPage() {
 
   async function handleRevoke(identityId: string) {
     try {
-      const res = await fetch(`/api/identities/${identityId}`, {
+      const response = await fetch(`/api/identities/${identityId}`, {
         method: "DELETE",
       });
-      if (!res.ok) {
+      if (!response.ok) {
         return;
       }
       await fetchIdentities();
     } catch {
       // TODO: toast notification
     }
-  }
-
-  function typeBadge(type: string) {
-    const cls = TYPE_BADGE_CLASSES[type] ?? "bg-gray-100 text-gray-800";
-    const label = TYPE_LABELS[type] ?? type;
-    return (
-      <span
-        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
-      >
-        {label}
-      </span>
-    );
-  }
-
-  function statusBadge(status: string) {
-    const cls = STATUS_BADGE_CLASSES[status] ?? "bg-gray-100 text-gray-800";
-    return (
-      <span
-        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${cls}`}
-      >
-        {status}
-      </span>
-    );
   }
 
   const filtered = identities.filter((identity) => {
@@ -110,134 +144,156 @@ export default function IdentitiesPage() {
   });
 
   if (loading) {
-    return <div className="p-8 text-gray-500">Loading identities...</div>;
+    return <div className="text-muted-foreground">Loading identities...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 font-bold text-2xl text-gray-900">
-          Identity Registry
-        </h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="font-bold text-2xl text-foreground">Identity Registry</h1>
 
-        {/* Filters */}
-        <div className="mb-6 flex gap-4">
-          <div>
-            <label
-              className="block font-medium text-gray-700 text-sm"
-              htmlFor="identity-type-filter"
-            >
-              Type
-            </label>
-            <select
-              className="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-              id="identity-type-filter"
-              onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              value={typeFilter}
-            >
-              <option value="all">All Types</option>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="voice">Voice</option>
-              <option value="service_account">Service Account</option>
-            </select>
-          </div>
-          <div>
-            <label
-              className="block font-medium text-gray-700 text-sm"
-              htmlFor="identity-status-filter"
-            >
-              Status
-            </label>
-            <select
-              className="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
-              id="identity-status-filter"
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              value={statusFilter}
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="revoked">Revoked</option>
-            </select>
-          </div>
-        </div>
+      <div className="flex gap-4">
+        <Select
+          onValueChange={(value) => setTypeFilter(value as TypeFilter)}
+          value={typeFilter}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="phone">Phone</SelectItem>
+              <SelectItem value="voice">Voice</SelectItem>
+              <SelectItem value="service_account">Service Account</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
-        {/* Identities Table */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Provider
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Identifier
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {filtered.map((identity) => (
-                <tr className="hover:bg-gray-50" key={identity.id}>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {typeBadge(identity.identityType)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
-                    {identity.provider}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
-                    {identity.identifier}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 font-mono text-gray-500 text-sm">
-                    {identity.agentId.slice(0, 8)}...
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {statusBadge(identity.status)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {new Date(identity.createdAt).toLocaleString()}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {identity.status === "active" && (
-                      <button
-                        className="rounded bg-red-600 px-3 py-1 font-medium text-white text-xs hover:bg-red-700"
-                        onClick={() => handleRevoke(identity.id)}
-                        type="button"
-                      >
-                        Revoke
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    className="px-6 py-12 text-center text-gray-500 text-sm"
-                    colSpan={7}
-                  >
-                    No identities found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Select
+          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+          value={statusFilter}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="revoked">Revoked</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Identities</CardTitle>
+          <CardDescription>
+            Manage agent identities and credentials
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <IdentitiesTable identities={filtered} onRevoke={handleRevoke} />
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+// ─── Identities Table ───────────────────────────────────────────────
+
+function IdentitiesTable({
+  identities,
+  onRevoke,
+}: {
+  identities: Identity[];
+  onRevoke: (identityId: string) => void;
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Type</TableHead>
+          <TableHead>Provider</TableHead>
+          <TableHead>Identifier</TableHead>
+          <TableHead>Agent</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Created</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {identities.map((identity) => (
+          <TableRow key={identity.id}>
+            <TableCell>{typeBadge(identity.identityType)}</TableCell>
+            <TableCell>{identity.provider}</TableCell>
+            <TableCell>{identity.identifier}</TableCell>
+            <TableCell className="font-mono text-muted-foreground">
+              {identity.agentId.slice(0, 8)}...
+            </TableCell>
+            <TableCell>{statusBadge(identity.status)}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {new Date(identity.createdAt).toLocaleString()}
+            </TableCell>
+            <TableCell>
+              {identity.status === "active" && (
+                <RevokeDialog
+                  identityName={identity.identifier}
+                  onConfirm={() => onRevoke(identity.id)}
+                />
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+        {identities.length === 0 && (
+          <TableRow>
+            <TableCell
+              className="py-12 text-center text-muted-foreground"
+              colSpan={7}
+            >
+              No identities found.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
+// ─── Revoke Dialog ──────────────────────────────────────────────────
+
+function RevokeDialog({
+  identityName,
+  onConfirm,
+}: {
+  identityName: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant="destructive">
+          Revoke
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revoke Identity</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to revoke{" "}
+            <span className="font-medium text-foreground">{identityName}</span>?
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} variant="destructive">
+            Revoke
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

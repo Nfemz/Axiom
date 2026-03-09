@@ -1,6 +1,37 @@
 "use client";
 
+import { PlusIcon } from "lucide-react";
 import { useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface Pipeline {
   budget: { limit: number; spent: number };
@@ -11,12 +42,15 @@ interface Pipeline {
   status: "planned" | "active" | "paused" | "completed" | "failed";
 }
 
-const STATUS_BADGE_CLASSES: Record<Pipeline["status"], string> = {
-  planned: "bg-gray-100 text-gray-800",
-  active: "bg-blue-100 text-blue-800",
-  paused: "bg-yellow-100 text-yellow-800",
-  completed: "bg-green-100 text-green-800",
-  failed: "bg-red-100 text-red-800",
+const STATUS_VARIANT: Record<
+  Pipeline["status"],
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  planned: "secondary",
+  active: "default",
+  paused: "outline",
+  completed: "secondary",
+  failed: "destructive",
 };
 
 const PLACEHOLDER_PIPELINES: Pipeline[] = [
@@ -48,16 +82,16 @@ const PLACEHOLDER_PIPELINES: Pipeline[] = [
 
 export default function PipelinesPage() {
   const [pipelines] = useState<Pipeline[]>(PLACEHOLDER_PIPELINES);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formGoal, setFormGoal] = useState("");
   const [formStages, setFormStages] = useState("");
   const [formBudget, setFormBudget] = useState("");
 
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  function handleCreate(event: React.FormEvent) {
+    event.preventDefault();
     // TODO: POST to /api/pipelines
-    setShowCreateForm(false);
+    setDialogOpen(false);
     setFormName("");
     setFormGoal("");
     setFormStages("");
@@ -65,170 +99,186 @@ export default function PipelinesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="font-bold text-2xl text-gray-900">Pipelines</h1>
-          <button
-            className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-sm text-white hover:bg-blue-700"
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            type="button"
-          >
-            {showCreateForm ? "Cancel" : "Create Pipeline"}
-          </button>
-        </div>
+    <div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Pipelines</CardTitle>
+          <CardDescription>
+            Manage multi-stage agent pipelines and track their progress.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <CreatePipelineDialog
+              dialogOpen={dialogOpen}
+              formBudget={formBudget}
+              formGoal={formGoal}
+              formName={formName}
+              formStages={formStages}
+              onBudgetChange={setFormBudget}
+              onCreate={handleCreate}
+              onGoalChange={setFormGoal}
+              onNameChange={setFormName}
+              onOpenChange={setDialogOpen}
+              onStagesChange={setFormStages}
+            />
+          </div>
 
-        {showCreateForm && (
-          <form
-            className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-            onSubmit={handleCreate}
-          >
-            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
-              New Pipeline
-            </h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  className="mb-1 block font-medium text-gray-700 text-sm"
-                  htmlFor="pipeline-name"
-                >
-                  Name
-                </label>
-                <input
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="pipeline-name"
-                  onChange={(e) => setFormName(e.target.value)}
+          <PipelinesTable pipelines={pipelines} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CreatePipelineDialog({
+  dialogOpen,
+  onOpenChange,
+  formName,
+  formGoal,
+  formStages,
+  formBudget,
+  onNameChange,
+  onGoalChange,
+  onStagesChange,
+  onBudgetChange,
+  onCreate,
+}: {
+  dialogOpen: boolean;
+  formBudget: string;
+  formGoal: string;
+  formName: string;
+  formStages: string;
+  onBudgetChange: (value: string) => void;
+  onCreate: (event: React.FormEvent) => void;
+  onGoalChange: (value: string) => void;
+  onNameChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onStagesChange: (value: string) => void;
+}) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={dialogOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          Create Pipeline
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>New Pipeline</DialogTitle>
+          <DialogDescription>
+            Define a new multi-stage pipeline for agent orchestration.
+          </DialogDescription>
+        </DialogHeader>
+        <form className="flex flex-col gap-4" onSubmit={onCreate}>
+          <FieldGroup>
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Name</FieldLabel>
+                <Input
+                  onChange={(event) => onNameChange(event.target.value)}
                   placeholder="Pipeline name"
                   required
-                  type="text"
                   value={formName}
                 />
-              </div>
-              <div>
-                <label
-                  className="mb-1 block font-medium text-gray-700 text-sm"
-                  htmlFor="pipeline-budget"
-                >
-                  Budget (USD)
-                </label>
-                <input
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="pipeline-budget"
+              </Field>
+              <Field>
+                <FieldLabel>Budget (USD)</FieldLabel>
+                <Input
                   min="0"
-                  onChange={(e) => setFormBudget(e.target.value)}
+                  onChange={(event) => onBudgetChange(event.target.value)}
                   placeholder="50.00"
                   required
                   step="0.01"
                   type="number"
                   value={formBudget}
                 />
-              </div>
-              <div className="md:col-span-2">
-                <label
-                  className="mb-1 block font-medium text-gray-700 text-sm"
-                  htmlFor="pipeline-goal"
-                >
-                  Goal
-                </label>
-                <input
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="pipeline-goal"
-                  onChange={(e) => setFormGoal(e.target.value)}
-                  placeholder="What should this pipeline accomplish?"
-                  required
-                  type="text"
-                  value={formGoal}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label
-                  className="mb-1 block font-medium text-gray-700 text-sm"
-                  htmlFor="pipeline-stages"
-                >
-                  Stages (comma-separated)
-                </label>
-                <input
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="pipeline-stages"
-                  onChange={(e) => setFormStages(e.target.value)}
-                  placeholder="Research, Analysis, Implementation"
-                  required
-                  type="text"
-                  value={formStages}
-                />
-              </div>
+              </Field>
             </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-sm text-white hover:bg-blue-700"
-                type="submit"
-              >
-                Create
-              </button>
-            </div>
-          </form>
-        )}
+            <Field>
+              <FieldLabel>Goal</FieldLabel>
+              <Input
+                onChange={(event) => onGoalChange(event.target.value)}
+                placeholder="What should this pipeline accomplish?"
+                required
+                value={formGoal}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>Stages (comma-separated)</FieldLabel>
+              <Input
+                onChange={(event) => onStagesChange(event.target.value)}
+                placeholder="Research, Analysis, Implementation"
+                required
+                value={formStages}
+              />
+            </Field>
+          </FieldGroup>
+          <DialogFooter>
+            <Button type="submit">Create</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Goal
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Current Stage
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Budget
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {pipelines.map((pipeline) => (
-                <tr className="hover:bg-gray-50" key={pipeline.id}>
-                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
-                    {pipeline.name}
-                  </td>
-                  <td className="px-6 py-4 text-gray-500 text-sm">
-                    {pipeline.goal}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {pipeline.currentStage}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${STATUS_BADGE_CLASSES[pipeline.status]}`}
-                    >
-                      {pipeline.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    ${pipeline.budget.spent.toFixed(2)} / $
-                    {pipeline.budget.limit.toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-              {pipelines.length === 0 && (
-                <tr>
-                  <td
-                    className="px-6 py-12 text-center text-gray-500 text-sm"
-                    colSpan={5}
-                  >
-                    No pipelines yet. Create one to get started.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+function PipelinesTable({ pipelines }: { pipelines: Pipeline[] }) {
+  if (pipelines.length === 0) {
+    return (
+      <p className="text-muted-foreground text-sm">
+        No pipelines yet. Create one to get started.
+      </p>
+    );
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Goal</TableHead>
+          <TableHead>Current Stage</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Budget</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {pipelines.map((pipeline) => (
+          <PipelineRow key={pipeline.id} pipeline={pipeline} />
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function PipelineRow({ pipeline }: { pipeline: Pipeline }) {
+  const budgetRatio = pipeline.budget.spent / pipeline.budget.limit;
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{pipeline.name}</TableCell>
+      <TableCell className="text-muted-foreground">{pipeline.goal}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {pipeline.currentStage}
+      </TableCell>
+      <TableCell>
+        <Badge variant={STATUS_VARIANT[pipeline.status]}>
+          {pipeline.status}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <span
+          className={cn(
+            "text-sm",
+            budgetRatio > 0.9 ? "text-destructive" : "text-muted-foreground"
+          )}
+        >
+          ${pipeline.budget.spent.toFixed(2)} / $
+          {pipeline.budget.limit.toFixed(2)}
+        </span>
+      </TableCell>
+    </TableRow>
   );
 }

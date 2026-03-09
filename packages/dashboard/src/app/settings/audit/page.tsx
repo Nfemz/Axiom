@@ -1,6 +1,42 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+// ─── Types ──────────────────────────────────────────────────────────
 
 interface AuditEntry {
   actionType: string;
@@ -13,7 +49,6 @@ interface AuditEntry {
 }
 
 const ACTION_TYPES = [
-  "",
   "secret_access",
   "secret_create",
   "secret_update",
@@ -29,6 +64,8 @@ const ACTION_TYPES = [
 ] as const;
 
 const PAGE_SIZE = 20;
+
+// ─── Component ──────────────────────────────────────────────────────
 
 export default function AuditPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
@@ -50,12 +87,11 @@ export default function AuditPage() {
     setLoading(true);
     try {
       // TODO: Replace with real API call to /api/audit
-      // Mock data for now
       const mockEntries: AuditEntry[] = [];
       setEntries(mockEntries);
       setFetchError(null);
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : "Unknown error");
+    } catch (error) {
+      setFetchError(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -65,312 +101,367 @@ export default function AuditPage() {
     fetchAudit();
   }, [fetchAudit]);
 
-  const filtered = entries
-    .filter((e) => {
-      if (agentIdFilter && !e.agentId.includes(agentIdFilter)) {
-        return false;
-      }
-      if (actionTypeFilter && e.actionType !== actionTypeFilter) {
-        return false;
-      }
-      if (securityOnly && !e.securityFlag) {
-        return false;
-      }
-      if (dateFrom && e.timestamp < dateFrom) {
-        return false;
-      }
-      if (dateTo && e.timestamp > `${dateTo}T23:59:59.999Z`) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  const filtered = applyFilters(entries, {
+    agentIdFilter,
+    actionTypeFilter,
+    securityOnly,
+    dateFrom,
+    dateTo,
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (loading) {
-    return <div style={{ padding: "2rem" }}>Loading audit log...</div>;
+    return <div className="text-muted-foreground">Loading audit log...</div>;
   }
+
   if (fetchError) {
-    return (
-      <div style={{ padding: "2rem", color: "#ef4444" }}>
-        Error: {fetchError}
-      </div>
-    );
+    return <div className="text-destructive">Error: {fetchError}</div>;
   }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1
-        style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}
-      >
-        Audit Log
-      </h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="font-bold text-2xl text-foreground">Audit Log</h1>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-          padding: "1rem",
-          border: "1px solid #374151",
-          borderRadius: "8px",
-          alignItems: "flex-end",
+      <FiltersCard
+        actionTypeFilter={actionTypeFilter}
+        agentIdFilter={agentIdFilter}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onActionTypeChange={(value) => {
+          setActionTypeFilter(value);
+          setPage(0);
         }}
-      >
-        <label style={filterLabelStyle}>
-          <span style={filterSpanStyle}>Agent ID</span>
-          <input
-            onChange={(e) => {
-              setAgentIdFilter(e.target.value);
-              setPage(0);
-            }}
-            placeholder="Filter by agent ID"
-            style={inputStyle}
-            type="text"
-            value={agentIdFilter}
-          />
-        </label>
+        onAgentIdChange={(value) => {
+          setAgentIdFilter(value);
+          setPage(0);
+        }}
+        onDateFromChange={(value) => {
+          setDateFrom(value);
+          setPage(0);
+        }}
+        onDateToChange={(value) => {
+          setDateTo(value);
+          setPage(0);
+        }}
+        onSecurityOnlyChange={(value) => {
+          setSecurityOnly(value);
+          setPage(0);
+        }}
+        securityOnly={securityOnly}
+      />
 
-        <label style={filterLabelStyle}>
-          <span style={filterSpanStyle}>Action Type</span>
-          <select
-            onChange={(e) => {
-              setActionTypeFilter(e.target.value);
-              setPage(0);
-            }}
-            style={inputStyle}
-            value={actionTypeFilter}
-          >
-            <option value="">All</option>
-            {ACTION_TYPES.filter(Boolean).map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
+      <AuditTable
+        entries={paginated}
+        expandedId={expandedId}
+        onToggleExpand={(id) => setExpandedId(expandedId === id ? null : id)}
+        totalCount={filtered.length}
+      />
 
-        <label style={filterLabelStyle}>
-          <span style={filterSpanStyle}>From</span>
-          <input
-            onChange={(e) => {
-              setDateFrom(e.target.value);
-              setPage(0);
-            }}
-            style={inputStyle}
-            type="date"
-            value={dateFrom}
-          />
-        </label>
-
-        <label style={filterLabelStyle}>
-          <span style={filterSpanStyle}>To</span>
-          <input
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setPage(0);
-            }}
-            style={inputStyle}
-            type="date"
-            value={dateTo}
-          />
-        </label>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            cursor: "pointer",
-          }}
-        >
-          <input
-            checked={securityOnly}
-            onChange={(e) => {
-              setSecurityOnly(e.target.checked);
-              setPage(0);
-            }}
-            type="checkbox"
-          />
-          <span style={{ fontSize: "0.875rem", color: "#d1d5db" }}>
-            Security events only
-          </span>
-        </label>
-      </div>
-
-      {filtered.length === 0 ? (
-        <p style={{ color: "#9ca3af" }}>No audit entries found.</p>
-      ) : (
-        <>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{ borderBottom: "1px solid #374151", textAlign: "left" }}
-              >
-                <th style={thStyle}>Timestamp</th>
-                <th style={thStyle}>Agent ID</th>
-                <th style={thStyle}>Action Type</th>
-                <th style={thStyle}>Outcome</th>
-                <th style={thStyle}>Security</th>
-                <th style={thStyle}>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((entry) => (
-                <tr
-                  key={entry.id}
-                  style={{ borderBottom: "1px solid #1f2937" }}
-                >
-                  <td
-                    style={{
-                      ...tdStyle,
-                      fontFamily: "monospace",
-                      fontSize: "0.8125rem",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      fontFamily: "monospace",
-                      fontSize: "0.8125rem",
-                    }}
-                  >
-                    {entry.agentId.slice(0, 8)}...
-                  </td>
-                  <td style={tdStyle}>{entry.actionType}</td>
-                  <td style={tdStyle}>
-                    <span
-                      style={{
-                        color:
-                          entry.outcome === "success" ? "#22c55e" : "#ef4444",
-                      }}
-                    >
-                      {entry.outcome}
-                    </span>
-                  </td>
-                  <td style={tdStyle}>
-                    {entry.securityFlag ? (
-                      <span style={{ color: "#eab308", fontWeight: 600 }}>
-                        !
-                      </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td style={tdStyle}>
-                    <button
-                      onClick={() =>
-                        setExpandedId(expandedId === entry.id ? null : entry.id)
-                      }
-                      style={{
-                        background: "none",
-                        border: "1px solid #374151",
-                        borderRadius: "4px",
-                        color: "#60a5fa",
-                        cursor: "pointer",
-                        padding: "0.125rem 0.5rem",
-                        fontSize: "0.8125rem",
-                      }}
-                      type="button"
-                    >
-                      {expandedId === entry.id ? "Hide" : "Show"}
-                    </button>
-                    {expandedId === entry.id && (
-                      <pre
-                        style={{
-                          marginTop: "0.5rem",
-                          padding: "0.5rem",
-                          backgroundColor: "#111827",
-                          borderRadius: "4px",
-                          fontSize: "0.75rem",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-all",
-                          color: "#d1d5db",
-                        }}
-                      >
-                        {entry.details}
-                      </pre>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "1rem",
-              fontSize: "0.875rem",
-              color: "#9ca3af",
-            }}
-          >
-            <span>
-              Page {page + 1} of {totalPages} ({filtered.length} entries)
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-                style={paginationBtnStyle(page === 0)}
-                type="button"
-              >
-                Previous
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                style={paginationBtnStyle(page >= totalPages - 1)}
-                type="button"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <AuditPagination
+        page={page}
+        setPage={setPage}
+        totalCount={filtered.length}
+        totalPages={totalPages}
+      />
     </div>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  backgroundColor: "#111827",
-  border: "1px solid #374151",
-  borderRadius: "4px",
-  color: "#f3f4f6",
-  fontSize: "0.875rem",
-};
+// ─── Filter Logic ───────────────────────────────────────────────────
 
-const filterLabelStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.25rem",
-};
+interface FilterOptions {
+  actionTypeFilter: string;
+  agentIdFilter: string;
+  dateFrom: string;
+  dateTo: string;
+  securityOnly: boolean;
+}
 
-const filterSpanStyle: React.CSSProperties = {
-  fontSize: "0.75rem",
-  color: "#9ca3af",
-};
+function applyFilters(
+  entries: AuditEntry[],
+  filters: FilterOptions
+): AuditEntry[] {
+  return entries
+    .filter((entry) => {
+      if (
+        filters.agentIdFilter &&
+        !entry.agentId.includes(filters.agentIdFilter)
+      ) {
+        return false;
+      }
+      if (
+        filters.actionTypeFilter &&
+        entry.actionType !== filters.actionTypeFilter
+      ) {
+        return false;
+      }
+      if (filters.securityOnly && !entry.securityFlag) {
+        return false;
+      }
+      if (filters.dateFrom && entry.timestamp < filters.dateFrom) {
+        return false;
+      }
+      if (
+        filters.dateTo &&
+        entry.timestamp > `${filters.dateTo}T23:59:59.999Z`
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
 
-const thStyle: React.CSSProperties = { padding: "0.75rem" };
-const tdStyle: React.CSSProperties = { padding: "0.75rem", color: "#d1d5db" };
+// ─── Filters Card ───────────────────────────────────────────────────
 
-function paginationBtnStyle(disabled: boolean): React.CSSProperties {
-  return {
-    padding: "0.375rem 1rem",
-    backgroundColor: disabled ? "#1f2937" : "#374151",
-    color: disabled ? "#6b7280" : "#f3f4f6",
-    border: "none",
-    borderRadius: "4px",
-    cursor: disabled ? "not-allowed" : "pointer",
-  };
+interface FiltersCardProps {
+  actionTypeFilter: string;
+  agentIdFilter: string;
+  dateFrom: string;
+  dateTo: string;
+  onActionTypeChange: (value: string) => void;
+  onAgentIdChange: (value: string) => void;
+  onDateFromChange: (value: string) => void;
+  onDateToChange: (value: string) => void;
+  onSecurityOnlyChange: (value: boolean) => void;
+  securityOnly: boolean;
+}
+
+function FiltersCard({
+  agentIdFilter,
+  actionTypeFilter,
+  dateFrom,
+  dateTo,
+  securityOnly,
+  onAgentIdChange,
+  onActionTypeChange,
+  onDateFromChange,
+  onDateToChange,
+  onSecurityOnlyChange,
+}: FiltersCardProps) {
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Filters</CardTitle>
+        <CardDescription>Narrow down audit log entries.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <Field>
+              <FieldLabel htmlFor="audit-agent-id">Agent ID</FieldLabel>
+              <Input
+                id="audit-agent-id"
+                onChange={(event) => onAgentIdChange(event.target.value)}
+                placeholder="Filter by agent ID"
+                value={agentIdFilter}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Action Type</FieldLabel>
+              <Select
+                onValueChange={(value) =>
+                  onActionTypeChange(value === "all" ? "" : value)
+                }
+                value={actionTypeFilter || "all"}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {ACTION_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="audit-date-from">From</FieldLabel>
+              <Input
+                id="audit-date-from"
+                onChange={(event) => onDateFromChange(event.target.value)}
+                type="date"
+                value={dateFrom}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="audit-date-to">To</FieldLabel>
+              <Input
+                id="audit-date-to"
+                onChange={(event) => onDateToChange(event.target.value)}
+                type="date"
+                value={dateTo}
+              />
+            </Field>
+          </div>
+
+          <Field orientation="horizontal">
+            <Switch
+              checked={securityOnly}
+              id="audit-security-only"
+              onCheckedChange={onSecurityOnlyChange}
+            />
+            <FieldLabel htmlFor="audit-security-only">
+              Security events only
+            </FieldLabel>
+          </Field>
+        </FieldGroup>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Audit Table ────────────────────────────────────────────────────
+
+interface AuditTableProps {
+  entries: AuditEntry[];
+  expandedId: string | null;
+  onToggleExpand: (id: string) => void;
+  totalCount: number;
+}
+
+function AuditTable({
+  entries,
+  expandedId,
+  onToggleExpand,
+  totalCount,
+}: AuditTableProps) {
+  if (totalCount === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground">
+          No audit entries found.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Timestamp</TableHead>
+              <TableHead>Agent ID</TableHead>
+              <TableHead>Action Type</TableHead>
+              <TableHead>Outcome</TableHead>
+              <TableHead>Security</TableHead>
+              <TableHead>Details</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map((entry) => (
+              <AuditRow
+                entry={entry}
+                expanded={expandedId === entry.id}
+                key={entry.id}
+                onToggle={() => onToggleExpand(entry.id)}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Audit Row ──────────────────────────────────────────────────────
+
+interface AuditRowProps {
+  entry: AuditEntry;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function AuditRow({ entry, expanded, onToggle }: AuditRowProps) {
+  return (
+    <TableRow>
+      <TableCell className="font-mono text-xs">
+        {new Date(entry.timestamp).toLocaleString()}
+      </TableCell>
+      <TableCell className="font-mono text-xs">
+        {entry.agentId.slice(0, 8)}...
+      </TableCell>
+      <TableCell>{entry.actionType}</TableCell>
+      <TableCell>
+        <Badge
+          variant={entry.outcome === "success" ? "default" : "destructive"}
+        >
+          {entry.outcome}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        {entry.securityFlag ? (
+          <Badge variant="destructive">!</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <Button onClick={onToggle} size="xs" variant="outline">
+          {expanded ? "Hide" : "Show"}
+        </Button>
+        {expanded && (
+          <pre className="mt-2 whitespace-pre-wrap break-all rounded-md bg-muted p-2 text-muted-foreground text-xs">
+            {entry.details}
+          </pre>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// ─── Pagination ─────────────────────────────────────────────────────
+
+interface AuditPaginationProps {
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  totalCount: number;
+  totalPages: number;
+}
+
+function AuditPagination({
+  page,
+  setPage,
+  totalCount,
+  totalPages,
+}: AuditPaginationProps) {
+  if (totalCount === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 flex items-center justify-between">
+      <span className="text-muted-foreground text-sm">
+        Page {page + 1} of {totalPages} ({totalCount} entries)
+      </span>
+      <Pagination className="mx-0 w-auto">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              className={page === 0 ? "pointer-events-none opacity-50" : ""}
+              onClick={() => setPage((previous) => previous - 1)}
+            />
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext
+              className={
+                page >= totalPages - 1 ? "pointer-events-none opacity-50" : ""
+              }
+              onClick={() => setPage((previous) => previous + 1)}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    </div>
+  );
 }
