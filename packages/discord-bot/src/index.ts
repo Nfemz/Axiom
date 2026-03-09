@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     }
   });
 
-  client.once("ready", (c) => {
+  client.once("clientReady", (c) => {
     log.info("Discord bot ready", { user: c.user.tag });
   });
 
