@@ -1,6 +1,21 @@
 "use client";
 
+import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
+
+import { AgentCostBreakdown, ModelCostBreakdown } from "./cost-breakdowns";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -23,14 +38,14 @@ interface ModelCost {
 
 interface CostsResponse {
   costs: Array<{
-    id: string;
     agentId: string;
-    modelProvider: string;
-    modelId: string;
-    inputTokens: number;
-    outputTokens: number;
     computedCostUsd: string;
     createdAt: string;
+    id: string;
+    inputTokens: number;
+    modelId: string;
+    modelProvider: string;
+    outputTokens: number;
   }>;
   currency: string;
   totalCost: number;
@@ -51,16 +66,6 @@ type TimeRange = "7d" | "30d";
 
 function formatCurrency(amount: number): string {
   return `$${amount.toFixed(2)}`;
-}
-
-function formatTokens(count: number): string {
-  if (count >= 1_000_000) {
-    return `${(count / 1_000_000).toFixed(1)}M`;
-  }
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}k`;
-  }
-  return count.toString();
 }
 
 function computeProjectedMonthly(totalCost: number, range: TimeRange): number {
@@ -130,17 +135,17 @@ export default function CostCharts() {
     setLoading(true);
     setError(null);
     try {
-      const [costsRes, summaryRes] = await Promise.all([
+      const [costsResponse, summaryResponse] = await Promise.all([
         fetch("/api/financial?view=costs"),
         fetch("/api/financial?view=summary"),
       ]);
 
-      if (!(costsRes.ok && summaryRes.ok)) {
+      if (!(costsResponse.ok && summaryResponse.ok)) {
         throw new Error("Failed to fetch financial data");
       }
 
-      const costsData: CostsResponse = await costsRes.json();
-      const summaryData: SummaryResponse = await summaryRes.json();
+      const costsData: CostsResponse = await costsResponse.json();
+      const summaryData: SummaryResponse = await summaryResponse.json();
 
       setAgentCosts(aggregateByAgent(costsData.costs));
       setModelCosts(aggregateByModel(costsData.costs));
@@ -161,211 +166,118 @@ export default function CostCharts() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500 text-sm">Loading cost data...</p>
-      </div>
+      <p className="py-12 text-center text-muted-foreground text-sm">
+        Loading cost data...
+      </p>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-        <p className="text-red-700 text-sm">Error loading cost data: {error}</p>
-        <button
-          className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-800"
-          onClick={() => void fetchData()}
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircleIcon />
+        <AlertDescription className="flex items-center gap-2">
+          Error loading cost data: {error}
+          <Button onClick={() => void fetchData()} size="sm" variant="link">
+            <RefreshCwIcon data-icon="inline-start" />
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header with Range Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 text-lg">Token Economics</h2>
-        <div className="flex rounded-md border border-gray-300 bg-white shadow-sm">
-          <button
-            className={`px-4 py-1.5 font-medium text-sm ${
-              range === "7d"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            } rounded-l-md`}
-            onClick={() => setRange("7d")}
-            type="button"
-          >
-            7d
-          </button>
-          <button
-            className={`px-4 py-1.5 font-medium text-sm ${
-              range === "30d"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            } rounded-r-md`}
-            onClick={() => setRange("30d")}
-            type="button"
-          >
-            30d
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-8">
+      <TokenEconomicsHeader onRangeChange={setRange} range={range} />
 
-      {/* Summary Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="font-medium text-gray-500 text-sm">Total LLM Spend</p>
-          <p className="mt-1 font-bold text-2xl text-gray-900">
+      <CostSummaryCards
+        projectedMonthly={projectedMonthly}
+        summary={summary}
+        totalCost={totalCost}
+      />
+
+      <AgentCostBreakdown agentCosts={agentCosts} />
+      <ModelCostBreakdown modelCosts={modelCosts} />
+    </div>
+  );
+}
+
+function TokenEconomicsHeader({
+  range,
+  onRangeChange,
+}: {
+  onRangeChange: (range: TimeRange) => void;
+  range: TimeRange;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="font-semibold text-lg">Token Economics</h2>
+      <ToggleGroup
+        onValueChange={(value) => {
+          if (value) {
+            onRangeChange(value as TimeRange);
+          }
+        }}
+        type="single"
+        value={range}
+        variant="outline"
+      >
+        <ToggleGroupItem value="7d">7d</ToggleGroupItem>
+        <ToggleGroupItem value="30d">30d</ToggleGroupItem>
+      </ToggleGroup>
+    </div>
+  );
+}
+
+function CostSummaryCards({
+  totalCost,
+  projectedMonthly,
+  summary,
+}: {
+  projectedMonthly: number;
+  summary: SummaryResponse | null;
+  totalCost: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardDescription>Total LLM Spend</CardDescription>
+          <CardTitle className="text-2xl">
             {formatCurrency(totalCost)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="font-medium text-gray-500 text-sm">Projected Monthly</p>
-          <p className="mt-1 font-bold text-2xl text-orange-600">
+          </CardTitle>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardDescription>Projected Monthly</CardDescription>
+          <CardTitle className="text-2xl text-chart-4">
             {formatCurrency(projectedMonthly)}
-          </p>
-        </div>
-        {summary && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-gray-500 text-sm">
-              Net Balance (ROI)
-            </p>
-            <p
-              className={`mt-1 font-bold text-2xl ${summary.netBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+          </CardTitle>
+        </CardHeader>
+      </Card>
+      {summary && (
+        <Card>
+          <CardHeader>
+            <CardDescription>Net Balance (ROI)</CardDescription>
+            <CardTitle
+              className={cn(
+                "text-2xl",
+                summary.netBalance >= 0 ? "text-chart-2" : "text-destructive"
+              )}
             >
               {formatCurrency(summary.netBalance)}
-            </p>
-            <p className="mt-1 text-gray-400 text-xs">
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-xs">
               Rev {formatCurrency(summary.totalRevenue)} / Exp{" "}
               {formatCurrency(summary.totalExpenses)}
             </p>
-          </div>
-        )}
-      </div>
-
-      {/* Per-Agent Cost Breakdown */}
-      <div>
-        <h3 className="mb-4 font-semibold text-base text-gray-900">
-          Per-Agent Cost Breakdown
-        </h3>
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Total Cost
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Input Tokens
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Output Tokens
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Requests
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {agentCosts.map((agent) => (
-                <tr className="hover:bg-gray-50" key={agent.agentId}>
-                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
-                    {agent.agentName}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {formatCurrency(agent.totalCost)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {formatTokens(agent.inputTokens)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {formatTokens(agent.outputTokens)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {agent.requestCount}
-                  </td>
-                </tr>
-              ))}
-              {agentCosts.length === 0 && (
-                <tr>
-                  <td
-                    className="px-6 py-12 text-center text-gray-500 text-sm"
-                    colSpan={5}
-                  >
-                    No cost data available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Per-Model Cost Breakdown */}
-      <div>
-        <h3 className="mb-4 font-semibold text-base text-gray-900">
-          Per-Model Cost Breakdown
-        </h3>
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Model
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Provider
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Total Cost
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Requests
-                </th>
-                <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                  Avg / Request
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {modelCosts.map((model) => (
-                <tr className="hover:bg-gray-50" key={model.modelId}>
-                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
-                    {model.modelId}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {model.provider}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {formatCurrency(model.totalCost)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {model.requestCount}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                    {formatCurrency(model.avgCostPerRequest)}
-                  </td>
-                </tr>
-              ))}
-              {modelCosts.length === 0 && (
-                <tr>
-                  <td
-                    className="px-6 py-12 text-center text-gray-500 text-sm"
-                    colSpan={5}
-                  >
-                    No model cost data available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

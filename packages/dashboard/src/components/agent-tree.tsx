@@ -1,6 +1,10 @@
 "use client";
 
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export interface Agent {
   children?: Agent[];
@@ -16,15 +20,21 @@ interface AgentTreeProps {
   onSelect?: (agentId: string) => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  running: "#22c55e",
-  paused: "#eab308",
-  suspended: "#9ca3af",
-  error: "#ef4444",
-  terminated: "#6b7280",
-  spawning: "#3b82f6",
-  idle: "#a3e635",
+type StatusVariant = "default" | "secondary" | "destructive" | "outline";
+
+const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
+  running: "default",
+  idle: "default",
+  spawning: "secondary",
+  paused: "outline",
+  suspended: "outline",
+  error: "destructive",
+  terminated: "secondary",
 };
+
+function getStatusVariant(status: string): StatusVariant {
+  return STATUS_VARIANT_MAP[status] ?? "outline";
+}
 
 function buildTree(agents: Agent[]): Agent[] {
   const map = new Map<string, Agent>();
@@ -54,14 +64,12 @@ export function AgentTree({ agents, onSelect }: AgentTreeProps) {
 
   if (agents.length === 0) {
     return (
-      <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-        No agents to display.
-      </p>
+      <p className="text-muted-foreground text-sm">No agents to display.</p>
     );
   }
 
   return (
-    <div style={{ fontFamily: "inherit" }}>
+    <div>
       {tree.map((node) => (
         <TreeNode agent={node} depth={0} key={node.id} onSelect={onSelect} />
       ))}
@@ -80,90 +88,55 @@ function TreeNode({
 }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = agent.children && agent.children.length > 0;
-  const statusColor = STATUS_COLORS[agent.status] ?? "#9ca3af";
 
   return (
     <div>
       <button
+        className={cn(
+          "flex w-full items-center gap-2 rounded-md bg-transparent py-1.5 text-left",
+          "hover:bg-muted/50"
+        )}
         onClick={() => onSelect?.(agent.id)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          paddingLeft: `${depth * 1.5}rem`,
-          paddingTop: "0.375rem",
-          paddingBottom: "0.375rem",
-          cursor: "pointer",
-          borderRadius: "4px",
-          background: "none",
-          border: "none",
-          width: "100%",
-          textAlign: "left",
-          font: "inherit",
-          color: "inherit",
-        }}
+        style={{ paddingLeft: `${depth * 1.5}rem` }}
         type="button"
       >
-        {/* Expand/collapse toggle */}
         {hasChildren ? (
           <span
             aria-hidden="true"
-            onClick={(e) => {
-              e.stopPropagation();
+            className="flex size-4 shrink-0 cursor-pointer items-center justify-center text-muted-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
               setExpanded(!expanded);
             }}
-            style={{
-              width: "16px",
-              textAlign: "center",
-              fontSize: "0.75rem",
-              color: "#9ca3af",
-              cursor: "pointer",
-              userSelect: "none",
-            }}
           >
-            {expanded ? "\u25BC" : "\u25B6"}
+            {expanded ? (
+              <ChevronDown className="size-3" />
+            ) : (
+              <ChevronRight className="size-3" />
+            )}
           </span>
         ) : (
-          <span style={{ width: "16px" }} />
+          <span className="size-4" />
         )}
 
-        {/* Status dot */}
-        <span
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            backgroundColor: statusColor,
-            display: "inline-block",
-            flexShrink: 0,
-          }}
-        />
-
-        {/* Agent name */}
-        <span
-          style={{ fontWeight: 500, fontSize: "0.875rem", color: "#e5e7eb" }}
+        <Badge
+          className="text-[0.65rem]"
+          variant={getStatusVariant(agent.status)}
         >
+          {agent.status}
+        </Badge>
+
+        <span className="font-medium text-foreground text-sm">
           {agent.name}
         </span>
 
-        {/* Current task snippet */}
         {agent.currentTask && (
-          <span
-            style={{
-              fontSize: "0.75rem",
-              color: "#6b7280",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: "200px",
-            }}
-          >
+          <span className="max-w-[200px] truncate text-muted-foreground text-xs">
             - {agent.currentTask}
           </span>
         )}
       </button>
 
-      {/* Children */}
       {hasChildren && expanded && (
         <div>
           {agent.children?.map((child) => (

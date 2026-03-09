@@ -70,10 +70,13 @@ async function pollLoop(db: Database, redis: Redis): Promise<void> {
         try {
           await processMessage(db, msg.data);
         } catch (err) {
-          log.error("Failed to process message, acknowledging to prevent retry loop", {
-            messageId: msg.id,
-            error: err instanceof Error ? err.message : String(err),
-          });
+          log.error(
+            "Failed to process message, acknowledging to prevent retry loop",
+            {
+              messageId: msg.id,
+              error: err instanceof Error ? err.message : String(err),
+            }
+          );
         }
         await acknowledge(
           redis,

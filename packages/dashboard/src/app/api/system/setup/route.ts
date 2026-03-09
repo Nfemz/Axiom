@@ -1,4 +1,7 @@
-import { operatorCredentials, systemConfig } from "@axiom/orchestrator/db/schema";
+import {
+  operatorCredentials,
+  systemConfig,
+} from "@axiom/orchestrator/db/schema";
 import type { SetupWizardState } from "@axiom/shared/schemas/api";
 import { count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -29,7 +32,9 @@ export async function GET() {
 
 export async function POST() {
   const authError = await requireAuth();
-  if (authError) return authError;
+  if (authError) {
+    return authError;
+  }
 
   const db = getDb();
   const [credRows] = await db.select({ n: count() }).from(operatorCredentials);

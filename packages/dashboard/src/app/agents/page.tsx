@@ -1,6 +1,21 @@
 "use client";
 
+import { Pause, Play, Skull, Wifi, WifiOff } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useSSE } from "@/lib/use-sse";
 
 interface Agent {
@@ -12,18 +27,83 @@ interface Agent {
   status: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  running: "#22c55e",
-  paused: "#eab308",
-  suspended: "#9ca3af",
-  error: "#ef4444",
-  terminated: "#6b7280",
-  spawning: "#3b82f6",
-  idle: "#a3e635",
+type StatusVariant = "default" | "secondary" | "destructive" | "outline";
+
+const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
+  running: "default",
+  idle: "default",
+  spawning: "secondary",
+  paused: "outline",
+  suspended: "outline",
+  error: "destructive",
+  terminated: "secondary",
 };
 
-function getStatusColor(status: string): string {
-  return STATUS_COLORS[status] ?? "#9ca3af";
+function getStatusVariant(status: string): StatusVariant {
+  return STATUS_VARIANT_MAP[status] ?? "outline";
+}
+
+function formatBudget(spent?: number, total?: number): string {
+  if (spent == null || total == null) {
+    return "-";
+  }
+  return `$${spent.toFixed(2)} / $${total.toFixed(2)}`;
+}
+
+function AgentTableSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  );
+}
+
+function AgentActions({
+  agent,
+  onAction,
+}: {
+  agent: Agent;
+  onAction: (agentId: string, action: string) => void;
+}) {
+  return (
+    <div className="flex gap-1.5">
+      {agent.status === "running" && (
+        <Button
+          onClick={() => onAction(agent.id, "pause")}
+          size="xs"
+          type="button"
+          variant="outline"
+        >
+          <Pause className="size-3" />
+          Pause
+        </Button>
+      )}
+      {agent.status === "paused" && (
+        <Button
+          onClick={() => onAction(agent.id, "resume")}
+          size="xs"
+          type="button"
+          variant="outline"
+        >
+          <Play className="size-3" />
+          Resume
+        </Button>
+      )}
+      {agent.status !== "terminated" && (
+        <Button
+          onClick={() => onAction(agent.id, "terminate")}
+          size="xs"
+          type="button"
+          variant="destructive"
+        >
+          <Skull className="size-3" />
+          Terminate
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export default function AgentsPage() {
@@ -34,15 +114,15 @@ export default function AgentsPage() {
 
   const fetchAgents = useCallback(async () => {
     try {
-      const res = await fetch("/api/agents");
-      if (!res.ok) {
-        throw new Error(`Failed to fetch agents: ${res.status}`);
+      const response = await fetch("/api/agents");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agents: ${response.status}`);
       }
-      const json = await res.json();
+      const json = await response.json();
       setAgents(json.agents ?? []);
       setFetchError(null);
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : "Unknown error");
+    } catch (error) {
+      setFetchError(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -52,197 +132,128 @@ export default function AgentsPage() {
     fetchAgents();
   }, [fetchAgents]);
 
-  // Handle real-time SSE updates
   useEffect(() => {
     if (!sseEvent || sseEvent.type === "keepalive") {
       return;
     }
-
     if (sseEvent.type === "agent:status") {
       const { id, status, currentTask } = sseEvent.payload as {
         id: string;
         status: string;
         currentTask?: string;
       };
-      setAgents((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status, currentTask } : a))
+      setAgents((previous) =>
+        previous.map((agent) =>
+          agent.id === id ? { ...agent, status, currentTask } : agent
+        )
       );
     }
   }, [sseEvent]);
 
-  async function handleAction(agentId: string, action: string) {
-    try {
-      await fetch(`/api/agents/${agentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      await fetchAgents();
-    } catch {
-      // TODO: Show error toast
-    }
-  }
+  const handleAction = useCallback(
+    async (agentId: string, action: string) => {
+      try {
+        await fetch(`/api/agents/${agentId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        });
+        await fetchAgents();
+      } catch {
+        // TODO: Show error toast
+      }
+    },
+    [fetchAgents]
+  );
 
   if (loading) {
-    return <div style={{ padding: "2rem" }}>Loading agents...</div>;
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="font-semibold text-2xl text-foreground">Agents</h1>
+        <AgentTableSkeleton />
+      </div>
+    );
   }
+
   if (fetchError) {
     return (
-      <div style={{ padding: "2rem", color: "#ef4444" }}>
-        Error: {fetchError}
+      <div className="flex flex-col gap-4">
+        <h1 className="font-semibold text-2xl text-foreground">Agents</h1>
+        <Card>
+          <CardContent>
+            <p className="text-destructive text-sm">Error: {fetchError}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>Agents</h1>
-        <span
-          style={{
-            fontSize: "0.875rem",
-            color: connected ? "#22c55e" : "#ef4444",
-          }}
-        >
-          {connected ? "Live" : "Disconnected"}
-        </span>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="font-semibold text-2xl text-foreground">Agents</h1>
+        <Badge variant={connected ? "default" : "destructive"}>
+          {connected ? (
+            <>
+              <Wifi className="size-3" /> Live
+            </>
+          ) : (
+            <>
+              <WifiOff className="size-3" /> Disconnected
+            </>
+          )}
+        </Badge>
       </div>
 
-      {agents.length === 0 ? (
-        <p style={{ color: "#9ca3af" }}>
-          No agents running. Spawn one from a definition.
-        </p>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr
-              style={{ borderBottom: "1px solid #374151", textAlign: "left" }}
-            >
-              <th style={{ padding: "0.75rem" }}>Name</th>
-              <th style={{ padding: "0.75rem" }}>Status</th>
-              <th style={{ padding: "0.75rem" }}>Current Task</th>
-              <th style={{ padding: "0.75rem" }}>Budget</th>
-              <th style={{ padding: "0.75rem" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {agents.map((agent) => (
-              <tr key={agent.id} style={{ borderBottom: "1px solid #1f2937" }}>
-                <td style={{ padding: "0.75rem" }}>
-                  <a
-                    href={`/agents/${agent.id}`}
-                    style={{ color: "#60a5fa", textDecoration: "none" }}
-                  >
-                    {agent.name}
-                  </a>
-                </td>
-                <td style={{ padding: "0.75rem" }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        borderRadius: "50%",
-                        backgroundColor: getStatusColor(agent.status),
-                        display: "inline-block",
-                      }}
-                    />
-                    {agent.status}
-                  </span>
-                </td>
-                <td
-                  style={{
-                    padding: "0.75rem",
-                    color: "#d1d5db",
-                    maxWidth: "300px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {agent.currentTask ?? "-"}
-                </td>
-                <td
-                  style={{
-                    padding: "0.75rem",
-                    fontFamily: "monospace",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {agent.budgetSpent != null && agent.budgetTotal != null
-                    ? `$${agent.budgetSpent.toFixed(2)} / $${agent.budgetTotal.toFixed(2)}`
-                    : "-"}
-                </td>
-                <td
-                  style={{ padding: "0.75rem", display: "flex", gap: "0.5rem" }}
-                >
-                  {agent.status === "running" && (
-                    <button
-                      onClick={() => handleAction(agent.id, "pause")}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#eab308",
-                        color: "#000",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                      type="button"
-                    >
-                      Pause
-                    </button>
-                  )}
-                  {agent.status === "paused" && (
-                    <button
-                      onClick={() => handleAction(agent.id, "resume")}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#22c55e",
-                        color: "#000",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                      type="button"
-                    >
-                      Resume
-                    </button>
-                  )}
-                  {agent.status !== "terminated" && (
-                    <button
-                      onClick={() => handleAction(agent.id, "terminate")}
-                      style={{
-                        padding: "0.25rem 0.75rem",
-                        backgroundColor: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                      type="button"
-                    >
-                      Terminate
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <Card>
+        <CardContent>
+          {agents.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No agents running. Spawn one from a definition.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Current Task</TableHead>
+                  <TableHead>Budget</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agents.map((agent) => (
+                  <TableRow key={agent.id}>
+                    <TableCell>
+                      <Link
+                        className="font-medium text-primary hover:underline"
+                        href={`/agents/${agent.id}`}
+                      >
+                        {agent.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(agent.status)}>
+                        {agent.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[300px] truncate text-muted-foreground">
+                      {agent.currentTask ?? "-"}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {formatBudget(agent.budgetSpent, agent.budgetTotal)}
+                    </TableCell>
+                    <TableCell>
+                      <AgentActions agent={agent} onAction={handleAction} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

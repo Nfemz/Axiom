@@ -1,6 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -11,6 +28,16 @@ interface MemoryOperation {
   timestamp: string;
   type: "write" | "read" | "consolidate";
 }
+
+interface MemoryHealthMetrics {
+  avgImportanceScore: number;
+  knowledgeBaseEntries: number;
+  knowledgeGrowthLast24h: number;
+  totalMemories: number;
+  writeRateLastHour: number;
+}
+
+// ─── Placeholder Data ───────────────────────────────────────────────
 
 const PLACEHOLDER_OPS: MemoryOperation[] = [
   {
@@ -50,21 +77,30 @@ const PLACEHOLDER_OPS: MemoryOperation[] = [
   },
 ];
 
-const TYPE_CLASSES: Record<string, string> = {
-  write: "bg-green-100 text-green-800",
-  read: "bg-blue-100 text-blue-800",
-  consolidate: "bg-purple-100 text-purple-800",
+const TYPE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  write: "default",
+  read: "secondary",
+  consolidate: "outline",
 };
 
-// ─── Component ──────────────────────────────────────────────────────
+const REFLECTION_DATA = [
+  { key: "d0", value: 3 },
+  { key: "d1", value: 5 },
+  { key: "d2", value: 2 },
+  { key: "d3", value: 7 },
+  { key: "d4", value: 4 },
+  { key: "d5", value: 6 },
+  { key: "d6", value: 8 },
+  { key: "d7", value: 3 },
+  { key: "d8", value: 5 },
+  { key: "d9", value: 4 },
+  { key: "d10", value: 6 },
+  { key: "d11", value: 7 },
+  { key: "d12", value: 5 },
+  { key: "d13", value: 3 },
+];
 
-interface MemoryHealthMetrics {
-  avgImportanceScore: number;
-  knowledgeBaseEntries: number;
-  knowledgeGrowthLast24h: number;
-  totalMemories: number;
-  writeRateLastHour: number;
-}
+// ─── Component ──────────────────────────────────────────────────────
 
 export default function MemoryPage() {
   const [operations] = useState<MemoryOperation[]>(PLACEHOLDER_OPS);
@@ -72,7 +108,7 @@ export default function MemoryPage() {
 
   useEffect(() => {
     fetch("/api/system/memory-health")
-      .then((res) => (res.ok ? res.json() : null))
+      .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (data) {
           setMetrics(data);
@@ -91,148 +127,154 @@ export default function MemoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 font-bold text-2xl text-gray-900">
-          Memory &amp; Cognitive Health
-        </h1>
+    <div className="flex flex-col gap-8">
+      <h1 className="font-bold text-2xl text-foreground">
+        Memory &amp; Cognitive Health
+      </h1>
 
-        {/* Summary Cards */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-gray-500 text-sm">Total Memories</p>
-            <p className="mt-1 font-bold text-2xl text-gray-900">
-              {summaryStats.totalMemories}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-gray-500 text-sm">Write Rate</p>
-            <p className="mt-1 font-bold text-2xl text-green-600">
-              {summaryStats.writeRate}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-gray-500 text-sm">Read Rate</p>
-            <p className="mt-1 font-bold text-2xl text-blue-600">
-              {summaryStats.readRate}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-gray-500 text-sm">
-              Knowledge Base Entries
-            </p>
-            <p className="mt-1 font-bold text-2xl text-purple-600">
-              {summaryStats.knowledgeEntries}
-            </p>
-          </div>
-        </div>
-
-        {/* Retrieval Quality Gauge */}
-        <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
-              Retrieval Quality
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: "82%" }}
-                />
-              </div>
-              <span className="font-medium text-gray-700 text-sm">82%</span>
-            </div>
-            <p className="mt-2 text-gray-500 text-xs">
-              Average cosine similarity of retrieved memories to query context
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-semibold text-gray-900 text-lg">
-              Reflection Frequency
-            </h2>
-            <div className="flex h-24 items-end gap-1">
-              {[
-                "d0-3",
-                "d1-5",
-                "d2-2",
-                "d3-7",
-                "d4-4",
-                "d5-6",
-                "d6-8",
-                "d7-3",
-                "d8-5",
-                "d9-4",
-                "d10-6",
-                "d11-7",
-                "d12-5",
-                "d13-3",
-              ].map((entry) => {
-                const v = Number(entry.split("-")[1]);
-                return (
-                  <div
-                    className="flex-1 rounded-t bg-blue-400"
-                    key={entry}
-                    style={{ height: `${(v / 8) * 100}%` }}
-                  />
-                );
-              })}
-            </div>
-            <p className="mt-2 text-gray-500 text-xs">
-              Consolidation events per day (last 14 days)
-            </p>
-          </div>
-        </div>
-
-        {/* Recent Memory Operations */}
-        <div>
-          <h2 className="mb-4 font-semibold text-gray-900 text-lg">
-            Recent Memory Operations
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Agent
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Content
-                  </th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider">
-                    Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {operations.map((op) => (
-                  <tr className="hover:bg-gray-50" key={op.id}>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span
-                        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${TYPE_CLASSES[op.type] ?? "bg-gray-100 text-gray-800"}`}
-                      >
-                        {op.type}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
-                      {op.agentName}
-                    </td>
-                    <td className="max-w-md truncate px-6 py-4 text-gray-500 text-sm">
-                      {op.content}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-sm">
-                      {new Date(op.timestamp).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <SummaryCards stats={summaryStats} />
+      <GaugeRow />
+      <OperationsTable operations={operations} />
     </div>
+  );
+}
+
+// ─── Summary Cards ──────────────────────────────────────────────────
+
+interface SummaryStats {
+  knowledgeEntries: number;
+  readRate: string;
+  totalMemories: number;
+  writeRate: string;
+}
+
+function SummaryCards({ stats }: { stats: SummaryStats }) {
+  const cards = [
+    { label: "Total Memories", value: stats.totalMemories, color: "" },
+    { label: "Write Rate", value: stats.writeRate, color: "text-success" },
+    { label: "Read Rate", value: stats.readRate, color: "text-info" },
+    {
+      label: "Knowledge Base Entries",
+      value: stats.knowledgeEntries,
+      color: "text-chart-3",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {cards.map((card) => (
+        <Card key={card.label}>
+          <CardHeader>
+            <CardDescription>{card.label}</CardDescription>
+            <CardTitle className={cn("text-2xl", card.color)}>
+              {card.value}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ─── Gauge Row ──────────────────────────────────────────────────────
+
+function GaugeRow() {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <RetrievalQualityCard />
+      <ReflectionFrequencyCard />
+    </div>
+  );
+}
+
+function RetrievalQualityCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Retrieval Quality</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-4">
+          <div className="h-4 flex-1 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-success transition-all"
+              style={{ width: "82%" }}
+            />
+          </div>
+          <span className="font-medium text-foreground text-sm">82%</span>
+        </div>
+        <p className="mt-2 text-muted-foreground text-xs">
+          Average cosine similarity of retrieved memories to query context
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReflectionFrequencyCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Reflection Frequency</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex h-24 items-end gap-1">
+          {REFLECTION_DATA.map((entry) => (
+            <div
+              className="flex-1 rounded-t bg-primary/60"
+              key={entry.key}
+              style={{ height: `${(entry.value / 8) * 100}%` }}
+            />
+          ))}
+        </div>
+        <p className="mt-2 text-muted-foreground text-xs">
+          Consolidation events per day (last 14 days)
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Operations Table ───────────────────────────────────────────────
+
+function OperationsTable({ operations }: { operations: MemoryOperation[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Memory Operations</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Agent</TableHead>
+              <TableHead>Content</TableHead>
+              <TableHead>Time</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {operations.map((operation) => (
+              <TableRow key={operation.id}>
+                <TableCell>
+                  <Badge variant={TYPE_VARIANT[operation.type] ?? "outline"}>
+                    {operation.type}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono text-foreground">
+                  {operation.agentName}
+                </TableCell>
+                <TableCell className="max-w-md truncate text-muted-foreground">
+                  {operation.content}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Date(operation.timestamp).toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
