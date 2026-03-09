@@ -63,7 +63,9 @@ async function checkApprovalGate(
   // Check if any policy value matches the requested action.
   const policyValues = Object.values(policies);
   const requiresApproval = policyValues.some((p: unknown) => {
-    if (typeof p !== "object" || p === null) return false;
+    if (typeof p !== "object" || p === null) {
+      return false;
+    }
     const policy = p as { action?: string };
     return policy.action === action || policy.action === "*";
   });
